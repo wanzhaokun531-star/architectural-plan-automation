@@ -1,0 +1,209 @@
+{
+  "schema": "bcp.plan-text-indoor-location-rules.v1",
+  "effectiveDate": "2026-11-17",
+  "scope": "后续所有建筑平面项目；以各项目实际源构件和出图比例适配",
+  "authority": "用户2026-11-05确认六项修订并要求计入通用规则；2026-11-06用户确认120毫米室内平开门墙垛示意，并要求写入平面尺寸规则；2026-11-13用户确认标准门垛及分墙厚的非标准门垛归整目标。",
+  "implementationStatus": "百塘v10保留v9六项，另将三处旧楼梯/电梯线文尺寸替换真天正尺寸，实际净尺寸1103/1875/2500；PUB_DIM25及室内样式，保存重开及局部核图通过。正式插件接入另验。",
+  "dimensionStylePolicy": {
+    "mode": "native-template-clone-stretch-only",
+    "styleName": "_TCH_ARCH",
+    "effectiveStyleName": "_TCH_ARCH&&100",
+    "textStyleName": "_TCH_DIM_T3",
+    "textStyleMatch": "exact",
+    "nominalTextHeightPaperMM": 3.5,
+    "actualDimensionTextHeightAt100": 297.5,
+    "ruleIDs": [
+      "D30",
+      "Y04",
+      "Y10",
+      "D22"
+    ],
+    "templateAsset": "annotation-template/平面标注.dwg",
+    "templateSHA256": "3c6b19fae21c1c5729d0e0000104dcadd9ba7a81560a31d74f0d576b2bd0dd2f",
+    "duplicateStylePolicy": "template-wins-complete-dependency-map",
+    "allowSourceStyleOverwrite": false,
+    "textStyleDefinition": {
+      "fontFile": "simplex.shx",
+      "bigFontEnabled": true,
+      "bigFontFile": "gbcbig.shx",
+      "fixedHeight": 0,
+      "widthFactor": 0.705882,
+      "obliqueDegrees": 0
+    },
+    "readbackReference": "annotation-template/native-readback.json",
+    "preserveBaseAndDerivedDefinitionsSeparately": true,
+    "verifyActualSegmentTextStyle": true,
+    "textStyleReferencePolicy": {
+      "dimensionStyleVariable": "DIMTXSTY",
+      "baseDimensionStyle": "_TCH_ARCH",
+      "scaledDimensionStylePattern": "_TCH_ARCH&&<比例分母>",
+      "verifyStyleTableAfterReopen": true,
+      "verifyEffectiveSegmentsAfterReopen": true,
+      "nativeTemplate": {
+        "baseTextStyle": "_TCH_DIM",
+        "scaledTextStyle": "_TCH_DIM_T3",
+        "effectiveTextStyle": "_TCH_DIM_T3"
+      },
+      "explicitTchDim": {
+        "baseTextStyle": "_TCH_DIM",
+        "scaledTextStyle": "_TCH_DIM",
+        "effectiveTextStyle": "_TCH_DIM"
+      }
+    },
+    "modelTextHeightFormula": "native-template-proportion-once; do not overwrite actual derived glyph height with nominal paper height"
+  },
+  "rules": [
+    {
+      "id": "TL01",
+      "category": "入口及台阶衔接线",
+      "rule": "对照实际源图、已确认门廊/上部平台边界、柱与踏步的真实位置，补齐入口、平台和台阶交接处缺失的必要线条。既有踏步级数、宽深及高差不因补线而擅自重定；不把尺寸界线、轴线或旧描线当作踏步，避免重复或误删有效线。轮廓线采用STAIR层/色2。"
+    },
+    {
+      "id": "TL02",
+      "category": "门联窗编号复位",
+      "rule": "编号属于对应真实天正门窗对象，复位或以等效公开原生方式恢复到对应洞口附近的既定默认侧与方向，避免孤立远移在门廊中央。保留对象类别、业务编号、洞口和开启几何，不将编号与门做普通块或用独立文字冒充；尺寸优先避让编号。合法换侧按 L04，DK 项目错位例外按 L07，疑似组合按 O05 核对。"
+    },
+    {
+      "id": "TL03",
+      "category": "台阶细部尺寸",
+      "rule": "台阶宽度、定位及必要细部尺寸按Y04从模板实际原生尺寸复制、拉伸并保留全部派生样式，图层为PUB_DIM/25，以真实天正尺寸对象表达，连续分段需保持整体可编辑。测量点绑定实际构件，替换已确认的旧尺寸描线和文字后不得双重标注；踏步序号不是长度，不把1、2、3等级序误作尺寸值。"
+    },
+    {
+      "id": "TL04",
+      "category": "门窗编号字高",
+      "paperHeightMM": 3.0,
+      "supersedesPaperHeightMM": 3.5,
+      "publicEditingEntry": "用户确认使用门窗对象的特性面板；调整文字分类下的文字高度字段，不误改数据分类下的门窗高度。按实际面板字段名称定位，先核选中对象与旧值，修改后读回真实编号高度、内容和门窗几何；不把项目中的窗口句柄、控件坐标或列表行号写成通用规则。",
+      "rule": "门窗编号按L08及模板书面要求，住宅纸面2.8mm、其他3.0mm；_TCH_WINDOW用tssdeng.shx加hztxt.shx、宽0.65。按真实比例与单位换算，不能把展开字形高度直接视为名义高度，不能只改无效固定字高。原生自身属性、洞口关联及实际图面在保存重开后核对。"
+    },
+    {
+      "id": "TL05",
+      "category": "房间名称字体样式",
+      "textStyle": "FY_HZ",
+      "rule": "房间名称采用真实可编辑天正文字，统一按 N06 应用 1:100 文字比例、实际 FY_HZ 样式和纸面字高 4.0 mm。保留名称、简称和空间归属，发生实际冲突时就近避让。保存重开核实际文字比例、样式、字体和有效字高。面积文字的位置和样式按其专用条款。"
+    },
+    {
+      "id": "TL06",
+      "category": "室内门窗定位接轴线",
+      "rule": "室内门窗定位尺寸链以与该构件相关的逻辑轴线为起止定位基准，补齐到对应轴线的定位段，洞口宽度和中间必要定位点保持真实。判定轴线须结合支承墙/构件方向和实际适用范围，不能盲取最近的门廊柱偏心轴、跨越无关房间，或只因墙边数字小就删除。没有适用轴线时列待核对，不虚造轴线或伪改尺寸数字。房间净尺寸继续按墙内边，面积口径保持。"
+    },
+    {
+      "id": "TL07",
+      "category": "通用适配与核验",
+      "rule": "上述处理基于实际源对象、轴线适用范围、构造边界及文字样式，不能把百塘的坐标、句柄和固定房间位置硬编码用于不同项目。核验真实尺寸测值及整体编辑、门窗几何与编号不变、名义字高/字形系数、FY_HZ真实引用、台阶连续性、保存重开和局部图面。未解决项目单列，不把规则写入或辅助构建通过当作DWG或正式插件完成。"
+    },
+    {
+      "id": "TL08",
+      "category": "全部有效尺寸纳入对象清单",
+      "rule": "尺寸治理按 D30 覆盖本轮新建尺寸和源图尺寸的替换或退出，包括楼梯、电梯、平台、台阶、室内门窗定位、必要净尺寸及外围三道。先列明来源、所在构件、测点、测值、目标图层和重建或省标结论；不得因旧尺寸是源图线条、已包进块或落在STAIR层就跳过。已明确省略的卫生间内部隔墙/隔门及冗余尺寸不重新恢复。"
+    },
+    {
+      "id": "TL09",
+      "category": "源图线文尺寸真实化",
+      "rule": "确认为应标的源图线文尺寸必须依据实际构件重新取测点，替换为真正可编辑天正尺寸；同墙同方向的连续分段共享基线和节点，构成整体链，不套普通块、不用线文拼接、不仅改显示数字。楼梯、电梯、平台及台阶的细部长度尺寸按Y04从模板实际原生尺寸复制、拉伸并保留全部派生样式，图层为PUB_DIM/25；踏步序号、上下箭头和有效构件线不是尺寸描线，不得误删。真实几何与旧文字不符时列待核对，不照抄数字制造尺寸。"
+    },
+    {
+      "id": "TL10",
+      "category": "尺寸全量覆盖和关联轴验收",
+      "rule": "逐项核对保留尺寸的真实TCH对象、测点/测值、图层色和编辑结构；楼梯电梯等原有细部也纳入覆盖清单。室内门窗定位按TL06连接相关逻辑轴，房间净尺寸仍按墙内边；不能把全部净尺寸改量轴线。保存重开后验证同链共节点、整链/共享节点可编辑和恢复，相关局部图面无重叠；仅检查新建600或11条已修改链不能代表其余尺寸已通过。"
+    },
+    {
+      "id": "TL11",
+      "category": "室内平开门标准门垛及净宽标注",
+      "confirmedDate": "2026-11-13",
+      "scope": "室内平开门靠相邻墙的一侧",
+      "measurementDirection": "沿门所在墙方向",
+      "measurementFrom": "门洞口边缘",
+      "measurementTo": "相邻墙体内侧墙边",
+      "scaleDependent": false,
+      "rule": "室内平开门的标准门垛设在靠相邻墙的一侧。门洞所在墙厚 200 mm 时，标准门垛净宽为 100 mm。墙厚 240 mm 时，标准门垛净宽为 120 mm。沿门所在墙的方向，从门洞口边缘量至相邻墙体内侧墙边；不从墙轴线、墙中心或开启后的门扇边缘起算。门垛净宽为建筑实际长度，按靠相邻墙侧量取。门洞定位及相应尺寸测站应与实际净宽一致，保留洞口宽度、开启形式及自身编号关系。室内门窗定位链按 TL06 连接相关逻辑轴，局部门垛净宽取实际边线。适用范围仅为室内平开门，不扩展到推拉门、窗、室外门或立面；示意图900毫米门宽不是通用门宽。实测符合对应墙厚标准的门垛无需逐一标注净宽。室内平开门的门垛符合标准且门窗编号已准确表达洞口尺寸时，不重复标门垛净宽和洞口宽度。编号未明确表达洞口尺寸时保留洞口宽度标注。保留实际门洞几何、房间净尺寸、必要定位尺寸及有效测站，核相应尺寸链闭合。既有非标准门垛优先按门洞所在墙厚归整至对应标准净宽。在允许调整且满足固定构件、使用净空及项目定位要求时，移动门洞并同步关联尺寸和编号位置，保持墙厚、洞口宽度及开启形式。归整后达到对应标准净宽的，按同样条件省标。确有约束无法达到归整目标时，保留实际位置，按实际净宽标注并记录原因；依据不足时列待核对。已取消的卫生间内部隔墙和隔门尺寸不因此恢复。",
+      "implementationStatus": "规则已确认；本次仅更新规则及文档，未修改DWG、产品源码、ARX或安装包。",
+      "standardJambIndividualLabelsRequired": false,
+      "doorJambByWallThicknessMM": {
+        "200": {
+          "standardClearWidthMM": 100,
+          "preferredAdjustmentMM": 100
+        },
+        "240": {
+          "standardClearWidthMM": 120,
+          "preferredAdjustmentMM": 120
+        }
+      }
+    }
+  ],
+  "authorizedNumberTextEditing": {
+    "scope": "用户明确允许本次及此后门窗编号字体/字高使用天正公开文字/编号编辑功能与隔离桌面的原生Windows控件接口",
+    "constraints": [
+      "仍以ObjectARX C++为原生接口，普通AutoCAD隔离桌面工作",
+      "不使用COM或Computer Use，不猜写天正私有字段",
+      "只改授权的编号字体/字高等参数，不改变门窗几何/编号分类，不改日常配置",
+      "其它天正命令及业务面板不因此自动放开"
+    ],
+    "verification": "以实际对象读回、保存重开及图面为准"
+  },
+  "sampleVerification": {
+    "project": "百塘村邹总三层平面v9",
+    "nativeDoorWindowCaptions3MM": 44,
+    "nativeRoomNamesFY_HZ": 34,
+    "interiorOpeningChainsToActualAxes": 11,
+    "nativeStairDetailDimensionsAdded": 1,
+    "sameOpeningGeometryAndNumberContent": true,
+    "savedReopened": true,
+    "formalPluginUpdated": false,
+    "evidence": "阶段2/项目/百塘村邹总_20261105_v9/qa-v9-final-data.json"
+  },
+  "unresolvedIssueRegister": "规则汇编_20261105/修复事项及状态_20261105.json",
+  "consolidatedRuleIndex": "规则汇编_20261105/建筑施工图平面自动化通用规则_20261105.json",
+  "latestDeliveryEvidence": "阶段2\\项目\\百塘村邹总_20261105_v10\\delivery-v10.json",
+  "latestRuleChange": {
+    "date": "2026-11-13",
+    "ruleID": "TL11",
+    "dwgModified": false,
+    "formalPluginUpdated": false
+  },
+  "annotationSkillPolicy": {
+    "skill": "architectural-annotation-rules",
+    "adoptedDate": "2026-11-06",
+    "scope": "仅施工图平面标注规则；不启用立面或剖面功能",
+    "references": [
+      "references/common.md",
+      "references/plan.md"
+    ],
+    "excludedReferences": [
+      "references/elevation.md",
+      "references/section.md"
+    ],
+    "projectRuleProfile": "平面标注Skill执行规则_20261106.json",
+    "precedence": "用户最新明确确认优先；Skill仅在本次确认的平面标注范围采用，不覆盖未涉及的平面构件规则、项目配置及后续明确修订。",
+    "implementation": "仅规则维护；本次未修改DWG、插件源码、ARX或安装包。"
+  },
+  "supplementalPlacementRules": {
+    "O05": "相邻门、窗的原编号与单个洞口实测规格不一致时，先查项目门窗表、构造详图及原生组合关系。确认组合者按组合的实际宽高及洞口整体位置标一号。确认独立者按各自实际类别和洞口规格编号，在允许侧分别排版。归属未确认时逐组记录实测洞口、原编号和所缺依据。",
+    "L07": "按相撞编号对记录图幅、洞口句柄、编号、实际字框及换侧受阻对象。先按 L04 试排，保留洞口对应。墙洞 DK 在既定排位和合法换侧均无法解开时，可提出同侧沿洞口最小错位候选。经项目明确确认后采用，保持门窗自身编号与洞口对应，并复核与开启线、构件和相邻文字的净空。试排偏移取本图实测。",
+    "D25": "按房间净域及实际测站将既有、新建和等价转换的尺寸链归组。组内统一比较各链的基线和文字候选位置，发生空间冲突的邻组一并复核。保护墙柱、开启线、家具及已落位的房名、门窗号和标高。保持原测点、测值、同侧及可编辑性，已指定室内侧的新链保持该侧的基线和文字。保存重开查净空，逐段定位碰撞和无法读回项。先建立名称、门窗号和标高，再联合试排同房间及相互影响的邻链。原图文字与深化标注之间的避让优先顺序按 L06。按 D23 先核每段文字居中及默认界线长度。发生实际冲突时先试就近移字，仍拥挤时比较整组基线和文字的组合位置。轴线冲突按实际出图的点划线可见段核实，图面重叠、净空不足和仅与轴线几何延长或线型空档相交分别记录。",
+    "N05": "雨棚、门廊及其他已确认的室外构造名称按所属楼层纳入应有名称清单。名称与尺寸接用同一份已确认构造轮廓，核原名锚点和构造对应后按现行名称样式处理，保留原文和已确认锚点。房间净面积资格按实际净域独立核对。",
+    "QA09": "整图验收逐层对照应有名称及新旧室内尺寸，按 S05 核源房间面积退出。室内尺寸登记源与成果对应、组内冲突前后、普通投影转换及保真结果。区分确认排除、未识别、参数缺失、格式或数值错误、字框未读回和已确认冲突，按实际对象或位置定位。原始 DWG 与已有标注的历史成图各按本身版本核验，零数量按应有清单和图面核查覆盖。逐层登记门窗编号碰撞的对象对、试排结果和受阻对象，复核独立洞口及组合编号依据。对室外构造名称核源锚点、轮廓来源、成果原文及样式。室内尺寸残留按链和段记录实测净空、字框位置和相撞对象。已处理、待项目确认及读回不足分别给出结论。 逐层核标准门垛实测和门窗编号所表达的洞口尺寸，核门垛与洞口宽省标依据。按 D23 从可见起笔端实测界线至基线的长度，核文字默认居中；已移位项记录实际冲突、移位后净空、原测点及原测值读回。",
+    "D13": "室内门窗定位按 TL06 接至与宿主相关的真实逻辑轴，必要定位段和应标洞口宽组成连续链。房间净尺寸按墙内边取点。室内平开门的门垛达到 TL11 标准且门窗编号已准确表达洞口尺寸时，不重复标门垛净宽和洞口宽度。编号未明确表达洞口尺寸时保留洞口宽度标注。非标准门垛按 TL11 归整或实测标注。保留必要定位尺寸和有效测站，复核尺寸链闭合，尺寸整链主动为对应门窗自身编号让位。",
+    "D23": "室内尺寸就近布置。1:100、1 绘图单位等于 1 mm 时，尺寸界线从实际可见起笔端到尺寸基线按 550 mm 布置，按实际显示核算 DIMEXO 偏移，界线尾段另计。每段尺寸文字默认沿该段居中，水平文字在线上方，竖向文字在线左侧。遇到实际文字、编号或其他图面冲突时，再就近调整尺寸文字或基线，保留原测点、原测值及尺寸链结构，文字保持同侧且无引线。其他比例和单位按项目核定对应排布距离。"
+  },
+  "planTextTypography": {
+    "ruleID": "N06",
+    "mandatory": true,
+    "scaleDenominator": 100,
+    "styleName": "FY_HZ",
+    "nominalPaperHeightMM": 4.0
+  },
+  "openingLabelTypography": {
+    "typographyRule": "L08",
+    "mandatoryTypography": true,
+    "textStyle": "_TCH_WINDOW",
+    "paperHeightMM": 3.0,
+    "residentialPaperHeightMM": 2.8,
+    "fontFile": "tssdeng.shx",
+    "bigFontFile": "hztxt.shx",
+    "widthFactor": 0.65,
+    "fixedHeight": 0,
+    "layer": "A-WINDOW-TEXT",
+    "source": "template-written-requirements"
+  }
+}

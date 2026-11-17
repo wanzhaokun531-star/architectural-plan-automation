@@ -1,0 +1,12 @@
+{
+  "schema": "plan.template-plotters.v1",
+  "allFontsAsGeometry": true,
+  "lineweight": "template exact CTB widths; unspecified colors use object/layer",
+  "furniture": "ACI254, black, 70 percent screening",
+  "otherACI254Objects": "explicit ACI7 to retain black table/frame printing",
+  "files": {
+    "FY-XS-2026.9-PDF.pc3": "3E1E998E70B8D5D48650C241ECF8F45C7009CA37E45B5BCF41C8EB00DE36741F",
+    "FY-XS-2026.9-A3 A4.ctb": "3AE55A425F8D3B44CF34B5A1AFAE6139E15686258FE200596F462584270037CB",
+    "FY-XS-2026.9-A1.ctb": "C39413CAFAAE72004225159833AC18A7FA677E33EE70831AEA962130DCF7DBD7"
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "schema": "bcp.plan-perimeter-content.v1",
+  "effectiveDate": "2026-11-17",
+  "scope": "所有项目各平面按 D01、D06、D27 逐侧核定外围各道适用性",
+  "status": "现行第一、第二道覆盖本侧有效外墙轴及外侧门廊柱、阳台柱轴，禁止统一裁回外墙范围。旧v7/v9等项目保留其原验收事实；本次仅规则及文档更新，DWG和正式插件接入另验。",
+  "dimensionStylePolicy": {
+    "mode": "native-template-clone-stretch-only",
+    "styleName": "_TCH_ARCH",
+    "effectiveStyleName": "_TCH_ARCH&&100",
+    "textStyleName": "_TCH_DIM_T3",
+    "textStyleMatch": "exact",
+    "nominalTextHeightPaperMM": 3.5,
+    "actualDimensionTextHeightAt100": 297.5,
+    "ruleIDs": [
+      "D30",
+      "Y04",
+      "Y10",
+      "D22"
+    ],
+    "templateAsset": "annotation-template/平面标注.dwg",
+    "templateSHA256": "3c6b19fae21c1c5729d0e0000104dcadd9ba7a81560a31d74f0d576b2bd0dd2f",
+    "duplicateStylePolicy": "template-wins-complete-dependency-map",
+    "allowSourceStyleOverwrite": false,
+    "textStyleDefinition": {
+      "fontFile": "simplex.shx",
+      "bigFontEnabled": true,
+      "bigFontFile": "gbcbig.shx",
+      "fixedHeight": 0,
+      "widthFactor": 0.705882,
+      "obliqueDegrees": 0
+    },
+    "readbackReference": "annotation-template/native-readback.json",
+    "preserveBaseAndDerivedDefinitionsSeparately": true,
+    "verifyActualSegmentTextStyle": true,
+    "modelTextHeightFormula": "native-template-proportion-once; do not overwrite actual derived glyph height with nominal paper height"
+  },
+  "rules": [
+    {
+      "id": "PC01",
+      "rule": "三道均取消墙轴至墙外边及柱轴至柱外边的补充端腿；独立有效柱轴至墙轴定位段不属于此类端腿，不能一并删除。"
+    },
+    {
+      "id": "PC02",
+      "rule": "第一道总尺寸端点采用本侧沿测量方向全部有效外墙轴线、门廊柱轴线及阳台柱轴线中的首末轴位。外侧门廊柱或阳台柱轴超出外墙轴范围时，必须纳入总轴距，不能裁回首末外墙轴。按真实墙柱轴位重算，不量墙柱外边、不仅改显示数字。台阶等无此类有效轴线的凸出边另保必要宽深与定位尺寸，不直接并入总轴距；排布偏距按A14执行。 按A18归并的柱采用外墙轴测站。"
+    },
+    {
+      "id": "PC03",
+      "rule": "第二道以与第一道总尺寸一致的首末有效墙柱轴为边界，按本侧全部有效定位轴形成连续轴间分段，包括外墙范围之外的门廊柱、阳台柱轴，不能统一裁到外墙轴范围。轴圈在本侧隐藏不等于轴位无效；有实际定位意义的轴间尺寸仍保留。仅剔除本侧确实无支撑及无定位意义的轴位，并同步重算；同一边界下分段之和须等于总轴距。 按A18归并后按有效轴位重算轴间分段，必要的柱局部定位按 D28 单列。"
+    },
+    {
+      "id": "PC04",
+      "rule": "按端点关联和构件意义判断，不按120/100等数值或短尺寸阈值一刀切；标准门垛按 TL11 省去逐一净宽标注，保留实际洞口宽、应标的非标准门垛净宽及必要定位。真实门廊柱、阳台柱轴至外墙轴的定位段不得作为墙厚补腿误删。 按A18归并的必要的柱局部定位按 D28 单列。"
+    },
+    {
+      "id": "PC05",
+      "rule": "第一、第二道按本侧有效墙柱轴范围重算真实测站，保持连续整体天正链；首末边界一致，轴间分段之和等于总轴距。第三道按真实洞口和必要墙段，不机械延长；不得只改单个显示数字或另加局部尺寸代替主链覆盖。 归并后的外墙轴和其余独立有效轴用于两道主链闭合，必要的柱局部定位按 D28 单列。"
+    }
+  ],
+  "evidence": "阶段2/项目/百塘村邹总_20261105_v7/delivery-v7.json",
+  "consolidatedRuleIndex": "规则汇编_20261105/建筑施工图平面自动化通用规则_20261105.json",
+  "annotationSkillPolicy": {
+    "skill": "architectural-annotation-rules",
+    "adoptedDate": "2026-11-06",
+    "scope": "仅施工图平面标注规则；不启用立面或剖面功能",
+    "references": [
+      "references/common.md",
+      "references/plan.md"
+    ],
+    "excludedReferences": [
+      "references/elevation.md",
+      "references/section.md"
+    ],
+    "projectRuleProfile": "平面标注Skill执行规则_20261106.json",
+    "precedence": "用户最新明确确认优先；Skill仅在本次确认的平面标注范围采用，不覆盖未涉及的平面构件规则、项目配置及后续明确修订。",
+    "implementation": "仅规则维护；本次未修改DWG、插件源码、ARX或安装包。"
+  },
+  "authority": "用户根据截图指出第一、第二道止于B轴、遗漏外侧A柱轴，确认修改外围尺寸测站规则。",
+  "dimensionExtentPolicy": {
+    "scope": "逐侧、逐方向确定平面第一道总尺寸和第二道轴间尺寸的真实测站范围",
+    "axisSources": [
+      "本侧有效外墙轴线",
+      "本侧有效门廊柱实际中心轴线",
+      "本侧有效阳台柱实际中心轴线"
+    ],
+    "totalEndpoints": "上述本侧有效墙柱轴线集合中，沿尺寸测量方向排序的首末轴位",
+    "secondRowStations": "覆盖同一首末范围内全部本侧有效定位轴位，包括外墙范围之外的门廊柱和阳台柱轴线，形成连续轴间分段",
+    "clipToExteriorWallAxisRange": false,
+    "axisCircleVisibilityDeterminesCoverage": false,
+    "sameBoundaryForTotalAndAxisChain": true,
+    "thirdRow": "按真实门窗洞口、墙段和必要局部定位取点；不因柱轴扩展而机械延长无洞口第三道或制造零尺寸",
+    "wallOrColumnAxisToEdgeEndLegs": false,
+    "unaxisedSteps": "台阶等无此类有效墙柱轴线的凸出轮廓不直接并入总轴距，必要宽深和定位另标",
+    "retainRealColumnEccentricity": true,
+    "validation": [
+      "核对本侧有效最外门廊柱、阳台柱轴是否被遗漏",
+      "第一、第二道首末边界一致，轴间分段之和等于总轴距",
+      "取消轴至外边端腿不能误删真实柱轴至墙轴定位段",
+      "真实测点、测值、整体天正链和保存重开分别核验",
+      "核 A18 归并方向沿用外墙轴及原轴号，柱位和截面保持，必要的柱局部定位按 D28 取点，外围两道测站闭合"
+    ],
+    "nearbyPorchBalconyColumnAxisPolicy": "A18 归并后共用外墙轴测站，必要的柱局部定位按 D28 单列。其余独立有效外侧柱轴仍纳入第一、第二道。"
+  },
+  "latestRuleChange": {
+    "date": "2026-11-06",
+    "ruleIDs": [
+      "PC01",
+      "PC02",
+      "PC03",
+      "PC04",
+      "PC05"
+    ],
+    "supersedes": "仅以首末外墙轴为总尺寸端点，以及第一第二道一并裁到外墙范围",
+    "dwgModified": false,
+    "formalPluginUpdated": false
+  },
+  "axisLabelVisibilityPolicy": {
+    "hiddenLabelRemovesLogicalAxis": false,
+    "hiddenLabelRemovesValidDimensionStation": false,
+    "mergeDimensionSegmentsBecauseLabelHidden": false,
+    "whenDimensionMergeAllowed": "仅确认轴位实为重复，或相应测站确实无有效定位意义并符合项目要求时，才调整尺寸链；不得仅以轴圈隐藏为依据。",
+    "realWallColumnOffsetDimensionsRetained": true,
+    "nearbyPorchBalconyColumnRule": {
+      "ruleId": "A18",
+      "scope": "按楼层及定位方向核实邻近的门廊柱或阳台柱与本侧外墙轴",
+      "useExteriorWallAxisAndLabel": true,
+      "removeDedicatedColumnAxisAndLabel": true,
+      "retainOtherEffectiveIndependentAxes": true,
+      "preserveColumnPositionAndSection": true,
+      "localDimension": "定位已明确时省去重复尺寸，确需补定位时按 D28 从实际柱边量到确认的外墙轴或墙面",
+      "includeMergedColumnCenterInPerimeterAxisChain": false,
+      "firstAndSecondRows": "按归并后的有效轴位重算，首末一致且分段与总轴距闭合",
+      "numericProximityThresholdMM": null,
+      "example": {
+        "wallAxis": "1",
+        "formerDedicatedColumnAxis": "2",
+        "localOffsetMM": 180,
+        "caseOnly": true
+      }
+    },
+    "sideLabelTypes": {
+      "E": {
+        "ruleId": "A20",
+        "name": "E 型",
+        "condition": "一侧有实际定位依据，另一侧仍有功能空间且缺少该轴在该侧的实际定位依据",
+        "label": "仅在有定位依据侧显示，隐藏对侧圈及专用引线"
+      },
+      "J": {
+        "ruleId": "A21",
+        "name": "J 型",
+        "condition": "一侧有实际定位构件，另一侧经核实为建筑退空且无功能空间",
+        "label": "可在相对两侧显示同一逻辑轴号"
+      },
+      "scope": "适用于各项目、各图幅及相对侧。类型按实际定位和空间性质识别，与轴号字符无关。轴线范围和有效尺寸测站独立判断。"
+    }
+  },
+  "latestNearbyPorchBalconyAxisChange": {
+    "date": "2026-11-12",
+    "ruleIDs": [
+      "A01",
+      "A05",
+      "A14",
+      "A15",
+      "A18",
+      "D02",
+      "D03",
+      "D04"
+    ],
+    "policy": {
+      "ruleId": "A18",
+      "scope": "按楼层及定位方向核实邻近的门廊柱或阳台柱与本侧外墙轴",
+      "useExteriorWallAxisAndLabel": true,
+      "removeDedicatedColumnAxisAndLabel": true,
+      "retainOtherEffectiveIndependentAxes": true,
+      "preserveColumnPositionAndSection": true,
+      "localDimension": "定位已明确时省去重复尺寸，确需补定位时按 D28 从实际柱边量到确认的外墙轴或墙面",
+      "includeMergedColumnCenterInPerimeterAxisChain": false,
+      "firstAndSecondRows": "按归并后的有效轴位重算，首末一致且分段与总轴距闭合",
+      "numericProximityThresholdMM": null,
+      "example": {
+        "wallAxis": "1",
+        "formerDedicatedColumnAxis": "2",
+        "localOffsetMM": 180,
+        "caseOnly": true
+      }
+    },
+    "scope": "仅平面规则及本机Skill",
+    "dwgModified": false,
+    "formalPluginUpdated": false
+  },
+  "roofOutlinePolicyReference": "D27。屋面前两道按本侧有效轴位取点并闭合。屋面平面经核实无墙、柱、洞口和门窗时，可省略第三道尺寸。纯檐口侧按实际用途记录可省依据。施工需要的檐口出挑、退折或檐边到轴线距离，在对应位置按实际测点单独标注。",
+  "shortSegmentTextPolicy": {
+    "rules": [
+      "D17",
+      "QA10"
+    ],
+    "placement": "外围短段先从有效字框及本道、相邻道尺寸界线的实际可见线段求可用位置。优先试排单段，位置不足时将相邻短段数字作为一组在同侧错开。核文字与原测段对应、无引线、原测点、实测值及既定基线间距。",
+    "verification": "外围短段按 D17 在重开图中逐段核实际字框与本道、相邻道界线的净空、同侧无引线及与原测段的对应，记录剩余冲突的楼层、侧别、链、段和相撞对象。"
+  },
+  "applicabilityRules": {
+    "D01": "外围按图幅逐侧核定各道用途和适用条件。最外道为总尺寸，第二道为轴间开间进深，第三道为墙段及门窗洞口连续尺寸。各道按自身用途选择真实测站，不能未经用途判断机械套用全部测点；第一、第二道采用D02/D03规定的同一首末墙柱轴边界，第三道按实际洞口和必要墙段取点，不要求三道首末端点彼此不同。有两个及以上有效轴位时第一、第二道必须标注并闭合。经源图证实本侧缺少有效首末轴时，登记依据并将前两道列为不适用，依据不足时列待确认。第三道省略按 D06、D27 执行。",
+    "D27": "逐图幅、逐侧分别核定排布基准和尺寸测站。楼层附带屋面、阁楼层或独立屋面先按 A29、A31 核本幅各侧有效轴及退出项，再按本侧实际服务轴核定第一、第二道，适用及不适用条件按 D01。第一道取有效轴位的首末总距，第二道在同一首末范围覆盖全部有效轴位。经核实的屋面投影轴纳入相应侧，主体墙体包络不得截掉有效屋面轴。两道均用实际轴位，檐口到轴偏距和檐边测点单独处理。第三道按实际洞口及必要墙段取点。屋面平面经核实无墙、柱、洞口和门窗时，可省略第三道尺寸。楼层附带屋面或独立屋面中仅有纯檐口轮廓的侧别，可省该侧纯檐口总宽、总深及轮廓分段的第三道，并按图幅和侧别记录依据。施工需要的檐口出挑、退折或檐边到轴线距离，在对应位置按实际测点单独标注。退台或内退墙上的洞口尺寸就近标实际墙段。同侧同范围同用途只保留一份。先按墙柱轴试排。经核实的实际檐边进入本侧常规可见标注或虚拟排布参考范围时，取本侧受影响跨度内最外实有檐边为基准，整组外排。同侧尺寸组、轴圈、引线和四道虚拟排布参考共用该基准。选定基准至实际可见起笔端为纸面 18 mm，其后间距按纸面换算。檐边归属未确认时沿用有依据的本侧排布，逐段记录待确认项。经查无相应用途时逐侧记录可省依据。雨棚等局部按实际轮廓标注。",
+    "QA10": "生成前独立建立图幅×侧别×道次的应有清单，记录有效定位轴及首末测站、洞口或外檐用途、应有轴圈与引线接合，以及逐项可省依据。保存独立重开后枚举最终 DWG 全部可见相关对象，包含原有对象。按 D01 逐侧核前两道适用性。有有效首末轴时，两道均须存在，实际首末与应有首末一致，第二道覆盖应有轴位且分段和等于总轴距。经源图证实缺少有效首末轴时登记依据，前两道列为不适用，并核无多余轴距链。依据不足时列待确认。逐侧核应有第三道的实际洞口及必要墙段测值，并另核单列的檐口定位尺寸，查漏标、混入轴间的檐到轴偏距、重复总宽总深及重复定位段。逐端按 A14、A28、A32 核圈心齐排、真实轴位端及直折引线接合、屋面外净空和辅助框，最后用原生图面核标注关系及可读性。已生成对象计数和局部测值读回均不能代替应有项对账。应有的第一、第二道缺失、同用途多标、闭合或有效轴覆盖不符、应有第三道缺失时记为未通过。完成修复、独立重开和逐侧图面核对后方可验收。验收同时核对没有屋面文字的退让区，记录上下层配准、屋面识别依据及无建筑空间处轴圈显隐。按 D27 省略第三道时，登记图幅、侧别及无墙、柱、洞口和门窗或纯檐口的核查依据。第一、第二道和实际洞口仍按各自有效测站验收。逐项核施工所需的檐口出挑、退折及檐边到轴线距离已在对应位置单独标注。旧轴降为无号、恢复设轴或退出本幅时，逐项从源构件和已核实投影关系独立确认。重开后按实际轴位核独立轴线、轴圈和专用引线、尺寸测站。仅隐圈时核有效测站保留，退出时核前两道无残留测站及局部檐口定位引用，核其他图幅有效表达。用应有端点和交接依据检查轴线有无多余延伸。只验证引线接上或尺寸链闭合不能替代定位范围核查。出图验收执行 A32，逐层叠合核对应构件及全楼轴表。只抽查已经同号的轴无法发现对应构件被误拆成不同轴号。外围短段按 D17 在重开图中逐段核实际字框与本道、相邻道界线的净空、同侧无引线及与原测段的对应，记录剩余冲突的楼层、侧别、链、段和相撞对象。整套平面先对账独立屋顶图幅，按 P04、P06 记录已有屋面和露台的源方案表达及应有标注；另行生成屋顶图时登记依据项目资料补画或内部试排默认四坡的范围。逐屋面区核实际覆盖、边段、坡面交接和图幅重复，对照项目资料逐项复核采用值、来源及冲突；默认四坡在作业内部候选上注明待复核，并在清单中按图幅和部位记录默认依据、候选范围、缺失数值及影响的标注。保存重开核图示与清单一致，正式檐口尺寸测站和排布基准有已核实边线依据。默认及未决项目确认后方可核销。 应有清单逐道逐点记录来源与用途，说明排除的墙体拼接点。D24 规定的相关开间用各自实际有效轴位建立子链，逐段核洞口边、必要墙段和轴间闭合，再核整链。保存独立重开后从图元全量枚举可见尺寸，检查旧标注及块内成员，核实有测点、测值、实际显示、用途和数量。错点、错值、缺标、重复或无依据的文字覆盖记未通过。验收基准以源几何和已核轴表建立，禁止从生成尺寸反填。"
+  }
+}

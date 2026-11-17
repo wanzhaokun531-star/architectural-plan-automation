@@ -1,0 +1,13 @@
+build/
+bin/
+__pycache__/
+*.pyc
+*.arx
+*.obj
+*.exp
+*.lib
+*.pdb
+*.suo
+*.dwl
+*.dwl2
+/host/

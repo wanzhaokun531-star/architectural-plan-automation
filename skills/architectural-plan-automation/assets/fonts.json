@@ -1,0 +1,125 @@
+{
+  "roomName": {
+    "style": "FY_HZ",
+    "font": "tssdeng.shx",
+    "bigFont": "hztxt.shx",
+    "widthFactor": 0.7
+  },
+  "drawingTitle": {
+    "style": "FY_FS",
+    "windowsFont": "新宋体",
+    "nominalPaperTextHeightMM": 7.0,
+    "scaleNumberHeightMM": 5.0
+  },
+  "drawingSummary": {
+    "style": "FY_HZ",
+    "font": "tssdeng.shx",
+    "bigFont": "hztxt.shx",
+    "nominalPaperTextHeightMM": 4.0
+  },
+  "dimension": {
+    "style": "_TCH_ARCH&&100",
+    "textStyle": "_TCH_DIM_T3",
+    "source": "annotation-template/平面标注.dwg",
+    "mode": "native-template-clone-stretch-only",
+    "readback": "annotation-template/native-readback.json"
+  },
+  "fontSource": "目标机经授权安装的天正、AutoCAD 和 Windows 字体，按实际 DWG 的定义与字体支持路径核对。",
+  "openingNumber": {
+    "style": "_TCH_WINDOW",
+    "font": "tssdeng.shx",
+    "bigFont": "hztxt.shx",
+    "widthFactor": 0.65,
+    "nominalPaperTextHeightMM": 3.0,
+    "residentialPaperTextHeightMM": 2.8,
+    "fixedHeight": 0,
+    "source": "annotation-template/standard.json:textProfiles.openingNumber"
+  },
+  "axis": {
+    "style": "_TCH_AXIS",
+    "font": "complex.shx",
+    "bigFont": "gbcbig.shx",
+    "source": "annotation-template/平面标注.dwg",
+    "mode": "native-template-clone-stretch-only"
+  },
+  "roleProfiles": {
+    "general": {
+      "style": "FY_HZ",
+      "font": "tssdeng.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 4.0,
+      "width": 0.7
+    },
+    "generalSpecification": {
+      "style": "FY_HZ",
+      "heightMM": 4.5
+    },
+    "slopeStairDirection": {
+      "style": "FY_HZ",
+      "heightMM": 3.5
+    },
+    "elevation": {
+      "style": "FY_DIM",
+      "font": "simplex.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 3.5,
+      "width": 0.7
+    },
+    "coordinate": {
+      "style": "FY_DIM",
+      "heightMM": 3.0
+    },
+    "drawingTitle": {
+      "style": "FY_FS",
+      "windowsFont": "新宋体",
+      "heightMM": 7.0,
+      "width": 0.7
+    },
+    "drawingScale": {
+      "style": "FY_FS",
+      "heightMM": 5.0
+    },
+    "fireCivilDefenceZone": {
+      "style": "FY_FS",
+      "heightMM": 6.0
+    },
+    "unitSectionNote": {
+      "style": "FY_FS",
+      "heightMM": 4.0
+    },
+    "frameHz": {
+      "style": "FYTK-HZ",
+      "font": "tssdeng.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 3.5,
+      "width": 0.8
+    },
+    "frameSong": {
+      "style": "FYTK-ST",
+      "windowsFont": "宋体",
+      "heightMM": 4.0,
+      "width": 0.8
+    },
+    "frameHei": {
+      "style": "FYTK-HT",
+      "windowsFont": "黑体",
+      "heightMM": 3.0,
+      "width": 0.8
+    },
+    "revisionNote": {
+      "style": "FY_HT",
+      "windowsFont": "黑体",
+      "heightMM": 3.5
+    },
+    "openingNumber": {
+      "style": "_TCH_WINDOW",
+      "font": "tssdeng.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 3.0,
+      "residentialHeightMM": 2.8,
+      "width": 0.65,
+      "fixedHeight": 0,
+      "nativeOwnNumber": true
+    }
+  }
+}

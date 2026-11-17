@@ -1,0 +1,165 @@
+{
+  "schema": "bcp.plan-perimeter-spacing.v2",
+  "effectiveDate": "2026-11-12",
+  "scope": "建筑平面外围尺寸及轴号排布",
+  "authority": "用户2026-11-05截图明确指定；用户2026-11-06废止遇门廊、台阶等凸出构件整组外移，恢复以对应外墙轴线为基准；用户2026-11-06确认可见起笔端至第三道洞口尺寸线由1100改为800（1:100），其余间距不变；用户随后确认外墙轴线或外侧门廊柱、阳台柱轴线至界线可见起笔端1800的示例并要求修改规则",
+  "sourceImage": "codex-clipboard-622733b5-8ea2-47e9-8c91-0311889040e7.png",
+  "status": "按图幅、侧别统一判定常规轴基准和已确认檐边基准。尺寸组、轴圈、引线及辅助框使用同一基准。测站单独核定。",
+  "referenceScale": "1:100",
+  "modelUnit": "毫米",
+  "paperUnit": "毫米",
+  "rules": [
+    {
+      "relation": "轴圈近边到总尺寸",
+      "modelMillimetersAt1To100": 800,
+      "paperMillimeters": 8,
+      "measurement": "轴号圆圈靠建筑一侧边缘至总尺寸线的垂直净距"
+    },
+    {
+      "relation": "总尺寸到轴间尺寸",
+      "modelMillimetersAt1To100": 800,
+      "paperMillimeters": 8,
+      "measurement": "两道尺寸线之间的垂直距离"
+    },
+    {
+      "relation": "轴间尺寸到洞口尺寸",
+      "modelMillimetersAt1To100": 800,
+      "paperMillimeters": 8,
+      "measurement": "两道尺寸线之间的垂直距离"
+    },
+    {
+      "relation": "洞口尺寸到投影辅助框",
+      "modelMillimetersAt1To100": 800,
+      "paperMillimeters": 8,
+      "measurement": "第三道洞口尺寸基线至界线实际可见起笔端所在辅助框边的垂直距离；不是基准轴线至尺寸基线，界线尾段另计",
+      "authority": "用户2026-11-06确认800毫米示例并要求按此修改规则；替换原1100毫米（1:100）"
+    },
+    {
+      "relation": "轴圈直径",
+      "modelMillimetersAt1To100": 800,
+      "paperMillimeters": 8
+    },
+    {
+      "relation": "本侧排布基准至界线可见起笔端",
+      "modelMillimetersAt1To100": 1800,
+      "paperMillimeters": 18,
+      "measurement": "选定基准至实际可见起笔端为纸面 18 mm，其后间距按纸面换算。",
+      "authority": "用户2026-11-06确认外墙轴线或门廊柱、阳台柱轴线至可见起笔端1800的示例",
+      "mode": "相对本侧已选排布基准的固定纸面偏距"
+    }
+  ],
+  "applicationNotes": [
+    "可见起笔端、第三道、第二道、第一道和轴圈依次向外排布。",
+    "纸面间距按实际比例及绘图单位换算。",
+    "按 sidePlacement 逐侧选择基准，已确认影响常规排布的檐边纳入该侧判断。",
+    "1800 量实际可见起笔端。DIMEXO 等有效显示偏移用于换算定义点，界线尾段另计。",
+    "四道虚拟排布参考（不生成Defpoints实体）对应起笔端及三道基线。第三道可省时第一、第二道的排位不变。",
+    "尺寸测站按外围尺寸内容专项及 D27 独立核定。"
+  ],
+  "controlFrames": {
+    "emitEntities": false,
+    "countPerPlan": 0,
+    "virtualOffsetsAt100": [
+      1800,
+      2600,
+      3400,
+      4200
+    ],
+    "defpointsPlottable": false,
+    "modelRootLayer0Allowed": false,
+    "blockInternalLayer0Allowed": true
+  },
+  "consolidatedRuleIndex": "规则汇编_20261105/建筑施工图平面自动化通用规则_20261105.json",
+  "layoutPolicy": {
+    "visibleExtensionStartPaperMM": 18,
+    "frameOffsetsPaperMM": [
+      18,
+      26,
+      34,
+      42
+    ],
+    "axisCircleNearEdgePaperMM": 50,
+    "axisCircleCenterPaperMM": 54,
+    "axisCircleDiameterPaperMM": 8,
+    "visibleExtensionStartToThirdDimensionPaperMM": 8,
+    "axisCircleCrowding": {
+      "rule": "A14",
+      "minimumEdgeClearancePaperMM": 1,
+      "maximumLateralOffsetPaperMM": 8,
+      "referenceCircleDiameterPaperMM": 8,
+      "centerSpacingAtReferenceDiameterPaperMM": 9,
+      "layout": "按图幅及侧别设定外围尺寸基线、轴圈及四道虚拟排布参考（不生成Defpoints图元）的共同排布基准。建筑侧优先用承担外围定位的外侧门廊柱或阳台柱轴，无此轴时用对应外墙轴。A18 归并方向取外墙轴。1:100 时可见起笔端、三道基线和轴圈圆心距本侧排布基准分别为 1800、2600、3400、4200、5400 mm，轴圈直径 800 mm。逐幅逐侧以实际轴序联合排版保留和新增轴圈。南、北侧各用同一水平排布线，东、西侧各用同一竖向排布线。相邻圈外缘净空默认至少纸面 1 mm。圈径为纸面 8 mm 时，圈心距至少纸面 9 mm。单圈沿排布线的最大侧移默认纸面 8 mm，由真实轴位与排布线的交点量至圈心。无冲突的圈保持原轴位对应的圈心。有冲突时优先分担位移，取满足净空和真实轴序的较小移量。侧移圈的引线按 A28 只转折一次：沿真实轴位直伸，圈外折点起以约 45° 的径向斜段直接接圆周，入圈前不得续接短直段。在尺寸文字外侧逐段检查交叉和断口。同侧圈心继续齐排。空间不足时先利用排布线两端空位。图框受限时按 P03 保持比例调整图幅，再按 A20、A21 核有依据的单侧表达。仍有冲突时保留应有轴号，按图幅、侧别、轴号、实测净空及已试移量登记待确认。实际轴位和尺寸测站分别保持。先按墙柱轴试排。经核实的实际檐边进入本侧常规可见标注或虚拟排布参考范围时，取本侧受影响跨度内最外实有檐边为基准，整组外排。檐边归属未确认时沿用有依据的本侧排布，逐段记录待确认项。实际轴位和各道测点独立核定。其他比例按纸面毫米换算。台阶等无此类轴线的凸出边仍独立标注。建筑总尺寸和轴间尺寸覆盖本侧有效外侧柱轴，各道测量按 D02–D04 执行。"
+    }
+  },
+  "latestRuleChange": {
+    "date": "2026-11-12",
+    "scope": "平面外围逐侧排布",
+    "ruleIds": [
+      "A14",
+      "D09",
+      "D27"
+    ]
+  },
+  "annotationSkillPolicy": {
+    "skill": "architectural-annotation-rules",
+    "adoptedDate": "2026-11-06",
+    "scope": "仅施工图平面标注规则；不启用立面或剖面功能",
+    "references": [
+      "references/common.md",
+      "references/plan.md"
+    ],
+    "excludedReferences": [
+      "references/elevation.md",
+      "references/section.md"
+    ],
+    "projectRuleProfile": "平面标注Skill执行规则_20261106.json",
+    "precedence": "用户最新明确确认优先；Skill仅在本次确认的平面标注范围采用，不覆盖未涉及的平面构件规则、项目配置及后续明确修订。",
+    "implementation": "仅规则维护；本次未修改DWG、插件源码、ARX或安装包。"
+  },
+  "dimensionExtentPolicyReference": "平面外围尺寸内容规则_20261105.json#/dimensionExtentPolicy",
+  "latestNearbyPorchBalconyAxisChange": {
+    "date": "2026-11-12",
+    "ruleIDs": [
+      "A01",
+      "A05",
+      "A14",
+      "A15",
+      "A18",
+      "D02",
+      "D03",
+      "D04"
+    ],
+    "policy": {
+      "ruleId": "A18",
+      "scope": "按楼层及定位方向核实邻近的门廊柱或阳台柱与本侧外墙轴",
+      "useExteriorWallAxisAndLabel": true,
+      "removeDedicatedColumnAxisAndLabel": true,
+      "retainOtherEffectiveIndependentAxes": true,
+      "preserveColumnPositionAndSection": true,
+      "localDimension": "定位已明确时省去重复尺寸，确需补定位时按 D28 从实际柱边量到确认的外墙轴或墙面",
+      "includeMergedColumnCenterInPerimeterAxisChain": false,
+      "firstAndSecondRows": "按归并后的有效轴位重算，首末一致且分段与总轴距闭合",
+      "numericProximityThresholdMM": null,
+      "example": {
+        "wallAxis": "1",
+        "formerDedicatedColumnAxis": "2",
+        "localOffsetMM": 180,
+        "caseOnly": true
+      }
+    },
+    "scope": "仅平面规则及本机Skill",
+    "dwgModified": false,
+    "formalPluginUpdated": false
+  },
+  "sidePlacement": {
+    "normal": "WALL_OR_OUTER_COLUMN",
+    "confirmedRoof": "EAVE_IF_INTERSECTS",
+    "steps": "KEEP_AXIS_FOR_STEPS",
+    "normalSelection": "本侧有承担独立外围定位的门廊柱或阳台柱时取实际柱轴，其余取外墙轴。按 A18 归并的方向沿用外墙轴。",
+    "roofSelection": "先按墙柱轴试排。经核实的实际檐边进入本侧常规可见标注或辅助框的排布范围时，取本侧受影响跨度内最外实有檐边为基准，整组外排。",
+    "stepSelection": "仅有台阶等无轴凸出边时沿用墙柱轴，所需局部尺寸在对应位置另标。",
+    "unverifiedRoof": "檐边归属未确认时沿用有依据的本侧排布，逐段记录待确认项。",
+    "distanceRule": "选定基准至实际可见起笔端为纸面 18 mm，其后间距按纸面换算。",
+    "measurementRule": "按 D02、D03、D27 分别核实际有效测站。切换排布基准时保持测站、测值和真实轴位。"
+  }
+}

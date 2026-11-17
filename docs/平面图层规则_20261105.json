@@ -1,0 +1,214 @@
+{
+  "schema": "bcp.plan-layer-rules.v1",
+  "effectiveDate": "2026-11-17",
+  "scope": "建筑平面图",
+  "authority": "用户确认以平面标注.dwg书面用途层表替换平面旧规则；原生尺寸轴号内部依赖按实际样件",
+  "status": "规则与资源已更新，原生程序及实打适配另验",
+  "colorSystem": "AutoCAD ACI",
+  "rules": [
+    {
+      "category": "axis",
+      "layer": "A-AXIS",
+      "aci": 3,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.15
+    },
+    {
+      "category": "axisText",
+      "layer": "A-AXIS-TEXT",
+      "aci": 7,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "room",
+      "layer": "A-房间名称",
+      "aci": 7,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "table",
+      "layer": "A-表格",
+      "aci": 254,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "axisLine",
+      "layer": "A-DOTE",
+      "aci": 1,
+      "lineweightA3A4MM": 0.05,
+      "lineweightA1MM": 0.1
+    },
+    {
+      "category": "wall",
+      "layer": "A-WALL",
+      "aci": 4,
+      "lineweightA3A4MM": 0.3,
+      "lineweightA1MM": 0.35
+    },
+    {
+      "category": "partition",
+      "layer": "A-轻质隔墙",
+      "aci": 31,
+      "lineweightA3A4MM": 0.2,
+      "lineweightA1MM": 0.25
+    },
+    {
+      "category": "column",
+      "layer": "A-COLUMN",
+      "aci": 4,
+      "lineweightA3A4MM": 0.3,
+      "lineweightA1MM": 0.35
+    },
+    {
+      "category": "columnHatch",
+      "layer": "A-柱子填充",
+      "aci": 251,
+      "lineweightA3A4MM": 0.05,
+      "lineweightA1MM": 0.13
+    },
+    {
+      "category": "otherHatch",
+      "layer": "A-PUB-HATCH",
+      "aci": 251,
+      "lineweightA3A4MM": 0.05,
+      "lineweightA1MM": 0.13
+    },
+    {
+      "category": "acPlatform",
+      "layer": "A-空调机位",
+      "aci": 210,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "shaft",
+      "layer": "A-管井-N",
+      "aci": 227,
+      "lineweightA3A4MM": 0.2,
+      "lineweightA1MM": 0.25
+    },
+    {
+      "category": "opening",
+      "layer": "A-WINDOW",
+      "aci": 2,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.15
+    },
+    {
+      "category": "openingNumber",
+      "layer": "A-WINDOW-TEXT",
+      "aci": 7,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.15
+    },
+    {
+      "category": "kitchenSanitary",
+      "layer": "A-洁具、厨具",
+      "aci": 165,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "furniture",
+      "layer": "A-家具",
+      "aci": 254,
+      "lineweightA3A4MM": null,
+      "lineweightA1MM": null
+    },
+    {
+      "category": "slabOpening",
+      "layer": "A-楼板留洞",
+      "aci": 220,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "waterEquipment",
+      "layer": "A-水专业设备",
+      "aci": 150,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "acGasEquipment",
+      "layer": "A-空调、燃气专业设备",
+      "aci": 210,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "electricalEquipment",
+      "layer": "A-电气专业设备",
+      "aci": 33,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "category": "第三道及内部尺寸",
+      "layer": "PUB_DIM",
+      "aci": 25,
+      "source": "模板未涉及，现行用途保留"
+    },
+    {
+      "category": "楼梯台阶平台",
+      "layer": "STAIR",
+      "aci": 2,
+      "source": "模板未涉及，现行用途保留"
+    },
+    {
+      "category": "楼面标高",
+      "layer": "DIM_ELEV",
+      "aci": 3,
+      "source": "模板未涉及，现行用途保留"
+    },
+    {
+      "category": "图名符号",
+      "layer": "DIM_SYMB",
+      "aci": 3,
+      "source": "模板未涉及，现行用途保留"
+    }
+  ],
+  "applicationNotes": [
+    "平面图层、颜色及用途线宽按平面标注.dwg书面层表及template-standard.md执行，优先于旧规则和模板中未同步的实际层表。轴圈与轴线尺寸A-AXIS/3，独立轴线A-DOTE/1，房名A-房间名称/7，门窗本体A-WINDOW/2、编号A-WINDOW-TEXT/7，墙A-WALL/4，柱A-COLUMN/4，家具A-家具/254、洁厨A-洁具、厨具/165。实际原生轴号内部随样件保留，不为套层表炸开或外挂文字。模板未涉及的PUB_DIM/25、STAIR/2、DIM_ELEV/3、DIM_SYMB/3等继续按本用途规则。层名以书面英文名去末尾空格为准，不采用旧下划线或漏字拼写；逐对象核有效层色，图层仅是识别辅助。",
+    "新标注优先ByLayer，保留参考中必要且有效的实体线型覆盖，包括DOTE。应检查模型根、容器内本体及有效显示，不能只改外层块的图层。",
+    "打印按模板书面用途表的A3/A4和A1线宽执行，样式名FY-XS-2026.9-A3 A4；同色不同用途按图层/对象线宽及使用对象线宽的打印样式区分。色7的轴号/房名A1为0.18、门窗编号为0.15，不得用单一颜色固定值抹平。家具色254按70%灰，表格同色黑线需按用途独立控制；模板未给家具线宽，不猜成已确认数值。采用可实现差别的打印处理或经验证等效STB映射，最终DWG和实打须同版。PDF字体全部转几何。模板DWG未绑定有效CTB/PC3，书面要求不等于已配置，资源缺项及未验证映射按P06列清单并继续独立项。",
+    "按模板要求，成果不得在Defpoints或模型根0层绘制图形；块定义内部基础图元用0层为制块例外。取消旧每平面四道Defpoints实体框；1800/2600/3400/4200四道排布参考保留为计算与核验记录，不生成辅助图元，不改变尺寸基线、轴圈、测点或建筑几何。只删除已证实为旧辅助框者，禁止按图层一键误删未识别构件。",
+    "Defpoints保持不打印，最终交付核旧辅助框退出及不存在新生成的Defpoints图形；模型根0层不承载新成图对象，块内0层例外按Y07。检查见证留在独立记录或不回存测试副本，不能混入交付。",
+    "家具、洁具和厨具仍按NC08、NC15先识别、递归打散、内部基础图元归0层，再完整单件成块。外块按用途分层：家具A-家具/254，洁具厨具A-洁具、厨具/165；外块ByLayer，内部ByBlock继承各自用途颜色，内部无子块。家具打印70%灰按Y05，不能把全部类别继续统一色252。保护非家具及其他共享实例；无法保形的按单件记原因，继续独立项。"
+  ],
+  "consolidatedRuleIndex": "规则汇编_20261105/建筑施工图平面自动化通用规则_20261105.json",
+  "annotationSkillPolicy": {
+    "skill": "architectural-annotation-rules",
+    "adoptedDate": "2026-11-06",
+    "scope": "仅施工图平面标注规则；不启用立面或剖面功能",
+    "references": [
+      "references/common.md",
+      "references/plan.md"
+    ],
+    "excludedReferences": [
+      "references/elevation.md",
+      "references/section.md"
+    ],
+    "projectRuleProfile": "平面标注Skill执行规则_20261106.json",
+    "precedence": "用户最新明确确认优先；Skill仅在本次确认的平面标注范围采用，不覆盖未涉及的平面构件规则、项目配置及后续明确修订。",
+    "implementation": "仅规则维护；本次未修改DWG、插件源码、ARX或安装包。"
+  },
+  "historicalValidation": "百塘v10保留已落实层色及Defpoints、文字设置，已修复本次确认的家具分类/完整成块及三处旧细部尺寸遗漏；其他项目及正式插件接入另验。",
+  "templateSHA256": "3c6b19fae21c1c5729d0e0000104dcadd9ba7a81560a31d74f0d576b2bd0dd2f",
+  "controlFrames": {
+    "emitEntities": false,
+    "countPerPlan": 0,
+    "virtualOffsetsAt100": [
+      1800,
+      2600,
+      3400,
+      4200
+    ],
+    "defpointsPlottable": false,
+    "modelRootLayer0Allowed": false,
+    "blockInternalLayer0Allowed": true
+  }
+}

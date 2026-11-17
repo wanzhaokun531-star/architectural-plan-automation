@@ -1,0 +1,952 @@
+{
+  "schema": "plan.annotation-template-standard.v1",
+  "effectiveDate": "2026-11-17",
+  "dwg": "平面标注.dwg",
+  "sha256": "3c6b19fae21c1c5729d0e0000104dcadd9ba7a81560a31d74f0d576b2bd0dd2f",
+  "scope": "architectural-plan-only",
+  "authority": {
+    "dimensionAndAxis": "actual-native-template-objects",
+    "otherTypographyLayersPrinting": "template-written-requirements",
+    "uncovered": "existing-plan-rules"
+  },
+  "operations": {
+    "dimensionAndAxis": [
+      "clone-native-object",
+      "stretch-native-grips",
+      "place-rigidly",
+      "set-project-business-number"
+    ],
+    "sourceDimensionsAndLabels": "inventory-then-remove-in-work-copy",
+    "defaultStyles": "initialization-only-before-template-import",
+    "duplicateStylePolicy": "template-wins-complete-dependency-map",
+    "allowSourceStyleOverwrite": false,
+    "allowExplodedReplacement": false
+  },
+  "nativeDonors": [
+    {
+      "handle": "357",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "358",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "359",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "35A",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "35B",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "364",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "365",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "366",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "367",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "375",
+      "type": "TDbDimension2",
+      "layer": "PUB_DIM"
+    },
+    {
+      "handle": "8C0",
+      "type": "TDbDimension2",
+      "layer": "0"
+    },
+    {
+      "handle": "8C1",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8C2",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8C3",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8C4",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8C5",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8C6",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8C7",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8C8",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8CB",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8CC",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "8E1",
+      "type": "TDbDimension2",
+      "layer": "0"
+    },
+    {
+      "handle": "911",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "912",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "913",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "914",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "915",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "916",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "917",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "930",
+      "type": "TDbDimension2",
+      "layer": "PUB_DIM"
+    },
+    {
+      "handle": "938",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "939",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "93A",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "93B",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "93D",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "93E",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "93F",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "940",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "941",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "942",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "943",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "944",
+      "type": "TDbDimension2",
+      "layer": "PUB_DIM"
+    },
+    {
+      "handle": "945",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "946",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "947",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "948",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "949",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "94B",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "94C",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "94D",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "94E",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "94F",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "950",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "951",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "952",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "953",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "954",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "99A",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "99C",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "99D",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "99F",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A1",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A2",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A3",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A4",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A5",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A6",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A7",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A8",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9A9",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9AA",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9AB",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9AC",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9AD",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9AE",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9AF",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B0",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B1",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B2",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B4",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B6",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B7",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B8",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9B9",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9BA",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9BB",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9BC",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9BD",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9BF",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C1",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C2",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C3",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C4",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C5",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C6",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C7",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C8",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9C9",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9CA",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9CB",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9CC",
+      "type": "TDbAxisLabelSet",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "9F8",
+      "type": "TDbDimension2",
+      "layer": "PUB_DIM"
+    },
+    {
+      "handle": "A10",
+      "type": "TDbDimension2",
+      "layer": "PUB_DIM"
+    },
+    {
+      "handle": "A1C",
+      "type": "TDbDimension2",
+      "layer": "PUB_DIM"
+    },
+    {
+      "handle": "A2D",
+      "type": "TDbDimension2",
+      "layer": "PUB_DIM"
+    },
+    {
+      "handle": "A35",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "A3A",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "A57",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "A63",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "A87",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "A8C",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "AA9",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    },
+    {
+      "handle": "AB5",
+      "type": "TDbDimension2",
+      "layer": "A-AXIS"
+    }
+  ],
+  "nativeDimensionStyles": [
+    {
+      "name": "_TCH_ARCH",
+      "parameters": {
+        "textStyle": "_TCH_DIM",
+        "textHeight": 2.8,
+        "scale": 1,
+        "arrowSize": 1,
+        "arrow": "_ArchTick",
+        "gap": 1,
+        "witnessOffset": 3,
+        "witnessExtension": 2.5,
+        "lineExtension": 1.5,
+        "measurementFactor": 1,
+        "textAbove": 1,
+        "textColor": 7,
+        "lineColor": 0,
+        "witnessColor": 0,
+        "lineweight": -2,
+        "witnessLineweight": -2,
+        "linearUnits": 2,
+        "decimals": 0,
+        "zeroSuppression": 0
+      }
+    },
+    {
+      "name": "_TCH_ARCH&&100",
+      "parameters": {
+        "textStyle": "_TCH_DIM_T3",
+        "textHeight": 297.5,
+        "scale": 1,
+        "arrowSize": 100,
+        "arrow": "_ArchTick",
+        "gap": 126.25,
+        "witnessOffset": 300,
+        "witnessExtension": 250,
+        "lineExtension": 0,
+        "measurementFactor": 1,
+        "textAbove": 1,
+        "textColor": 7,
+        "lineColor": 0,
+        "witnessColor": 0,
+        "lineweight": -2,
+        "witnessLineweight": -2,
+        "linearUnits": 2,
+        "decimals": 0,
+        "zeroSuppression": 0
+      }
+    }
+  ],
+  "nativeTextStyles": [
+    {
+      "name": "_TCH_DIM",
+      "primary": "SIMPLEX",
+      "big": "GBCBIG",
+      "width": 1,
+      "height": 0,
+      "oblique": 0,
+      "flags": 0
+    },
+    {
+      "name": "_TCH_AXIS",
+      "primary": "COMPLEX",
+      "big": "GBCBIG",
+      "width": 1,
+      "height": 0,
+      "oblique": 0,
+      "flags": 0
+    },
+    {
+      "name": "_TCH_DIM_T3",
+      "primary": "SIMPLEX",
+      "big": "GBCBIG",
+      "width": 0.705882,
+      "height": 0,
+      "oblique": 0,
+      "flags": 0
+    }
+  ],
+  "nativeDimensionReadback": {
+    "style": "_TCH_ARCH&&100",
+    "textStyle": "_TCH_DIM_T3",
+    "nominalHeightFromWrittenTableMM": 3.5,
+    "effectiveDIMTXTAt100": 297.5,
+    "DIMSCALE": 1,
+    "DIMGAP": 126.25,
+    "DIMEXO": 300,
+    "DIMEXE": 250,
+    "DIMDLE": 0,
+    "DIMLFAC": 1,
+    "arrow": "_ArchTick",
+    "arrowSize": 100,
+    "textWidth": 0.705882
+  },
+  "axisReadback": {
+    "type": "TDbAxisLabelSet",
+    "circleDiameterAt100": 800,
+    "textStyle": "_TCH_AXIS",
+    "font": "complex.shx",
+    "bigFont": "gbcbig.shx",
+    "fit": "native-per-label",
+    "forceUniformExplodedTextHeight": false
+  },
+  "textProfiles": {
+    "general": {
+      "style": "FY_HZ",
+      "font": "tssdeng.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 4.0,
+      "width": 0.7
+    },
+    "generalSpecification": {
+      "style": "FY_HZ",
+      "heightMM": 4.5
+    },
+    "slopeStairDirection": {
+      "style": "FY_HZ",
+      "heightMM": 3.5
+    },
+    "elevation": {
+      "style": "FY_DIM",
+      "font": "simplex.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 3.5,
+      "width": 0.7
+    },
+    "coordinate": {
+      "style": "FY_DIM",
+      "heightMM": 3.0
+    },
+    "drawingTitle": {
+      "style": "FY_FS",
+      "windowsFont": "新宋体",
+      "heightMM": 7.0,
+      "width": 0.7
+    },
+    "drawingScale": {
+      "style": "FY_FS",
+      "heightMM": 5.0
+    },
+    "fireCivilDefenceZone": {
+      "style": "FY_FS",
+      "heightMM": 6.0
+    },
+    "unitSectionNote": {
+      "style": "FY_FS",
+      "heightMM": 4.0
+    },
+    "frameHz": {
+      "style": "FYTK-HZ",
+      "font": "tssdeng.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 3.5,
+      "width": 0.8
+    },
+    "frameSong": {
+      "style": "FYTK-ST",
+      "windowsFont": "宋体",
+      "heightMM": 4.0,
+      "width": 0.8
+    },
+    "frameHei": {
+      "style": "FYTK-HT",
+      "windowsFont": "黑体",
+      "heightMM": 3.0,
+      "width": 0.8
+    },
+    "revisionNote": {
+      "style": "FY_HT",
+      "windowsFont": "黑体",
+      "heightMM": 3.5
+    },
+    "openingNumber": {
+      "style": "_TCH_WINDOW",
+      "font": "tssdeng.shx",
+      "bigFont": "hztxt.shx",
+      "heightMM": 3.0,
+      "residentialHeightMM": 2.8,
+      "width": 0.65,
+      "fixedHeight": 0,
+      "nativeOwnNumber": true
+    }
+  },
+  "layers": [
+    {
+      "role": "axis",
+      "name": "A-AXIS",
+      "aci": 3,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.15
+    },
+    {
+      "role": "axisText",
+      "name": "A-AXIS-TEXT",
+      "aci": 7,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "room",
+      "name": "A-房间名称",
+      "aci": 7,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "table",
+      "name": "A-表格",
+      "aci": 254,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "axisLine",
+      "name": "A-DOTE",
+      "aci": 1,
+      "lineweightA3A4MM": 0.05,
+      "lineweightA1MM": 0.1
+    },
+    {
+      "role": "wall",
+      "name": "A-WALL",
+      "aci": 4,
+      "lineweightA3A4MM": 0.3,
+      "lineweightA1MM": 0.35
+    },
+    {
+      "role": "partition",
+      "name": "A-轻质隔墙",
+      "aci": 31,
+      "lineweightA3A4MM": 0.2,
+      "lineweightA1MM": 0.25
+    },
+    {
+      "role": "column",
+      "name": "A-COLUMN",
+      "aci": 4,
+      "lineweightA3A4MM": 0.3,
+      "lineweightA1MM": 0.35
+    },
+    {
+      "role": "columnHatch",
+      "name": "A-柱子填充",
+      "aci": 251,
+      "lineweightA3A4MM": 0.05,
+      "lineweightA1MM": 0.13
+    },
+    {
+      "role": "otherHatch",
+      "name": "A-PUB-HATCH",
+      "aci": 251,
+      "lineweightA3A4MM": 0.05,
+      "lineweightA1MM": 0.13
+    },
+    {
+      "role": "acPlatform",
+      "name": "A-空调机位",
+      "aci": 210,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "shaft",
+      "name": "A-管井-N",
+      "aci": 227,
+      "lineweightA3A4MM": 0.2,
+      "lineweightA1MM": 0.25
+    },
+    {
+      "role": "opening",
+      "name": "A-WINDOW",
+      "aci": 2,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.15
+    },
+    {
+      "role": "openingNumber",
+      "name": "A-WINDOW-TEXT",
+      "aci": 7,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.15
+    },
+    {
+      "role": "kitchenSanitary",
+      "name": "A-洁具、厨具",
+      "aci": 165,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "furniture",
+      "name": "A-家具",
+      "aci": 254,
+      "lineweightA3A4MM": null,
+      "lineweightA1MM": null
+    },
+    {
+      "role": "slabOpening",
+      "name": "A-楼板留洞",
+      "aci": 220,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "waterEquipment",
+      "name": "A-水专业设备",
+      "aci": 150,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "acGasEquipment",
+      "name": "A-空调、燃气专业设备",
+      "aci": 210,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    },
+    {
+      "role": "electricalEquipment",
+      "name": "A-电气专业设备",
+      "aci": 33,
+      "lineweightA3A4MM": 0.1,
+      "lineweightA1MM": 0.18
+    }
+  ],
+  "controlFrames": {
+    "emitEntities": false,
+    "countPerPlan": 0,
+    "virtualOffsetsAt100": [
+      1800,
+      2600,
+      3400,
+      4200
+    ],
+    "defpointsPlottable": false,
+    "modelRootLayer0Allowed": false,
+    "blockInternalLayer0Allowed": true
+  },
+  "plot": {
+    "nameA3A4": "FY-XS-2026.9-A3 A4",
+    "paperDefault": "A3-landscape",
+    "scaleDenominator": 100,
+    "fitToPaper": false,
+    "pdfFonts": "all-text-as-geometry",
+    "lineweightAuthority": "by-role-table",
+    "sameColorDifferentLineweight": "layer-or-object-lineweights-with-object-lineweight-plot-style",
+    "furnitureGrayWritten": "70%灰",
+    "ctbOrPc3Verified": true,
+    "a2Profile": "FY-XS-2026.9-A3 A4.ctb; 贺府、刘府原有A2布局实打验证",
+    "unresolved": [
+      "A1打印资源与原生布局选择已接入，尚无A1项目实打记录",
+      "家具线宽沿对象/图层，模板未指定固定值；254按70%screen实际输出"
+    ]
+  },
+  "runtimeStatus": {
+    "rulesAndResourcesUpdated": true,
+    "nativeEngineAdaptationVerified": true,
+    "newProjectPlotVerified": false,
+    "verifiedScope": "贺府、刘府已有平面的模板原生终核，完整范围及模块指纹见 ../template-runtime.json"
+  }
+}

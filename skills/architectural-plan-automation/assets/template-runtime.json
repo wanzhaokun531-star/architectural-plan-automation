@@ -1,0 +1,98 @@
+{
+  "moduleSHA256": "508A94839F2F7E106292D0584D479B61F9DF3843D380B69854FD4A5770428DD1",
+  "templateSHA256": "3C6B19FAE21C1C5729D0E0000104DCADD9BA7A81560A31D74F0D576B2BD0DD2F",
+  "plotterResources": {
+    "schema": "plan.template-plotters.v1",
+    "allFontsAsGeometry": true,
+    "lineweight": "template exact CTB widths; unspecified colors use object/layer",
+    "furniture": "ACI254, black, 70 percent screening",
+    "otherACI254Objects": "explicit ACI7 to retain black table/frame printing",
+    "files": {
+      "FY-XS-2026.9-PDF.pc3": "3E1E998E70B8D5D48650C241ECF8F45C7009CA37E45B5BCF41C8EB00DE36741F",
+      "FY-XS-2026.9-A3 A4.ctb": "3AE55A425F8D3B44CF34B5A1AFAE6139E15686258FE200596F462584270037CB",
+      "FY-XS-2026.9-A1.ctb": "C39413CAFAAE72004225159833AC18A7FA677E33EE70831AEA962130DCF7DBD7"
+    }
+  },
+  "scope": "既有平面的模板原生终核与同版整套实打",
+  "limits": [
+    "墙柱洞口等原建筑位置按源平面保持",
+    "尚无A1、新方案从零生成全流程实跑",
+    "嵌套旧尺寸和不可安全改写的关联文字逐项登记"
+  ],
+  "projects": [
+    {
+      "project": "贺府",
+      "acceptedVersion": "v21",
+      "inputSHA256": "1F68D5FA2BB1003B85A8AA2F30F22FBB6F7B66C34CAA9757E7FEDE1007CEB6C3",
+      "outputSHA256": "B19902EC55C20DD8B7E4711DB4D79931BD8D9B86E353173C5587AC55F6375559",
+      "verifiedModuleSHA256": "E812E2D8DC18AE0E57655AB13178F6065F1EE4BA63377B92FD2750D218F76331",
+      "dimensions": 93,
+      "axisSets": 76,
+      "paperChecks": 135,
+      "paperIssues": 0,
+      "paperCoverageIssues": 0,
+      "pages": [
+        [
+          "平面图幅-1",
+          "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+          "FY-XS-2026.9-A3 A4.ctb",
+          "CC825C46E7427060276E7C07C39DCD3A73D215EFD85B142DAE9B9437309735E1"
+        ],
+        [
+          "平面图幅-2",
+          "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+          "FY-XS-2026.9-A3 A4.ctb",
+          "F462E279A643AEF0384E767E51F839B37BAC0A624DF7FE761F1BEDD7B8790967"
+        ],
+        [
+          "平面图幅-3",
+          "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+          "FY-XS-2026.9-A3 A4.ctb",
+          "229D59143B878D41FF53C98A7B6366C0B1977625D22FB5297E089FD753CF1C63"
+        ],
+        [
+          "平面图幅-4",
+          "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+          "FY-XS-2026.9-A3 A4.ctb",
+          "C20979503BE7AA35FCC7C33C079B89E2D6F1BB4F500824932776E277D65F2334"
+        ]
+      ],
+      "checklistCount": 36,
+      "nativeQuitExitCode": 0
+    },
+    {
+      "project": "刘府",
+      "acceptedVersion": "v21",
+      "inputSHA256": "503A3298F2886C80190061E5C932652B06E15A984B12B724EF0BC389411DFD30",
+      "outputSHA256": "5ED1E80EA28692750B3CA1B6ACC41AA604D1CBC5EC6EB614AAD882E1FCDA7C6A",
+      "verifiedModuleSHA256": "E812E2D8DC18AE0E57655AB13178F6065F1EE4BA63377B92FD2750D218F76331",
+      "dimensions": 81,
+      "axisSets": 59,
+      "paperChecks": 73,
+      "paperIssues": 0,
+      "paperCoverageIssues": 0,
+      "pages": [
+        [
+          "平面出图-1",
+          "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+          "FY-XS-2026.9-A3 A4.ctb",
+          "2200D48D659E994528F79AA90D923A259A109F45FCE0CF792D6A73D8F0BF7545"
+        ],
+        [
+          "平面出图-2",
+          "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+          "FY-XS-2026.9-A3 A4.ctb",
+          "E80CE2C7C15B590CE691ABBB76EB388F24C7ADFB1BE4CA866740DCC47D55A333"
+        ],
+        [
+          "平面出图-3",
+          "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+          "FY-XS-2026.9-A3 A4.ctb",
+          "97617143EA58B875BC5E760D457CD966621B8E995AEC92B86638E682251F58C2"
+        ]
+      ],
+      "checklistCount": 64,
+      "nativeQuitExitCode": 0
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+PLANTEMPLATELAYERS1
+axis "A-AXIS" 3 10 15
+axisText "A-AXIS-TEXT" 7 10 18
+room "A-房间名称" 7 10 18
+table "A-表格" 254 10 18
+axisLine "A-DOTE" 1 5 10
+wall "A-WALL" 4 30 35
+partition "A-轻质隔墙" 31 20 25
+column "A-COLUMN" 4 30 35
+columnHatch "A-柱子填充" 251 5 13
+otherHatch "A-PUB-HATCH" 251 5 13
+acPlatform "A-空调机位" 210 10 18
+shaft "A-管井-N" 227 20 25
+opening "A-WINDOW" 2 10 15
+openingNumber "A-WINDOW-TEXT" 7 10 15
+kitchenSanitary "A-洁具、厨具" 165 10 18
+furniture "A-家具" 254 -1 -1
+slabOpening "A-楼板留洞" 220 10 18
+waterEquipment "A-水专业设备" 150 10 18
+acGasEquipment "A-空调、燃气专业设备" 210 10 18
+electricalEquipment "A-电气专业设备" 33 10 18
+END
