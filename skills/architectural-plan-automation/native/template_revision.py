@@ -30,7 +30,61 @@ def missing_paper_segments(audit, ink):
     return missing
 
 
-def verify_template_revision(attempt, source, resources):
+def verify_final_panel_coverage(sheets, source_digest, pages, ink_frames):
+    lines = Path(sheets).read_text('utf-8-sig').splitlines()
+    require(lines and lines[0].split() == ['PLANJOINT1', source_digest],
+            '图幅应有清单与本轮源DWG不一致')
+    expected = []
+    for line in lines[1:]:
+        if line.startswith('SHEET '):
+            _, panel, layout = line.split(maxsplit=2)
+            expected.append((int(panel), json.loads(layout)))
+    require(expected and len({panel for panel, _ in expected}) == len(expected) and
+            len({layout for _, layout in expected}) == len(expected), '输入图幅重复或缺少应有清单')
+    actual = [(page['panel'], page['layout']) for page in pages]
+    require(len(actual) == len(expected) and set(actual) == set(expected),
+            '最终布局有漏幅、重复或图幅归属与输入不符')
+    ink_panels = [frame['panel'] for frame in ink_frames]
+    require(len(ink_panels) == len(expected) and set(ink_panels) == {panel for panel, _ in expected},
+            '实打复核未覆盖全部应有图幅或出现重复')
+    return [{'panel': panel, 'layout': layout} for panel, layout in expected]
+
+
+def typography_evidence_issues(audit, policy=None):
+    issues = []
+    styles = {style['name']: style for style in (policy or {}).get('styles', [])}
+    for row in audit['objects']:
+        if not row['verified']:
+            continue
+        glyphs = row.get('glyphs', [])
+        complete = bool(glyphs) and all(
+            glyph.get('style') and (glyph.get('font') or glyph.get('fontFamily')) and
+            all(isinstance(glyph.get(key), (int, float)) and math.isfinite(glyph[key]) and glyph[key] > 0
+                for key in ('width', 'height'))
+            for glyph in glyphs)
+        if not complete:
+            issues.append({'object': row['object'], 'role': row['role'],
+                           'reason': '文字通过记录缺少有效实际字形、字体、宽度或字高证据，未计为通过'})
+            continue
+        expected_style = {'general': 'FY_HZ', 'opening-label': '_TCH_WINDOW',
+                          'native-opening-label': '_TCH_WINDOW'}.get(row['role'])
+        for glyph in glyphs:
+            spec = styles.get(expected_style or glyph['style'])
+            if spec is None:
+                continue
+            font = Path(glyph.get('font', '').replace('\\', '/')).name.lower()
+            big = Path(glyph.get('bigFont', '').replace('\\', '/')).name.lower()
+            if (glyph['style'] != spec['name'] or font != spec['font'].lower() or
+                    big != spec['bigFont'].lower() or abs(glyph['width'] - spec['width']) > .01 or
+                    min(abs(glyph['height'] - spec['heightMM']),
+                        abs(glyph['height'] - spec['heightMM'] * 100)) > .01):
+                issues.append({'object': row['object'], 'role': row['role'],
+                               'reason': '实际文字引用、字体、有效字高或宽度与当前三套强制参数不符'})
+                break
+    return issues
+
+
+def verify_template_revision(attempt, source, resources, *, sheets=None):
     report = attempt / 'job'
     drawing = report / 'candidate.dwg'
     digest = file_hash(drawing)
@@ -63,6 +117,8 @@ def verify_template_revision(attempt, source, resources):
         if not row['verified']:
             require(any(x['object'] == row['object'] and x['role'] == row['role'] for x in unresolved),
                     '字体未通过对象没有进入同版清单')
+    typography_issues = typography_evidence_issues(text_audit, standard.get('finalTypographyPolicy'))
+    unresolved.extend(typography_issues)
     host = read_json(attempt / 'host.json')
     closure = read_json(Path(host['session']) / 'isolation-final.json')
     require(closure.get('userCadTouched') is False, '缺少用户 CAD 隔离证据')
@@ -76,6 +132,20 @@ def verify_template_revision(attempt, source, resources):
     write_json(report / 'template-paper-coverage.json', {'outputSHA256': digest, 'unresolved': coverage_issues})
     plots = read_json(report / 'formal-layout-print-review.json')
     require(plots.get('outputSHA256') == digest and plots.get('pages'), '缺少最终同版整套实打')
+    if sheets is not None:
+        panels = verify_final_panel_coverage(sheets, file_hash(source), plots['pages'], ink['frames'])
+        write_json(report / 'template-final-checks.json', {
+            'outputSHA256': digest,
+            'ruleCatalogSHA256': file_hash(resources / 'plan-policy/rule-catalog.tsv'),
+            'expectedPanels': panels,
+            'typographyEvidenceIssues': typography_issues,
+        })
+    frame_check = read_json(report / 'defpoints-frame-readback.json')
+    frames = frame_check['frames']
+    expected = {(page['panel'], row) for page in plots['pages'] for row in range(1, 5)}
+    require(frame_check['outputSHA256'] == digest and len(frames) == len(expected) and
+            len({f['handle'] for f in frames}) == len(frames) and
+            {(f['panel'], f['row']) for f in frames} == expected, '重开后未能逐幅核实四道 Defpoints 实体框')
     for page in plots['pages']:
         require(page.get('status') == 'plotted' and page['paperScale'] == 1 and page['viewportScale'] == .01 and
                 file_hash(report / page['file']) == page['sha256'], '最终实打缺页、比例错误或文件被替换')
@@ -91,7 +161,7 @@ def verify_template_revision(attempt, source, resources):
             'formal': not unresolved}
 
 
-def execute_template_revision(source, sheets, work, workspace, skill, *, module=None, auto_repair=True):
+def execute_template_revision(source, sheets, work, workspace, skill, *, module=None, auto_repair=True, frame_datums=None):
     source, sheets, work, workspace, skill = (Path(p).resolve() for p in (source, sheets, work, workspace, skill))
     module = module or skill / 'tools/PlanNative.arx'
     resources = skill / 'assets'
@@ -101,8 +171,13 @@ def execute_template_revision(source, sheets, work, workspace, skill, *, module=
                 'plotters': file_hash(resources / 'plotters/manifest.json'),
                 'standard': file_hash(resources / 'annotation-template/standard.json'),
                 'layers': file_hash(resources / 'plotters/layers.tsv'),
+                'ruleCatalog': file_hash(resources / 'plan-policy/rule-catalog.tsv'),
+                'planRules': file_hash(resources / 'plan-policy/all-plan-rules.json'),
                 'inkAnalyzer': file_hash(skill / 'tools/check_plan_print_ink.py'),
                 'entry': file_hash(Path(__file__)), 'host': file_hash(Path(__file__).with_name('owned_plan_host.py'))}
+    if frame_datums is not None:
+        config['frameDatums'] = str(frame_datums.resolve(strict=True))
+        identity['frameDatums'] = file_hash(frame_datums)
     work.mkdir(parents=True, exist_ok=True)
     checkpoint = work / 'template-job.json'
     if checkpoint.exists() and read_json(checkpoint)['identity'] != identity:
@@ -148,7 +223,7 @@ def execute_template_revision(source, sheets, work, workspace, skill, *, module=
             if not result_file.is_file() or not read_json(result_file).get('completed'):
                 continue
             try:
-                result = verify_template_revision(attempt, source, resources)
+                result = verify_template_revision(attempt, source, resources, sheets=sheets)
             except RetryableHostError as error:
                 record = next((row for row in state['attempts'] if row['attempt'] == attempt.name), None)
                 if record is not None:
@@ -270,10 +345,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('source', 'sheets', 'work', 'workspace-root'):
         parser.add_argument('--' + name, required=True, type=Path)
+    parser.add_argument('--frame-datums', type=Path, help='与输入 DWG 指纹匹配的逐层外围排布基准 TSV')
     args = parser.parse_args(argv)
     skill = Path(__file__).resolve().parents[1]
     print(json.dumps(execute_template_revision(args.source.resolve(strict=True), args.sheets.resolve(strict=True),
-          args.work.resolve(), args.workspace_root.resolve(), skill), ensure_ascii=False))
+          args.work.resolve(), args.workspace_root.resolve(), skill, frame_datums=args.frame_datums), ensure_ascii=False))
 
 
 if __name__ == '__main__':

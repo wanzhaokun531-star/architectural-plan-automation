@@ -372,7 +372,24 @@ def main(argv=None):
         f'SHEET {index} {json.dumps(page["layout"], ensure_ascii=False)}\n'
         for index, page in enumerate(pages, 1)) + 'END\n', encoding='utf-8')
     from template_revision import execute_template_revision, publish_template_result
-    finalized = execute_template_revision(result, sheets, work / 'template-finalize', workspace, skill, module=module)
+    frame_datums = None
+    layout_file = Path(prepared['report']) / '外围间距核验.json'
+    if layout_file.is_file():
+        layout = read_json(layout_file)
+        sides = {}
+        for side in layout['sidePlacement']:
+            key = (side['view'], side['side'])
+            require(key not in sides, '辅助框排布基准重复')
+            sides[key] = side['coordinate']
+        rows = []
+        for index, page in enumerate(pages, 1):
+            panel = page['panel']
+            require(all((panel, side) in sides for side in range(4)), '图幅缺少已核实的辅助框基准')
+            bounds = ' '.join(str(sides[panel, side]) for side in (0, 2, 1, 3))
+            rows.append(f'PANEL {index} {bounds}')
+        frame_datums = work / 'template-frame-datums.tsv'
+        frame_datums.write_text('PLANFRAMES1 ' + file_hash(result) + '\n' + '\n'.join(rows) + '\nEND\n', encoding='ascii')
+    finalized = execute_template_revision(result, sheets, work / 'template-finalize', workspace, skill, module=module, frame_datums=frame_datums)
     publish_template_result(finalized, output, prior_checklist=checklist_path(result))
     print(output)
     if checklist_path(output).is_file():

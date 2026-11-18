@@ -404,12 +404,13 @@ struct ProductRoomLeaf {
  AcDbObjectId style;
  double rotation{},height{};
  AcGePoint3d anchor;
+ double width{};
 };
 void productRoomLeaves(const AcDbEntity& entity,std::vector<ProductRoomLeaf>& leaves,int depth=0) {
  if(depth>4)return;
  if(const auto* text=AcDbText::cast(&entity)){
   leaves.push_back({text->textString(),text->textStyle(),text->rotation(),text->height(),
-   text->isDefaultAlignment()?text->position():text->alignmentPoint()});
+   text->isDefaultAlignment()?text->position():text->alignmentPoint(),text->widthFactor()});
   return;
  }
  TemplateParts parts(&entity);

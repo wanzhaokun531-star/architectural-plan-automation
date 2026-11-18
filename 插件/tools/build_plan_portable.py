@@ -60,8 +60,15 @@ def build(output, native_module, bridge, prepared_assets=None):
                     for name, digest in plotters['files'].items())):
             raise ValueError('Missing or inconsistent template print resources')
         runtime = json.loads(members['assets/template-runtime.json'].decode('utf-8-sig'))
-        if runtime['moduleSHA256'].lower() != sha(members['tools/PlanNative.arx']):
+        module_hash = sha(members['tools/PlanNative.arx'])
+        records = [runtime, runtime.get('controlFrameRevision', {}),
+                   runtime.get('mandatoryTypographyRevision', {})]
+        binding = next((record for record in records
+                        if record.get('moduleSHA256', '').lower() == module_hash), None)
+        if binding is None:
             raise ValueError('Runtime record does not match the packaged ARX')
+        runtime['packagedModuleSHA256'] = module_hash.upper()
+        runtime['packagedValidationScope'] = binding.get('scope', runtime['scope'])
         for project in runtime['projects']:
             project.pop('nativeAudit', None)  # Machine-local verification path is not portable.
         members['assets/template-runtime.json'] = (json.dumps(runtime, ensure_ascii=False, indent=2) + '\n').encode('utf-8')

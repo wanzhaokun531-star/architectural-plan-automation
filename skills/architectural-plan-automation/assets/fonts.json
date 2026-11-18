@@ -3,7 +3,8 @@
     "style": "FY_HZ",
     "font": "tssdeng.shx",
     "bigFont": "hztxt.shx",
-    "widthFactor": 0.7
+    "widthFactor": 0.7,
+    "nominalPaperTextHeightMM": 4.0
   },
   "drawingTitle": {
     "style": "FY_FS",
@@ -19,21 +20,22 @@
   },
   "dimension": {
     "style": "_TCH_ARCH&&100",
-    "textStyle": "_TCH_DIM_T3",
+    "textStyle": "_TCH_DIM",
     "source": "annotation-template/平面标注.dwg",
     "mode": "native-template-clone-stretch-only",
-    "readback": "annotation-template/native-readback.json"
+    "readback": "annotation-template/native-readback.json",
+    "nominalPaperTextHeightMM": 2.8,
+    "widthFactor": 1.0
   },
   "fontSource": "目标机经授权安装的天正、AutoCAD 和 Windows 字体，按实际 DWG 的定义与字体支持路径核对。",
   "openingNumber": {
     "style": "_TCH_WINDOW",
-    "font": "tssdeng.shx",
-    "bigFont": "hztxt.shx",
+    "font": "simplex.shx",
+    "bigFont": "gbcbig.shx",
     "widthFactor": 0.65,
-    "nominalPaperTextHeightMM": 3.0,
-    "residentialPaperTextHeightMM": 2.8,
-    "fixedHeight": 0,
-    "source": "annotation-template/standard.json:textProfiles.openingNumber"
+    "nominalPaperTextHeightMM": 4.0,
+    "fixedHeight": 4.0,
+    "source": "annotation-template/standard.json:finalTypographyPolicy"
   },
   "axis": {
     "style": "_TCH_AXIS",
@@ -52,11 +54,11 @@
     },
     "generalSpecification": {
       "style": "FY_HZ",
-      "heightMM": 4.5
+      "heightMM": 4.0
     },
     "slopeStairDirection": {
       "style": "FY_HZ",
-      "heightMM": 3.5
+      "heightMM": 4.0
     },
     "elevation": {
       "style": "FY_DIM",
@@ -113,12 +115,11 @@
     },
     "openingNumber": {
       "style": "_TCH_WINDOW",
-      "font": "tssdeng.shx",
-      "bigFont": "hztxt.shx",
-      "heightMM": 3.0,
-      "residentialHeightMM": 2.8,
+      "font": "simplex.shx",
+      "bigFont": "gbcbig.shx",
+      "heightMM": 4.0,
       "width": 0.65,
-      "fixedHeight": 0,
+      "fixedHeight": 4.0,
       "nativeOwnNumber": true
     }
   }

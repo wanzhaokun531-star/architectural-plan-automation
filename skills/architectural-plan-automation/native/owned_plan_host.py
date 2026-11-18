@@ -300,7 +300,7 @@ def run_owned_plan(workspace, module, source, attempt, configuration):
     session = host.parent / 'runs' / f'isolated-plan-portable-{nonce[:8]}'
     session.mkdir(parents=True)
     (session / 'queue').mkdir()
-    if configuration.get('mode') == 'template-finalize':
+    if configuration.get('mode') in ('template-finalize', 'control-frames'):
         install_template_plotters(Path(configuration['resources']), frozen, session)
     attempt.mkdir()
     report = attempt / 'job'

@@ -5,10 +5,56 @@ import tempfile
 import unittest
 
 from owned_plan_host import JobError, file_hash
-from template_revision import missing_paper_segments, publish_template_result
+from template_revision import (missing_paper_segments, publish_template_result,
+                               typography_evidence_issues, verify_final_panel_coverage)
 
 
 class TemplateRevisionTests(unittest.TestCase):
+    def test_same_named_opening_style_cannot_hide_wrong_font_height_or_width(self):
+        policy = {'styles': [{'name': '_TCH_WINDOW', 'font': 'simplex.shx',
+                              'bigFont': 'gbcbig.shx', 'heightMM': 4.0, 'width': .65}]}
+        glyph = {'style': '_TCH_WINDOW', 'font': 'simplex.shx', 'bigFont': 'gbcbig.shx',
+                 'width': .65, 'height': 400}
+        audit = {'objects': [{'object': 'OPEN', 'role': 'native-opening-label',
+                              'verified': True, 'glyphs': [glyph]}]}
+        self.assertEqual(typography_evidence_issues(audit, policy), [])
+        for key, value in [('font', 'tssdeng.shx'), ('bigFont', 'hztxt.shx'),
+                           ('width', 1), ('height', 280)]:
+            original = glyph[key]
+            glyph[key] = value
+            self.assertEqual(len(typography_evidence_issues(audit, policy)), 1)
+            glyph[key] = original
+
+    def test_missing_second_floor_cannot_pass_with_matching_generated_totals(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sheets = Path(directory) / 'sheets.tsv'
+            sheets.write_text('PLANJOINT1 HASH\nSHEET 1 "一层"\nSHEET 2 "二层"\nEND\n', encoding='utf-8')
+            with self.assertRaises(JobError):
+                verify_final_panel_coverage(sheets, 'HASH', [{'panel': 1, 'layout': '一层'}], [{'panel': 1}])
+            pages = [{'panel': 1, 'layout': '一层'}, {'panel': 2, 'layout': '二层'}]
+            self.assertEqual(len(verify_final_panel_coverage(sheets, 'HASH', pages, [{'panel': 1}, {'panel': 2}])), 2)
+            pages[1]['layout'] = '一层'
+            with self.assertRaises(JobError):
+                verify_final_panel_coverage(sheets, 'HASH', pages, [{'panel': 1}, {'panel': 2}])
+
+    def test_duplicate_ink_panels_and_wrong_source_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sheets = Path(directory) / 'sheets.tsv'
+            sheets.write_text('PLANJOINT1 HASH\nSHEET 1 "一层"\nSHEET 2 "二层"\nEND\n', encoding='utf-8')
+            pages = [{'panel': 1, 'layout': '一层'}, {'panel': 2, 'layout': '二层'}]
+            with self.assertRaises(JobError):
+                verify_final_panel_coverage(sheets, 'HASH', pages, [{'panel': 1}, {'panel': 1}])
+            with self.assertRaises(JobError):
+                verify_final_panel_coverage(sheets, 'OTHER', pages, [{'panel': 1}, {'panel': 2}])
+
+    def test_named_style_without_actual_glyph_evidence_is_unresolved(self):
+        row = {'object': 'ABC', 'role': 'general', 'verified': True, 'glyphs': []}
+        self.assertEqual(len(typography_evidence_issues({'objects': [row]})), 1)
+        row['glyphs'] = [{'style': 'FY_HZ', 'font': 'tssdeng.shx', 'width': .7, 'height': 400}]
+        self.assertEqual(typography_evidence_issues({'objects': [row]}), [])
+        row['glyphs'][0]['height'] = float('nan')
+        self.assertEqual(len(typography_evidence_issues({'objects': [row]})), 1)
+
     def test_diagonal_short_segment_cannot_hide_behind_another_target(self):
         audit = {'objects': [{'kind': 'dimension', 'verified': True, 'targets': ['AB'],
                              'stations': [[0, 0], [200, 200], [1000, 1000]]}]}

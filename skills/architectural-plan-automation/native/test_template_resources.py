@@ -11,6 +11,25 @@ from owned_plan_host import file_hash
 class TemplateResourceTests(unittest.TestCase):
     resources = Path(__file__).resolve().parents[1] / 'assets'
 
+    def test_current_typography_overrides_original_template_text_parameters(self):
+        standard = json.loads((self.resources / 'annotation-template/standard.json').read_text('utf-8'))
+        policy = standard['finalTypographyPolicy']
+        styles = {row['name']: row for row in policy['styles']}
+        self.assertTrue(policy['restoreAfterEveryImport'])
+        self.assertTrue(policy['verifyActualGlyphsAfterReopen'])
+        self.assertEqual((styles['FY_HZ']['heightMM'], styles['FY_HZ']['width']), (4.0, .7))
+        self.assertEqual((styles['_TCH_DIM']['heightMM'], styles['_TCH_DIM']['width']), (2.8, 1))
+        self.assertEqual((styles['_TCH_WINDOW']['heightMM'], styles['_TCH_WINDOW']['width']), (4.0, .65))
+        self.assertEqual(styles['_TCH_WINDOW']['font'], 'simplex.shx')
+        self.assertEqual(styles['_TCH_WINDOW']['bigFont'], 'gbcbig.shx')
+        fonts = json.loads((self.resources / 'fonts.json').read_text('utf-8'))
+        self.assertEqual(fonts['dimension']['textStyle'], '_TCH_DIM')
+        self.assertEqual(fonts['dimension']['nominalPaperTextHeightMM'], 2.8)
+        self.assertEqual(fonts['openingNumber']['font'], 'simplex.shx')
+        self.assertEqual(fonts['openingNumber']['nominalPaperTextHeightMM'], 4.0)
+        self.assertNotIn('residentialPaperTextHeightMM', fonts['openingNumber'])
+        self.assertEqual(fonts['roleProfiles'], standard['textProfiles'])
+
     def test_template_donors_are_real_native_objects_in_verified_dwg(self):
         standard = json.loads((self.resources / 'annotation-template/standard.json').read_text('utf-8'))
         observed = json.loads((self.resources / 'annotation-template/native-readback.json').read_text('utf-8'))

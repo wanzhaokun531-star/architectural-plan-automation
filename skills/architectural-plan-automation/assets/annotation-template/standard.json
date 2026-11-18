@@ -1,13 +1,14 @@
 {
   "schema": "plan.annotation-template-standard.v1",
-  "effectiveDate": "2026-11-17",
+  "effectiveDate": "2026-11-18",
   "dwg": "平面标注.dwg",
   "sha256": "3c6b19fae21c1c5729d0e0000104dcadd9ba7a81560a31d74f0d576b2bd0dd2f",
   "scope": "architectural-plan-only",
   "authority": {
     "dimensionAndAxis": "actual-native-template-objects",
     "otherTypographyLayersPrinting": "template-written-requirements",
-    "uncovered": "existing-plan-rules"
+    "uncovered": "existing-plan-rules",
+    "finalTypography": "user-confirmed-2026-11-18-overrides-source-template-typography"
   },
   "operations": {
     "dimensionAndAxis": [
@@ -702,11 +703,11 @@
     },
     "generalSpecification": {
       "style": "FY_HZ",
-      "heightMM": 4.5
+      "heightMM": 4.0
     },
     "slopeStairDirection": {
       "style": "FY_HZ",
-      "heightMM": 3.5
+      "heightMM": 4.0
     },
     "elevation": {
       "style": "FY_DIM",
@@ -763,12 +764,11 @@
     },
     "openingNumber": {
       "style": "_TCH_WINDOW",
-      "font": "tssdeng.shx",
-      "bigFont": "hztxt.shx",
-      "heightMM": 3.0,
-      "residentialHeightMM": 2.8,
+      "font": "simplex.shx",
+      "bigFont": "gbcbig.shx",
+      "heightMM": 4.0,
       "width": 0.65,
-      "fixedHeight": 0,
+      "fixedHeight": 4.0,
       "nativeOwnNumber": true
     }
   },
@@ -915,9 +915,9 @@
     }
   ],
   "controlFrames": {
-    "emitEntities": false,
-    "countPerPlan": 0,
-    "virtualOffsetsAt100": [
+    "emitEntities": true,
+    "countPerPlan": 4,
+    "offsetsAt100": [
       1800,
       2600,
       3400,
@@ -925,7 +925,15 @@
     ],
     "defpointsPlottable": false,
     "modelRootLayer0Allowed": false,
-    "blockInternalLayer0Allowed": true
+    "blockInternalLayer0Allowed": true,
+    "layer": "Defpoints",
+    "layerACI": 8,
+    "visibleInModel": true,
+    "linetype": "BCP_DEFP_DASH",
+    "paperDashMM": [
+      6,
+      -3
+    ]
   },
   "plot": {
     "nameA3A4": "FY-XS-2026.9-A3 A4",
@@ -948,5 +956,36 @@
     "nativeEngineAdaptationVerified": true,
     "newProjectPlotVerified": false,
     "verifiedScope": "贺府、刘府已有平面的模板原生终核，完整范围及模块指纹见 ../template-runtime.json"
+  },
+  "finalTypographyPolicy": {
+    "authority": "user-confirmed-2026-11-18",
+    "restoreAfterEveryImport": true,
+    "verifyActualGlyphsAfterReopen": true,
+    "styles": [
+      {
+        "name": "FY_HZ",
+        "font": "tssdeng.shx",
+        "bigFont": "hztxt.shx",
+        "heightMM": 4.0,
+        "width": 0.7,
+        "fixedHeight": 0
+      },
+      {
+        "name": "_TCH_DIM",
+        "font": "simplex.shx",
+        "bigFont": "gbcbig.shx",
+        "heightMM": 2.8,
+        "width": 1.0,
+        "fixedHeight": 0
+      },
+      {
+        "name": "_TCH_WINDOW",
+        "font": "simplex.shx",
+        "bigFont": "gbcbig.shx",
+        "heightMM": 4.0,
+        "width": 0.65,
+        "fixedHeight": 4.0
+      }
+    ]
   }
 }

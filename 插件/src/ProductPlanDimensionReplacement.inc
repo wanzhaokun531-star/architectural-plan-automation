@@ -70,16 +70,7 @@ std::map<std::wstring,AcDbObjectId> productPlanDimensionTableStyles(AcDbDatabase
 void productSynchronizePlanDimensionTable(const ProductJob& job,AcDbDatabase& db,AcDbDatabase& reference,
  AcDbObjectId font){
  const auto& base=job.dimensionStylePolicy.name;
- // The explicit typography entry selects _TCH_DIM. Other entries must not
- // replace the native template's distinct text style as a side effect.
- if(job.planMode!="typography-finalize"&&!job.templatePreparation){
-  for(const auto& [name,id]:productPlanDimensionTableStyles(db,base)){
-   if(id.isNull())continue;
-   const auto currentFont=open<AcDbDimStyleTableRecord>(id)->dimtxsty();
-   if(!currentFont.isNull()&&_wcsicmp(symbolName(currentFont).c_str(),L"_TCH_DIM_T3")==0)
-    throw std::runtime_error(u8"尺寸样式 "+ascii(name)+u8" 使用模板派生文字 _TCH_DIM_T3。按模板出图须使用已适配入口；已明确要求统一 _TCH_DIM 时使用字体统一入口。");
-  }
- }
+ // All plan paths restore the current mandatory text reference after imports.
  productPlanDimensionBase(db,reference,base);
  for(const auto& [name,id]:productPlanDimensionTableStyles(db,base)){
   if(id.isNull()||open<AcDbDimStyleTableRecord>(id)->dimtxsty()==font)continue;

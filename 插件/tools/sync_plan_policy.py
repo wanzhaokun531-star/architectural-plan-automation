@@ -13,7 +13,7 @@ PLAN_SKILL = ROOT / 'skills/architectural-plan-automation'
 PLAN_FILES = ('SKILL.md', 'references/rules.md', 'references/project-parameters.md',
               'references/acceptance.md', 'references/rule-index.md', 'references/native-tools.md',
               'references/template-standard.md')
-REVISION = '2026-11-17'
+REVISION = '2026-11-18'
 VERSION = '0.2.2'
 MASTER = ROOT / 'docs/规则汇编_20261105/建筑施工图平面自动化通用规则_20261105.json'
 SPACING = ROOT / 'docs/平面外围尺寸与轴号间距规则_20261105.json'
@@ -102,13 +102,6 @@ def unified_catalog(master, digest):
         if state not in {'active', 'retired', 'paused'} or not re.fullmatch(r'[a-z][a-z0-9-]*', action):
             raise ValueError(f'Invalid execution metadata: {key}')
         rule = row['rule']
-        if key == 'D23' and state == 'active':
-            match = re.fullmatch(r'(室内尺寸就近布置。1:100、1 绘图单位等于 1 mm 时，尺寸界线从实际可见起笔端到尺寸基线按 )([0-9]+(?:\.[0-9]+)?)( mm 布置，按实际显示核算 DIMEXO 偏移，界线尾段另计。每段尺寸文字默认沿该段居中，水平文字在线上方，竖向文字在线左侧。遇到实际文字、编号或其他图面冲突时，再就近调整尺寸文字或基线，保留原测点、原测值及尺寸链结构，文字保持同侧且无引线。其他比例和单位按项目核定对应排布距离。)', rule)
-            if match and 0 < float(match[2]) < 10000:
-                lines.append(f'PARAM D23 stair-extension {float(match[2]) / 100:g}')
-                action = 'stair-extension'
-            else:
-                action = 'changed'
         if state != 'active':
             action = 'none'
         signature = hashlib.sha256(rule.encode('utf-8')).hexdigest().upper()
@@ -225,12 +218,9 @@ def opening_label_typography(rule):
     result = {'typographyRule': 'L08', 'mandatoryTypography': True,
               'textStyle': match[1], 'paperHeightMM': float(match[2])}
     if match[1] == '_TCH_WINDOW':
-        residential = re.search(r'住宅类项目改为(\d+(?:\.\d+)?)mm', rule)
-        if not residential:
-            raise ValueError('Missing residential template opening height')
-        result.update(residentialPaperHeightMM=float(residential[1]), fontFile='tssdeng.shx',
-                      bigFontFile='hztxt.shx', widthFactor=0.65, fixedHeight=0,
-                      layer='A-WINDOW-TEXT', source='template-written-requirements')
+        result.update(fontFile='simplex.shx', bigFontFile='gbcbig.shx',
+                      widthFactor=0.65, fixedHeight=4.0, layer='A-WINDOW-TEXT',
+                      source='user-confirmed-2026-11-18')
     return result
 
 
@@ -275,7 +265,15 @@ def project_execution_rules(execution, rules, dimension_policy, template_policy=
             'allowSourceStyleOverwrite': False, 'readback': template_policy['axisReadback']}
     dimensions.pop('interiorHingedDoorJambMM', None)
     dimensions['doorJambByWallThicknessMM'] = door_jamb_by_wall_thickness(rules['TL11'])
-    dimensions['interiorJointPlacement'] = rules['D25']
+    if cleanup_policy and cleanup_policy.get('publishInteriorDimensions') is False:
+        dimensions['publishInteriorDimensions'] = False
+        dimensions['removeSourceInteriorDimensions'] = True
+        for previous in ('netDimensions', 'interiorOpeningChainEndpoints',
+                         'includeExistingStairLiftPlatformStepDimensions', 'interiorJointPlacement'):
+            dimensions.pop(previous, None)
+        execution['furnitureEdit'] = cleanup_policy['furnitureEdit']
+    else:
+        dimensions['interiorJointPlacement'] = rules['D25']
     execution.setdefault('floorElevations', {})['wallHeightPolicy'] = wall_height_policy(rules['B04'])
     floor_details = execution.setdefault('floorDetailVerification', {})
     floor_details['railingUpstandPlanSpacingMM'] = railing_upstand_plan_spacing(rules['D29'])
@@ -419,8 +417,8 @@ def verify_machine_rules(entry, rules, dimension_policy):
         'verifyEffectiveSegmentsAfterReopen': True,
         'nativeTemplate': {
             'baseTextStyle': '_TCH_DIM',
-            'scaledTextStyle': '_TCH_DIM_T3',
-            'effectiveTextStyle': '_TCH_DIM_T3',
+            'scaledTextStyle': '_TCH_DIM',
+            'effectiveTextStyle': '_TCH_DIM',
         },
         'explicitTchDim': {
             'baseTextStyle': '_TCH_DIM',
@@ -428,7 +426,7 @@ def verify_machine_rules(entry, rules, dimension_policy):
             'effectiveTextStyle': '_TCH_DIM',
         },
     }
-    if (dimension_policy.get('textStyleName') != ('_TCH_DIM_T3' if template_mode else '_TCH_DIM') or
+    if (dimension_policy.get('textStyleName') != '_TCH_DIM' or
             dimension_policy.get('textStyleMatch') != 'exact' or
             dimension_policy.get('textStyleReferencePolicy') != expected_references or
             'Y10' not in dimension_policy.get('ruleIDs', []) or
@@ -437,7 +435,17 @@ def verify_machine_rules(entry, rules, dimension_policy):
     if ('interiorHingedDoorJambMM' in dimensions or
             dimensions.get('doorJambByWallThicknessMM') != door_jamb_by_wall_thickness(rules['TL11'])):
         raise ValueError('Stale TL11 door jamb dimensions')
-    if dimensions.get('interiorJointPlacement') != rules['D25']:
+    cleanup = entry.get('annotationCleanupPolicy', {})
+    if cleanup.get('publishInteriorDimensions') is False:
+        if (dimensions.get('publishInteriorDimensions') is not False or
+                dimensions.get('removeSourceInteriorDimensions') is not True or
+                'interiorJointPlacement' in dimensions or
+                entry.get('furnitureEdit') != 'set-layer-only' or
+                cleanup.get('allowFurnitureExplode') is not False or
+                cleanup.get('allowFurnitureRegroup') is not False or
+                entry['roomTextAndArea'].get('publishRoomArea') is not False):
+            raise ValueError('Stale plan annotation or furniture scope')
+    elif dimensions.get('interiorJointPlacement') != rules['D25']:
         raise ValueError('Stale D25 interior joint placement')
     for rule_id in REVIEWED_AXIS_RULES:
         if entry['axes'].get('reviewedPlacementRules', {}).get(rule_id) != rules[rule_id]:
@@ -565,6 +573,20 @@ def sync_installed_skills():
     installed = INSTALLED_SKILLS / PLAN_SKILL.name
     manifest_path = PLAN_SKILL / 'package-manifest.json'
     manifest = read_json(manifest_path)
+    template = master.get('annotationTemplatePolicy', {})
+    if template.get('finalTypographyPolicy'):
+        fonts_path = PLAN_SKILL / 'assets/fonts.json'
+        fonts = read_json(fonts_path)
+        fonts['roomName'].update(nominalPaperTextHeightMM=4.0, widthFactor=0.7)
+        fonts['dimension'].update(textStyle=master['dimensionStylePolicy']['textStyleName'],
+                                  nominalPaperTextHeightMM=2.8, widthFactor=1.0)
+        fonts['openingNumber'] = {
+            'style': '_TCH_WINDOW', 'font': 'simplex.shx', 'bigFont': 'gbcbig.shx',
+            'widthFactor': 0.65, 'nominalPaperTextHeightMM': 4.0, 'fixedHeight': 4.0,
+            'source': 'annotation-template/standard.json:finalTypographyPolicy',
+        }
+        fonts['roleProfiles'] = template['textProfiles']
+        write_text(fonts_path, json.dumps(fonts, ensure_ascii=False, indent=2) + '\n')
     sync_unified_catalog(PLAN_SKILL / 'assets/plan-policy', master)
     (PLAN_SKILL / 'assets/plan-policy/execution.tsv').write_text(
         executable_policy(master, read_json(SPACING)), encoding='ascii')
@@ -576,9 +598,12 @@ def sync_installed_skills():
     provenance_path = SKILL / 'references/provenance.json'
     provenance = read_json(provenance_path)
     write_text(master_markdown, master_text)
+    plan_sources = {'P1': MASTER.with_suffix('.md'), 'P2': SPACING, 'P3': PERIMETER_CONTENT,
+                    'P4': INTERIOR_DIMENSIONS, 'P5': ROOT / 'docs/平面图层规则_20261105.json',
+                    'P14': MASTER}
     for item in provenance['sources']:
-        if item['id'] in ('P1', 'P14'):
-            path = MASTER if item['id'] == 'P14' else MASTER.with_suffix('.md')
+        path = plan_sources.get(item['id'])
+        if path:
             item.update(path=str(path), sha256=sha(path).lower(), bytes=path.stat().st_size)
 
     write_text(annotation_path, annotation)

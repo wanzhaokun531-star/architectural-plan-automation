@@ -1,5 +1,9 @@
 # 平面自动化 Skill
 
+源码、规则和运行模块已更新至 **2026-11-18**。三套文字按现行强制参数恢复，FY_HZ使用tssdeng＋hztxt、4.0／宽0.7，_TCH_DIM使用simplex＋gbcbig、2.8／宽1，_TCH_WINDOW使用simplex＋gbcbig、4.0／宽0.65。每幅保留四道模型可见、灰色虚线、不打印的Defpoints实体辅助框。终核检查当前规则、实际字形和合图逐层覆盖。
+
+本轮原生模块已编译，52项规则及入口测试通过。邵府两层副本独立重开及实打中，50条文字记录、32条尺寸链的样式复核通过。整图另有1处轴号和3处短尺寸实打覆盖遗留，随运行记录登记。实际验证范围见[运行记录](skills/architectural-plan-automation/assets/template-runtime.json)。
+
 仓库主分支包含平面自动化的源代码、构建工程和规则。直接安装可使用 [2026-11-17 换机包](https://github.com/wanzhaokun531-star/architectural-plan-automation/releases/tag/portable-20261117)，包内有编译好的 ARX 和安装脚本。
 
 | 目录 | 内容 |

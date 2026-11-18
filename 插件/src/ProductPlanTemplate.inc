@@ -37,6 +37,19 @@ ProductTemplateRun productApplyNativeTemplate(ProductJob& job,AcDbDatabase& db){
  const auto sourceRows=productTypographyInventory(db);
  const auto sourceRoots=modelTypes(db);
  AcDbDatabase donor(false,true);status(donor.readDwgFile(path.c_str(),AcDbDatabase::kForReadAndAllShare,false),"read native template");status(donor.closeInput(true),"close template input");
+ // Normalize a memory-only donor copy. Preserve the signed template and native geometry.
+ {
+  Working donorWork(&donor);
+  const auto font=productRestoreTypographyFont(donor,{L"_TCH_DIM",L"simplex.shx",L"gbcbig.shx",1.,0.,0},0);
+  for(const auto& [name,id]:productPlanDimensionTableStyles(donor,job.dimensionStylePolicy.name)){
+   require(!id.isNull(),"template dimension style absent");
+   auto style=editObject<AcDbDimStyleTableRecord>(id);
+   const bool base=name==job.dimensionStylePolicy.name;
+   const auto factor=style->dimscale();require(factor>0,"positive native dimension text scale");
+   status(style->setDimtxsty(font),"bind mandatory template dimension text style");
+   status(style->setDimtxt(base?2.8:280./factor),"restore mandatory nominal or effective dimension height");
+  }
+ }
  {AcDbObjectIdArray styles;const auto table=open<AcDbDimStyleTable>(donor.dimStyleTableId());
   for(const auto* name:{L"_TCH_ARCH",L"_TCH_ARCH&&100"}){AcDbObjectId id;status(table->getAt(name,id),"template base and ratio definition");styles.append(id);}
   AcDbIdMapping mapping;status(donor.wblockCloneObjects(styles,db.dimStyleTableId(),mapping,AcDb::kDrcReplace,false),"template base and ratio dependency precedence");}

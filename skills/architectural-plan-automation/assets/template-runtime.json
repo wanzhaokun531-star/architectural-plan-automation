@@ -1,5 +1,20 @@
 {
   "moduleSHA256": "508A94839F2F7E106292D0584D479B61F9DF3843D380B69854FD4A5770428DD1",
+  "controlFrameRevision": {
+    "moduleSHA256": "B3402DB3B731B18EF0CB3A64BEAA77CC66332D026C5D1D54F050041872EC71C7",
+    "project": "邵府",
+    "outputSHA256": "A89FE13C44BDB8CA22A9BF0D849577A6256DEC7CD56450456C8D042269E19FD1",
+    "reopenedModelFrameCountsByFloor": [
+      4,
+      4
+    ],
+    "printedSheets": 2,
+    "printedPixelDifferencesAt300DPI": [
+      0,
+      0
+    ],
+    "existingFrameHandlesPreservedInTemplateFinalizerRegression": 4
+  },
   "templateSHA256": "3C6B19FAE21C1C5729D0E0000104DCADD9BA7A81560A31D74F0D576B2BD0DD2F",
   "plotterResources": {
     "schema": "plan.template-plotters.v1",
@@ -28,6 +43,7 @@
       "verifiedModuleSHA256": "E812E2D8DC18AE0E57655AB13178F6065F1EE4BA63377B92FD2750D218F76331",
       "dimensions": 93,
       "axisSets": 76,
+      "nativeAudit": "D:\\Codex\\建筑施工图自动化\\outputs\\PLAN_DRAW_模板原生适配_20261117\\he-entry-v21\\text-repair\\attempt-01\\job\\template-native-readback.json",
       "paperChecks": 135,
       "paperIssues": 0,
       "paperCoverageIssues": 0,
@@ -68,6 +84,7 @@
       "verifiedModuleSHA256": "E812E2D8DC18AE0E57655AB13178F6065F1EE4BA63377B92FD2750D218F76331",
       "dimensions": 81,
       "axisSets": 59,
+      "nativeAudit": "D:\\Codex\\建筑施工图自动化\\outputs\\PLAN_DRAW_模板原生适配_20261117\\liu-entry-v21\\text-repair\\attempt-01\\job\\template-native-readback.json",
       "paperChecks": 73,
       "paperIssues": 0,
       "paperCoverageIssues": 0,
@@ -94,5 +111,41 @@
       "checklistCount": 64,
       "nativeQuitExitCode": 0
     }
-  ]
+  ],
+  "mandatoryTypographyRevision": {
+    "date": "2026-11-18",
+    "moduleSHA256": "2797D61C253D0CA2302F4FF717CE5AF27F3384C858CC034C3BB1A0B331887731",
+    "project": "邵府两层副本",
+    "outputSHA256": "6BCDFE9D61335EEE88144027F90A894B9ED6FA94A7B0F5353D8E7108F08FD1F2",
+    "savedReopened": true,
+    "verifiedTypographyRecords": 50,
+    "verifiedDimensionChains": 32,
+    "printedLayouts": 2,
+    "defpointsFrames": 8,
+    "testsPassed": 52,
+    "paperInkIssues": [],
+    "otherDrawingIssues": [
+      {
+        "object": "27C",
+        "role": "axis",
+        "reason": "axis end numbers differ"
+      },
+      {
+        "object": "833/1",
+        "role": "printed-segment-coverage",
+        "reason": "图幅2第1段短尺寸未进入实打字形核验；斜向或未支持表达需单独处理，不能计为已通过"
+      },
+      {
+        "object": "833/3",
+        "role": "printed-segment-coverage",
+        "reason": "图幅2第3段短尺寸未进入实打字形核验；斜向或未支持表达需单独处理，不能计为已通过"
+      },
+      {
+        "object": "843/9",
+        "role": "printed-segment-coverage",
+        "reason": "图幅2第9段短尺寸未进入实打字形核验；斜向或未支持表达需单独处理，不能计为已通过"
+      }
+    ],
+    "scope": "本轮三套文字恢复与复核通过；全图其他遗留仍按实际清单记录"
+  }
 }

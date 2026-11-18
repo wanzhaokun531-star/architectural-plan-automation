@@ -3,14 +3,8 @@
 struct ProductTypographyFonts {ProductDimensionFont dimension,general,opening;AcDbObjectId dim,text,caption;};
 struct ProductTypographyIssue {std::string object,role,reason;};
 
-ProductDimensionFont productTypographyOpeningFont(AcDbDatabase& reference){
- AcDbObjectId id;const auto table=open<AcDbTextStyleTable>(reference.textStyleTableId());
- if(table->getAt(L"TCH_WINDOW",id)!=Acad::eOk)productStatus(table->getAt(L"_TCH_WINDOW",id),"approved opening font resource");
- auto font=productReadDimensionFont(id);font.name=L"TCH_WINDOW";
- font.primary=fs::path(font.primary).filename().wstring();font.big=fs::path(font.big).filename().wstring();
- if(fs::path(font.primary).extension().empty())font.primary+=L".shx";
- if(!font.big.empty()&&fs::path(font.big).extension().empty())font.big+=L".shx";
- return font;
+ProductDimensionFont productTypographyOpeningFont(AcDbDatabase&){
+ return {L"_TCH_WINDOW",L"simplex.shx",L"gbcbig.shx",.65,0.,0};
 }
 
 bool productTypographyFontMatches(AcDbObjectId id,const ProductDimensionFont& font,double fixed){
@@ -50,14 +44,14 @@ ProductTypographyFonts productRestorePlanTypography(AcDbDatabase& db,AcDbDatabas
  ProductTypographyFonts fonts;
  fonts.dimension={L"_TCH_DIM",L"simplex.shx",L"gbcbig.shx",1.,0.,0};
  fonts.general={L"FY_HZ",L"tssdeng.shx",L"hztxt.shx",.7,0.,0};
- fonts.opening=templateMode?ProductDimensionFont{L"_TCH_WINDOW",L"tssdeng.shx",L"hztxt.shx",.65,0.,0}:productTypographyOpeningFont(reference);
- if(!templateMode)fonts.dim=productRestoreTypographyFont(db,fonts.dimension,0);
+ fonts.opening=productTypographyOpeningFont(reference);
+ fonts.dim=productRestoreTypographyFont(db,fonts.dimension,0);
  // FY_HZ may require the trusted local font search paths resolved by its importer.
- fonts.text=productRoomStyle(reference,db);require(!fonts.text.isNull(),"cannot restore the approved FY_HZ resource");
+ fonts.text=productRestoreTypographyFont(db,fonts.general,0);require(!fonts.text.isNull(),"cannot restore the approved FY_HZ resource");
  {auto style=editObject<AcDbTextStyleTableRecord>(fonts.text);style->setTextSize(0);style->setObliquingAngle(0);style->setFlagBits(0);style->setIsVertical(false);
   if(auto* annotation=AcDbAnnotativeObjectPE::cast(style->queryX(AcDbAnnotativeObjectPE::desc())))
    productStatus(annotation->setAnnotative(style.get(),false),"restore non-annotative FY_HZ");}
- fonts.caption=productRestoreTypographyFont(db,fonts.opening,templateMode?0.:3.);
+ fonts.caption=productRestoreTypographyFont(db,fonts.opening,4.);
  return fonts;
 }
 
@@ -221,14 +215,14 @@ std::vector<ProductTypographyIssue> productNormalizeWholePlanTypography(ProductJ
  }
  const bool templateMode=job.planMode=="template-finalize";
  const auto fonts=productRestorePlanTypography(db,reference,templateMode);
- if(!templateMode)productSynchronizePlanDimensionTable(job,db,reference,fonts.dim);
+ productSynchronizePlanDimensionTable(job,db,reference,fonts.dim);
  std::vector<ProductTypographyIssue> issues;
  const auto rows=productTypographyInventory(db);
  std::map<std::string,std::pair<std::string,double>> requirements;std::set<std::string> conflicting,changed;
  for(const auto& row:rows)if(row.visible){
   const auto role=productTypographyRole(db,row);if(role!="general"&&role!="opening-label")continue;
   try{
-   const auto target=(role=="general"?400.:row.type==L"TDbText"?(templateMode?238.:255.):(templateMode?280.:300.))*productTypographySpaceFactor(db,row)/job.unifiedUnitMM/productTypographyInstanceScale(db,row);
+   const auto target=400.*productTypographySpaceFactor(db,row)/job.unifiedUnitMM/productTypographyInstanceScale(db,row);
    const auto match=requirements.emplace(row.handle,std::make_pair(role,target));
    if(!match.second&&(match.first->second.first!=role||std::abs(match.first->second.second-target)>.01))conflicting.insert(row.handle);
   }catch(const std::exception& error){conflicting.insert(row.handle);issues.push_back({row.path,role,error.what()});}
@@ -292,13 +286,13 @@ std::vector<ProductTypographyIssue> productNormalizeWholePlanTypography(ProductJ
     const auto glyph=productGenericCaptionGlyph(*entity,leaf.text);require(glyph.has_value(),"native opening label glyph unavailable");
     const auto captionLayer=productPlanLayer(db,templateMode?L"A-WINDOW-TEXT":L"A-WINDOW",7);
     if(glyph->style==fonts.caption&&glyph->layer==captionLayer){
-     entity.reset();productGenericMoveCaption(id,leaf.text,captionCentres.at({ascii(handle),leaf.text}));entity=open<AcDbEntity>(id);continue;
+     entity.reset();productGenericMoveCaption(id,leaf.text,(captionCentres.count({ascii(handle),leaf.text})?captionCentres.at({ascii(handle),leaf.text}):productGenericGlyphCentre(*glyph)));entity=open<AcDbEntity>(id);continue;
     }
     GenericOpeningCaption caption;caption.id=id;caption.number=leaf.text;caption.desired=productGenericGlyphCentre(*glyph);
     caption.vertical=std::abs(std::sin(glyph->angle))>.5;
     entity.reset();
     require(productRemapCaption(db,caption,*glyph,captionLayer,fonts.caption,false,0.,false),"native opening label mapping did not preserve its geometry");
-    productGenericMoveCaption(id,leaf.text,captionCentres.at({ascii(handle),leaf.text}));
+    productGenericMoveCaption(id,leaf.text,(captionCentres.count({ascii(handle),leaf.text})?captionCentres.at({ascii(handle),leaf.text}):productGenericGlyphCentre(*glyph)));
     entity=open<AcDbEntity>(id);
    }catch(const std::exception& error){issues.push_back({ascii(handle),"native-opening-label",error.what()});}
   }
@@ -349,7 +343,7 @@ std::vector<ProductTypographyIssue> productAuditWholePlanTypography(ProductJob& 
     for(auto& leaf:leaves)leaf.height*=scale;
     std::string issue;
     if(const auto* text=AcDbMText::cast(entity.get()))if(!productPlanMTextUsesStyle(*text))issue=u8"多行文字仍存在行内字体覆盖";
-    record(row.path,role,leaves,role=="general"?&fonts.general:&fonts.opening,(role=="general"?400.:row.type==L"TDbText"?255.:300.)*productTypographySpaceFactor(db,row)/job.unifiedUnitMM,role=="general"?0.:3.,issue);
+    record(row.path,role,leaves,role=="general"?&fonts.general:&fonts.opening,400.*productTypographySpaceFactor(db,row)/job.unifiedUnitMM,role=="general"?0.:4.,issue);
    }else if(role=="linked-note"){
     std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*entity,leaves);
     record(row.path,role,leaves,&fonts.general,400./job.unifiedUnitMM,0,
@@ -360,7 +354,7 @@ std::vector<ProductTypographyIssue> productAuditWholePlanTypography(ProductJob& 
  for(const auto& [handle,type]:modelTypes(db))if(type==L"TDbOpening"||type==L"TDbGroupOpening"){
   const auto entity=open<AcDbEntity>(find(db,ascii(handle)));if(!productPlanDimensionVisible(*entity))continue;
   std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*entity,leaves);
-  for(const auto& leaf:leaves)if(!leaf.text.empty())record(ascii(handle),"native-opening-label",{leaf},&fonts.opening,255./job.unifiedUnitMM,3.,
+  for(const auto& leaf:leaves)if(!leaf.text.empty())record(ascii(handle),"native-opening-label",{leaf},&fonts.opening,400./job.unifiedUnitMM,4.,
    productTypographyOpeningCode(leaf.text)?std::string{}:u8"洞口内部可见文字未与标准门窗编码匹配，未计为编号通过");
  }
  out<<"],\"checked\":"<<checked<<",\"specialistObjects\":"<<special<<",\"unresolved\":"<<issues.size()<<",\"allApplicableVerified\":"<<(issues.empty()?"true":"false")<<'}';

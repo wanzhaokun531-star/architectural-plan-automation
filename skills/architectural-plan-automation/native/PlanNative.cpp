@@ -337,7 +337,7 @@ void runNativePlan(const fs::path& config) {
     const auto mode = setting(L"mode");
     require(mode.empty() || mode == L"generate" || mode == L"revise" || mode == L"audit" ||
             ((mode==L"fixture"||mode==L"axis-edit-trial"||mode==L"joint-annotations"||mode==L"wall-height"||
-              mode==L"dimension-rebuild"||mode==L"furniture-normalize"||mode==L"typography-finalize"||mode==L"template-finalize"||mode==L"owned-cleanup")&&
+              mode==L"dimension-rebuild"||mode==L"furniture-normalize"||mode==L"typography-finalize"||mode==L"template-finalize"||mode==L"control-frames"||mode==L"owned-cleanup")&&
              !ini(iniPath(),L"nonce").empty()), "Unknown plan job mode");
     const fs::path resourceInput=setting(L"resources");
     require(!resourceInput.empty()&&fs::is_directory(resourceInput),u8"E_PLAN_RESOURCE：作业资源目录不存在，请核对本机 Skill 或项目资源路径。");
@@ -353,10 +353,11 @@ void runNativePlan(const fs::path& config) {
         isolated(ini(iniPath(),L"nonce"));
         acDocManager->executeInApplicationContext(finishPlanOwnedCleanup,new std::pair<fs::path,fs::path>(source,report));return;
     }
-    if(mode==L"template-finalize"){
+    if(mode==L"template-finalize"||mode==L"control-frames"){
         isolated(ini(iniPath(),L"nonce"));const fs::path output=setting(L"output");
         require(!output.empty()&&!fs::exists(output)&&output!=source,"template finalizer requires a new output");
         auto task=std::make_unique<PlanTemplateRequest>();task->source=source;task->output=output;task->report=report;
+        task->framesOnly=mode==L"control-frames";task->frameDatums=setting(L"frameDatums");
         task->resources=resources;task->sheets=setting(L"typographySheets");executePlanTemplate(std::move(task));return;
     }
     if(mode==L"typography-finalize"){
