@@ -1,9 +1,11 @@
 # 平面自动化 Skill 换机安装
 
+2026-11-18版包含三套文字通用强规则、原生恢复与逐对象复核，以及每幅四道模型可见、灰色虚线、不打印的Defpoints实体辅助框。尺寸与轴号使用模板原生对象。
+
 使用 Windows x64、已激活的 AutoCAD 2020（R23.1）、兼容的天正及 Python 3.11 或以上 x64。先正常启动一次 AutoCAD 和天正，完成激活及个人配置初始化。
 
 1. 解压到本用户可写的目录。用 Codex 聊天时，可以打开解压的 `architectural-plan-automation` 目录作为工作区，使用其中的 `SKILL.md`。
-2. 在该目录运行安装脚本。脚本检查文件指纹、CAD、天正、字体和 Python 打印依赖，并建立专用 CAD 配置。若提示插件目录权限不足，用同一个 Windows 账户以管理员身份安装一次。Python 已有依赖时可以省略 `-InstallPythonDependencies`。安装资料有多个版本或位于自定义目录时，按提示提供 `-AcadPath`、`-TianzhengKernel`、`-Template`、`-BaseProfile` 或 `-PythonPath`。
+2. 在该目录运行安装脚本。脚本检查文件指纹、CAD、天正、字体和 Python 打印依赖，并建立专用 CAD 配置。若提示插件目录权限不足，用同一个 Windows 账户以管理员身份安装一次。Python 已有依赖时可以省略 `-InstallPythonDependencies`。安装资料有多个版本或位于自定义目录时，按提示提供 `-AcadPath`、`-TianzhengKernel`、`-Template`、`-BaseProfile` 、`-PythonPath` 或 `-FontDirectory`。
 
    ```powershell
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\Install-PlanDraw.ps1 -InstallPythonDependencies
@@ -18,3 +20,5 @@
 作业资料、独立重开记录及实打 PDF 保存在内部作业目录。已配置另一台电脑时，在该电脑重新运行安装脚本，生成它自己的 CAD 路径和专用配置。
 
 轴号规则 A28 要求避让时只在圈外折一次，斜段直接接圆周。当前安装包已更新规则和验收说明，自动生成这类引线的原生实现尚待适配。验收时按 A28 量取重开后的引线几何。
+
+安装会核齐simplex.shx、gbcbig.shx、tssdeng.shx、hztxt.shx。字体须来自本机已安装的CAD、天正或用户字体目录。自定义位置可传入 `-FontDirectory 'D:\CAD字体'`，安装器会将已找到的字体复制到本包的专用本机支持目录。

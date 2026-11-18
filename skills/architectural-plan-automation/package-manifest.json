@@ -40,7 +40,7 @@
   "assets/annotation-template/平面标注.dwg": "3c6b19fae21c1c5729d0e0000104dcadd9ba7a81560a31d74f0d576b2bd0dd2f",
   "assets/template-runtime.json": "362a658677bd2f395530be5ed2b29da3e5ac54d7fead0f9d44342276bcbb0502",
   "native/PlanNative.cpp": "6401230a8808ede651dff971c7c5a712eaeaae87e104d5cb8d87f52dd4732666",
-  "native/PlanNativeTemplate.inc": "b7abe7a7c044509871d3d80e8acd128a697540bf049b9d4ea2546a33f6c4682a",
+  "native/PlanNativeTemplate.inc": "a921562e1ee6a0dd24c6534ae406e07a317051778d2baa3fe0d8c1ba851deed1",
   "native/PlanNativeJointRepair.inc": "f48a2eb49e924bf4384dab69bbffdc7f1477f9d0fccc292b14d01d56cc3fb230",
   "native/template_revision.py": "a0ba00f1a2097e6e18099856c81f7866368f18ce539d5b028b07a9e8708db8d7",
   "native/test_template_resources.py": "5c70b3c3e61b5c59cb18a3b1b0f1394da6a54e4f0d05758d622dc80a46601ff8",

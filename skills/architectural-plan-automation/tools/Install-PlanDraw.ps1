@@ -4,6 +4,7 @@
     [string]$Template,
     [string]$BaseProfile,
     [string]$PythonPath,
+    [string[]]$FontDirectory,
     [switch]$InstallPythonDependencies,
     [switch]$CheckOnly
 )
@@ -102,17 +103,17 @@ $general = Get-Item -LiteralPath (Join-Path $base.path 'General')
 $support = @(($general.GetValue('ACAD', '') -split ';') | Where-Object { $_ })
 $vendorSupport = @($kernel.DirectoryName, (Join-Path $kernel.Directory.Parent.FullName 'SYS')) |
                  Where-Object { Test-Path -LiteralPath $_ -PathType Container }
-$fontPaths = @($support) + @($vendorSupport) + @(Join-Path $acad.DirectoryName 'Fonts')
-$fontPaths = @($fontPaths | ForEach-Object { [Environment]::ExpandEnvironmentVariables($_.Trim('"')) })
+$fontPaths = @($support) + @($vendorSupport) + @(Join-Path $acad.DirectoryName 'Fonts') + @($FontDirectory)
+$fontPaths = @($fontPaths | Where-Object { $_ } | ForEach-Object { [Environment]::ExpandEnvironmentVariables($_.Trim('"')) })
 $resolvedFonts = @{}
 $missing = @(foreach ($font in @('simplex.shx', 'gbcbig.shx', 'hztxt.shx', 'tssdeng.shx')) {
     $folder = $fontPaths | Where-Object { Test-Path -LiteralPath (Join-Path $_ $font) -PathType Leaf } | Select-Object -First 1
     if ($folder) { $resolvedFonts[$font] = Join-Path $folder $font }
-    elseif ($font -ne 'tssdeng.shx') { $font }
+    else { $font }
 })
 if ($missing.Count) { throw ('Install the following CAD/Tianzheng fonts in the support paths: ' + ($missing -join ', ')) }
 
-$result = [ordered]@{acadPath=$AcadPath; template=$Template; supportComponent=$kernel.FullName; python=$python}
+$result = [ordered]@{acadPath=$AcadPath; template=$Template; supportComponent=$kernel.FullName; python=$python; fonts=$resolvedFonts}
 if (!$CheckOnly) {
     $profile = 'CodexS1Native_' + [Guid]::NewGuid().ToString('N').Substring(0,12)
     $target = Join-Path $base.key $profile
