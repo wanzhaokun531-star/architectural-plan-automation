@@ -12,6 +12,7 @@ struct ProductRoomGrid {
   return {(xs[x]+xs[x+1])/2,(ys[y]+ys[y+1])/2,0};
  }
  int at(double x,double y) const {
+  if(xs.size()<2||ys.size()<2)return outside;
   const auto i=std::upper_bound(xs.begin(),xs.end(),x);
   const auto j=std::upper_bound(ys.begin(),ys.end(),y);
   if(i==xs.begin()||i==xs.end()||j==ys.begin()||j==ys.end())return outside;
@@ -405,19 +406,21 @@ struct ProductRoomLeaf {
  double rotation{},height{};
  AcGePoint3d anchor;
  double width{};
+ std::optional<AcDbExtents> bounds;
 };
-void productRoomLeaves(const AcDbEntity& entity,std::vector<ProductRoomLeaf>& leaves,int depth=0) {
+void productRoomLeaves(const AcDbEntity& entity,std::vector<ProductRoomLeaf>& leaves,int depth=0,bool glyphGeometry=false) {
  if(depth>4)return;
  if(const auto* text=AcDbText::cast(&entity)){
   leaves.push_back({text->textString(),text->textStyle(),text->rotation(),text->height(),
    text->isDefaultAlignment()?text->position():text->alignmentPoint(),text->widthFactor()});
+  if(glyphGeometry){AcDbExtents box;if(text->getGeomExtents(box)==Acad::eOk)leaves.back().bounds=box;}
   return;
  }
  TemplateParts parts(&entity);
  if(entity.explode(parts.values)!=Acad::eOk)return;
  for(int i=0;i<parts.values.length();++i)
   if(const auto* child=AcDbEntity::cast(static_cast<AcRxObject*>(parts.values[i])))
-   productRoomLeaves(*child,leaves,depth+1);
+   productRoomLeaves(*child,leaves,depth+1,glyphGeometry);
 }
 
 std::optional<std::wstring> productRoomFontFile(AcDbDatabase& db,const AcString& file,bool allowConfiguredPath=true) {
@@ -710,12 +713,14 @@ bool productRoomConvertWithTangent(ProductJob& job,AcDbDatabase& db,ProductRoomN
  return true;
 }
 
-bool productRoomAreaText(const std::wstring& value) {
- const auto m=value.find(L'm');
- if(m==std::wstring::npos||m==0||value.front()<L'0'||value.front()>L'9')return false;
- const auto suffix=value.substr(m);
- return value.find_first_not_of(L"0123456789.",0)==m&&
-  (suffix==L"m"||suffix==L"m²"||suffix==L"m^U2^U");
+bool productRoomAreaText(const std::wstring& text) {
+ if(text.empty()||text.front()<L'0'||text.front()>L'9')return false;
+ wchar_t* end=nullptr;const auto n=std::wcstod(text.c_str(),&end);
+ if(!std::isfinite(n)||!end||end==text.c_str())return false;
+ while(*end==L' ')++end;
+ const std::wstring suffix=end;
+ return suffix==L"m"||suffix==L"m²"||suffix==L"m2"||suffix==L"㎡"||
+        suffix==L"平方米"||suffix==L"m^U2^U";
 }
 
 struct ProductOldNetArea {
@@ -726,13 +731,13 @@ struct ProductOldNetArea {
 };
 
 std::vector<ProductOldNetArea> productOldNetAreas(AcDbDatabase& db,const ProductRoomGrid& grid,
- const std::vector<bcpproduct::GenericView>& views,std::size_t view){
+ const std::vector<bcpproduct::GenericView>& views,std::size_t view,bool includeHidden=false){
  struct Candidate {std::string handle;std::wstring text;AcDbExtents box;AcDbObjectId layer,style;double height{};};
  std::vector<Candidate> bodies,exponents;
  for(const auto& [handle,type]:modelTypes(db)){
   if(type!=L"TDbText"&&type!=L"AcDbText"&&type!=L"AcDbMText")continue;
   const auto entity=open<AcDbEntity>(find(db,ascii(handle)));
-  if(!productPlanDimensionVisible(*entity))continue;
+  if(!includeHidden&&!productPlanDimensionVisible(*entity))continue;
   Candidate item;
   item.handle=ascii(handle);
   item.layer=entity->layerId();
@@ -754,7 +759,7 @@ std::vector<ProductOldNetArea> productOldNetAreas(AcDbDatabase& db,const Product
  for(const auto& body:bodies){
   wchar_t* end=nullptr;
   const double value=std::wcstod(body.text.c_str(),&end);
-  if(!std::isfinite(value)||value<=0||end!=body.text.c_str()+body.text.find(L'm'))continue;
+  if(!std::isfinite(value)||value<=0||end==body.text.c_str())continue;
   const auto center=body.box.minPoint()+(body.box.maxPoint()-body.box.minPoint())*.5;
   ProductOldNetArea old{body.handle,{},value,grid.at(center),body.text.back()!=L'm'};
   if(!old.explicitUnit&&body.height>0.){
@@ -2641,7 +2646,7 @@ void productGenericRooms(ProductJob& job,AcDbDatabase& db,const GenericNativeInp
  if(grid)for(auto& name:names)
   name.region=grid->at(name.bounds.minPoint()+(name.bounds.maxPoint()-name.bounds.minPoint())*0.5);
  const auto level=std::to_string(panel+1);
- if(!grid)job.detailPending.push_back({u8"房间面积",level,u8"未能确认本幅平面的完整正交净边界，保留源图面积"});
+ if(!grid&&!job.currentPlanRules)job.detailPending.push_back({u8"房间面积",level,u8"未能确认本幅平面的完整正交净边界，保留源图面积"});
  AcDbDatabase material(false,true);
  const auto donor=job.profile/L"room-material.dwg";
  const bool materialOpen=material.readDwgFile(donor.c_str(),AcDbDatabase::kForReadAndAllShare,false)==Acad::eOk&&
@@ -2654,6 +2659,7 @@ void productGenericRooms(ProductJob& job,AcDbDatabase& db,const GenericNativeInp
  const auto confirmations=productPlanDetailConfirmations(job);
  productRestylePlanNames(job,db,input,nameChecks,view,panel,views[view],bounds,surfaces,names,style,layer,unitMM,confirmations,
   materialOpen?&material:nullptr,reference);
+ if(job.currentPlanRules)return;
  std::size_t renamed=0;
  std::vector<AcDbExtents> obstacles;
  if(standalone)productRoomGraphicObstacles(db,obstacles);

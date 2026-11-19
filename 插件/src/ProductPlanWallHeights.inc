@@ -106,7 +106,7 @@ std::vector<ProductWallHeight> productApplyWallHeights(ProductJob& job,AcDbDatab
    row.base=bcpproduct::propertyNumber(p,L"底标高");
    if(p.count(L"左厚度")&&p.count(L"右厚度"))
     row.thickness=std::make_pair(bcpproduct::propertyNumber(p,L"左厚度"),bcpproduct::propertyNumber(p,L"右厚度"));
-   require(row.original>0,"positive public wall height");
+   require(std::isfinite(row.original),"finite public wall height");
    if(!row.target)row.issue=u8"层高来源冲突或当前规则缺可执行的默认参数";
    else if(std::abs(row.original-*row.target)>eps)groups[{row.panel,*row.target,row.base}].push_back(rows.size());
   }catch(const std::exception& error){

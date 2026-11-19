@@ -1,6 +1,6 @@
 {
   "schema": "bcp.plan-perimeter-spacing.v2",
-  "effectiveDate": "2026-11-12",
+  "effectiveDate": "2026-11-19",
   "scope": "建筑平面外围尺寸及轴号排布",
   "authority": "用户2026-11-05截图明确指定；用户2026-11-06废止遇门廊、台阶等凸出构件整组外移，恢复以对应外墙轴线为基准；用户2026-11-06确认可见起笔端至第三道洞口尺寸线由1100改为800（1:100），其余间距不变；用户随后确认外墙轴线或外侧门廊柱、阳台柱轴线至界线可见起笔端1800的示例并要求修改规则",
   "sourceImage": "codex-clipboard-622733b5-8ea2-47e9-8c91-0311889040e7.png",
@@ -165,9 +165,53 @@
     "steps": "KEEP_AXIS_FOR_STEPS",
     "normalSelection": "本侧有承担独立外围定位的门廊柱或阳台柱时取实际柱轴，其余取外墙轴。按 A18 归并的方向沿用外墙轴。",
     "roofSelection": "先按墙柱轴试排。经核实的实际檐边进入本侧常规可见标注或辅助框的排布范围时，取本侧受影响跨度内最外实有檐边为基准，整组外排。",
-    "stepSelection": "仅有台阶等无轴凸出边时沿用墙柱轴，所需局部尺寸在对应位置另标。",
+    "stepSelection": "门廊台阶纳入D31主体标注范围，主体排布与围墙分离；无轴凸出边的局部宽深和定位按实际测点另标，主体真实轴位独立核定。",
     "unverifiedRoof": "檐边归属未确认时沿用有依据的本侧排布，逐段记录待确认项。",
     "distanceRule": "选定基准至实际可见起笔端为纸面 18 mm，其后间距按纸面换算。",
-    "measurementRule": "按 D02、D03、D27 分别核实际有效测站。切换排布基准时保持测站、测值和真实轴位。"
+    "measurementRule": "按 D02、D03、D27 分别核实际有效测站。切换排布基准时保持测站、测值和真实轴位。",
+    "excludedBoundaryWalls": true
+  },
+  "buildingPerimeterScopePolicy": {
+    "mandatory": true,
+    "ruleID": "D31",
+    "subjectComponents": [
+      "building-exterior-wall",
+      "balcony",
+      "terrace",
+      "porch",
+      "porch-steps",
+      "gutter",
+      "eave"
+    ],
+    "excludeComponents": [
+      "boundary-wall",
+      "boundary-wall-opening"
+    ],
+    "applyTo": [
+      "main-perimeter-three-rows",
+      "axis-label-layout",
+      "defpoints-frames"
+    ],
+    "useWholeDrawingBounds": false,
+    "keepActualAxesAndStations": true,
+    "nativeImplementationVerified": false
+  },
+  "boundaryWallPlanPolicy": {
+    "mandatory": true,
+    "ruleID": "D31",
+    "allFloors": true,
+    "individualWallLengths": true,
+    "numberEveryGate": true,
+    "openingSourceRule": "O09",
+    "numberingRules": [
+      "O01",
+      "O02",
+      "O03",
+      "O04",
+      "O05",
+      "O06"
+    ],
+    "typographyRule": "L08",
+    "nativeImplementationVerified": false
   }
 }

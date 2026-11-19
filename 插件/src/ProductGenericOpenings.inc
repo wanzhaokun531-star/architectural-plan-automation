@@ -142,6 +142,10 @@ ProductPlanDetailConfirmations productPlanDetailConfirmations(const ProductJob& 
  throw std::runtime_error("plan detail confirmations are missing END");
 }
 void productPlanDimensionStrokes(const AcDbEntity&,std::vector<std::pair<AcGePoint3d,AcGePoint3d>>&);
+AcDbObjectId productCurrentOpeningCaptionStyle(ProductJob&,AcDbDatabase&);
+bool productCurrentOpeningCaptionMatches(const ProductJob&,AcDbObjectId);
+double productTypographyModelHeight(const ProductJob&,const std::string&);
+
 struct GenericOpeningInk {
  bool swing{};
  std::vector<std::pair<AcGePoint3d, AcGePoint3d>> straight;
@@ -1514,31 +1518,8 @@ std::optional<double> productTryCompactCaption(AcDbDatabase& db,const GenericOpe
 }
 
 AcDbObjectId productRequiredOpeningCaptionStyle(AcDbDatabase& db,AcDbObjectId original){
- if(productJob&&!productJob->approvedOpeningTextStyle.isNull()&&productJob->approvedOpeningTextStyle.database()==&db)
-  return productJob->approvedOpeningTextStyle;
- AcDbDatabase reference(false,true);AcDbObjectId donor;
- if(productJob){
-  productStatus(reference.readDwgFile((productJob->profile/L"reference.dwg").c_str(),AcDbDatabase::kForReadAndAllShare,false),"read approved opening font definition");
-  productStatus(reference.closeInput(true),"close approved opening font input");
-  const auto styles=open<AcDbTextStyleTable>(reference.textStyleTableId());
-  if(styles->getAt(L"TCH_WINDOW",donor)!=Acad::eOk)productStatus(styles->getAt(L"_TCH_WINDOW",donor),"approved native opening text style");
- }
- require(!donor.isNull(),"opening typography requires an approved reference, not the source style");
- const auto approved=open<AcDbTextStyleTableRecord>(donor);AcString primary,big;
- productStatus(approved->fileName(primary),"read approved opening primary font");productStatus(approved->bigFontFileName(big),"read approved opening big font");
- const auto table=editObject<AcDbTextStyleTable>(db.textStyleTableId());
- AcDbObjectId id;
- if(table->getAt(L"TCH_WINDOW",id)!=Acad::eOk){
-  auto style=std::make_unique<AcDbTextStyleTableRecord>();productStatus(style->setName(L"TCH_WINDOW"),"name the required opening caption style");
-  productStatus(table->add(id,style.get()),"add required opening caption style");style.release()->close();
- }
- {auto style=editObject<AcDbTextStyleTableRecord>(id);
-  productStatus(style->setFileName(primary.kACharPtr()),"restore opening primary font");productStatus(style->setBigFontFileName(big.kACharPtr()),"restore opening big font");
-  productStatus(style->setXScale(approved->xScale()),"restore opening width factor");productStatus(style->setTextSize(3.),"restore opening style nominal height");
-  productStatus(style->setObliquingAngle(approved->obliquingAngle()),"restore opening oblique");style->setFlagBits(approved->flagBits());style->setIsVertical(false);
- }
- if(productJob)productJob->approvedOpeningTextStyle=id;
- return id;
+ require(bool(productJob),"opening typography requires the current job policy");
+ return productCurrentOpeningCaptionStyle(*productJob,db);
 }
 
 void productPrepareCaptionLayer(AcDbDatabase& db,const std::vector<GenericOpeningCaption>& captions,
@@ -1566,7 +1547,7 @@ void productPrepareCaptionLayer(AcDbDatabase& db,const std::vector<GenericOpenin
     reason=verified?"remapped-native-caption-layer":"native-clone-layer-remap-not-applied";
    }
    const auto actual=productGenericCaptionGlyph(*open<AcDbEntity>(caption.id),caption.number);
-   verified=actual&&actual->layer==target&&(!exactStyle||(!actual->style.isNull()&&symbolName(actual->style)==L"TCH_WINDOW"));
+   verified=actual&&actual->layer==target&&(!exactStyle||productCurrentOpeningCaptionMatches(*productJob,actual->style));
   }
   if(!first)report<<',';first=false;
   report<<"{\"object\":\""<<axisHandle(caption.id)<<"\",\"priorLayer\":"
@@ -1788,11 +1769,12 @@ void productAuditCaptionLayer(ProductJob& job,AcDbDatabase& db,const std::vector
   else job.detailPending.push_back({u8"门窗编号图层",key,u8"保存重开后的原生编号显示层或有效7色待核，保留当前原生表达"});
   if(job.architecturalPlanOnly){
    const auto style=glyph&&!glyph->style.isNull()?symbolName(glyph->style):std::wstring{};
-   const bool passed=style==L"TCH_WINDOW"&&heights.size()==1&&std::abs(heights.front()-255.)<1e-5;
+   const bool passed=glyph&&productCurrentOpeningCaptionMatches(job,glyph->style)&&heights.size()==1&&
+     std::abs(heights.front()-productTypographyModelHeight(job,"_TCH_WINDOW"))<.01;
    job.drawingChecks.record(sourcePanel,"opening-caption-typography",key,{"L08"},bcpproduct::PlanReleaseGate::reopened,
     passed?bcpproduct::PlanCheck::verified:bcpproduct::PlanCheck::failed,
     u8"重开读回原生门窗编号的实际文字样式和纸面 3.0 mm 对应字高",
-    passed?"":u8"实际编号未引用 TCH_WINDOW 或编号字高未达到规则");
+    passed?"":u8"实际编号未引用现行 _TCH_WINDOW 定义或有效编号字高未达到规则");
    productRecordRuleEvidence(job,"L08","{\"object\":\""+key+"\",\"savedReopened\":true,\"textStyle\":"+
      jsonUtf8(style)+",\"verified\":"+(passed?"true":"false")+"}");
   }
@@ -1820,7 +1802,7 @@ void productAuditCaptionLayer(ProductJob& job,AcDbDatabase& db,const std::vector
         <<"\",\"glyphHeight\":";
   if(heights.size()==1)height<<heights.front();else height<<"null";
   height<<",\"heightField\":\"文字高度\",\"savedReopened\":true,\"result\":\""
-        <<(heights.size()==1&&std::abs(heights.front()-255.)<1e-5?"verified-reopened-glyph-height":"pending")<<"\"}";
+        <<(heights.size()==1&&std::abs(heights.front()-productTypographyModelHeight(job,"_TCH_WINDOW"))<.01?"verified-reopened-glyph-height":"pending")<<"\"}";
   productRecordRuleEvidence(job,"TL04",height.str());
  }
  if(sourceOpenings&&views){
@@ -2422,6 +2404,7 @@ void productNormalizeDoorJambs(ProductJob& job,AcDbDatabase& db,GenericNativeInp
   obstructions.push_back({wall.wall.handle,AcDbExtents({r[0],r[1],0},{r[2],r[3],0})});
  }
  for(auto& door:input.openings){
+  if(job.planAdoptedOpeningNumbers.count(door.handle))continue; // Adopted anchor has higher priority than default jamb relocation.
   if(door.window||door.grouped||std::abs(door.sill)>tolerance||entrances.count(door.handle)||
      confirmations.bathroomDoors.count(door.handle)||productGenericOpeningKind(door,L"推拉"))continue;
   const auto middle=door.a+(door.b-door.a)/2;
@@ -2431,6 +2414,7 @@ void productNormalizeDoorJambs(ProductJob& job,AcDbDatabase& db,GenericNativeInp
   const auto host=productGenericHost(door,input,view);
   if(!host||host->side>=0)continue;
   const auto& wall=input.walls[host->wall];
+  if(job.planBoundaryWalls.count(wall.wall.handle))continue;
   const double thickness=wall.total*unit;
   const double standard=std::abs(thickness-200)<=.01?100:std::abs(thickness-240)<=.01?120:0;
   if(standard==0)continue;
@@ -2519,11 +2503,18 @@ void productGenericOpenings(ProductJob& job,AcDbDatabase& db,const GenericNative
  const auto entranceSides=productConfirmedEntranceSides(job);
  const auto confirmations=productPlanDetailConfirmations(job);
  std::vector<GenericOpeningWork> work;
+  auto mainView=views[view];
+  mainView.walls.erase(std::remove_if(mainView.walls.begin(),mainView.walls.end(),[&](auto index){return job.planBoundaryWalls.count(input.walls[index].wall.handle);}),mainView.walls.end());
+  mainView.bounds={bounds.xmin,bounds.ymin,bounds.xmax,bounds.ymax};
  for(const auto& o:input.openings){
   const auto middle=o.a+(o.b-o.a)/2;
   if(bcpproduct::nearestGenericView(views,{middle.x,middle.y})!=view)continue;
   const auto main=entranceSides.find(o.handle);
-  auto host=productGenericHost(o,input,views[view]);
+   auto host=productGenericHost(o,input,mainView);
+   if(!host&&!job.planBoundaryWalls.empty()){
+    const auto candidate=productGenericHost(o,input,views[view]);
+    if(candidate&&job.planBoundaryWalls.count(input.walls[candidate->wall].wall.handle))host=candidate;
+   }
   if(!host&&main!=entranceSides.end()&&!o.window&&!o.grouped)
    host=productConfirmedSplitOpeningHost(o,input,views[view],main->second,layout.unitMM);
   if(!host){
@@ -2561,7 +2552,9 @@ void productGenericOpenings(ProductJob& job,AcDbDatabase& db,const GenericNative
     o.a,o.b,{},h.vertical,true,true,false,0,{}});
    continue;
   }
-  if(h.side>=0){auto& stations=exterior[h.side];stations.insert(stations.end(),{h.lower,lo,hi,h.upper});}else{auto& group=internal[h.wall];group.host=h;group.openings.push_back(&o);group.junctions.push_back(h.lower);group.junctions.push_back(h.upper);}
+   if(!job.planBoundaryWalls.count(input.walls[h.wall].wall.handle)){
+    if(h.side>=0){auto& stations=exterior[h.side];stations.insert(stations.end(),{h.lower,lo,hi,h.upper});}else{auto& group=internal[h.wall];group.host=h;group.openings.push_back(&o);group.junctions.push_back(h.lower);group.junctions.push_back(h.upper);}
+   }
   work.push_back({&o,h,std::move(ink),lo,hi,sliding});
  }
  // A central pair of leaves with two contiguous narrow matching leaves is one
@@ -2651,10 +2644,12 @@ void productGenericOpenings(ProductJob& job,AcDbDatabase& db,const GenericNative
    throw std::runtime_error("confirmed security door does not match exterior swing and actual source dimensions");
   const double width=assembly==assemblies.end()?o.width:assembly->second.first;
   const double center=assembly==assemblies.end()?(item.low+item.high)/2:assembly->second.second;
-  const wchar_t* prefix=o.grouped?nullptr:o.window?L"LC":(main||securityDoor)?L"FMD":item.sliding?(h.side<0?L"M":L"LM"):
+   const bool boundaryDoor=job.planBoundaryWalls.count(input.walls[h.wall].wall.handle)&&!o.window&&!o.grouped;
+   const wchar_t* prefix=o.grouped?nullptr:o.window?L"LC":(main||securityDoor)?L"FMD":boundaryDoor?(item.sliding?L"LM":item.ink.swing?L"M":nullptr):item.sliding?(h.side<0?L"M":L"LM"):
       h.side<0 && item.ink.swing?L"M":h.side<0 && o.kind==L"墙洞" && std::abs(o.sill)*layout.unitMM<=.01?L"DK":nullptr;
-  const auto ruleNumber=productGenericOpeningCode(prefix,width*layout.unitMM,o.height*layout.unitMM);
-  std::wstring number=o.existing;
+   const auto adopted=job.planAdoptedOpeningNumbers.find(o.handle);
+   const auto ruleNumber=adopted==job.planAdoptedOpeningNumbers.end()?productGenericOpeningCode(prefix,width*layout.unitMM,o.height*layout.unitMM):adopted->second;
+   std::wstring number=adopted==job.planAdoptedOpeningNumbers.end()?o.existing:adopted->second;
   if (number.empty()) {
    if (!prefix) {
     if(productNativeRaisedWallVoid(o,item.ink)||productConfirmedRaisedWallOpening(o,confirmations,layout.unitMM))continue;
@@ -2692,11 +2687,12 @@ void productGenericOpenings(ProductJob& job,AcDbDatabase& db,const GenericNative
   caption.source=!o.existing.empty()?"existing":confirmedMain?"confirmedMainEntrance":assembly!=assemblies.end()?"entryAssembly":item.sliding?"sliding":"native";
   captions.push_back(std::move(caption));
  }
+ work.erase(std::remove_if(work.begin(),work.end(),[&](const auto& item){return job.planBoundaryWalls.count(input.walls[item.host.wall].wall.handle);}),work.end());
  std::vector<bcpproduct::OpeningStationWall> transverseWalls;
  std::vector<std::string> transverseHandles;
  for(const auto index:views[view].walls){
   const auto& item=input.walls[index];
-  if(item.low||!item.orthogonal)continue;
+   if(item.low||!item.orthogonal||job.planBoundaryWalls.count(item.wall.handle))continue;
   const auto a=bcp::bodyCentreStart(item.wall);
   const bcp::Point b{a.x+item.wall.end.x-item.wall.start.x,a.y+item.wall.end.y-item.wall.start.y};
   const bool vertical=std::abs(a.x-b.x)<1e-5;
@@ -2977,7 +2973,7 @@ void productGenericOpenings(ProductJob& job,AcDbDatabase& db,const GenericNative
    points.push_back(host.vertical?AcGePoint3d(host.normal,value,0):AcGePoint3d(value,host.normal,0));
   };
   const auto emit=[&](){
-   if(points.size()<2)return;
+   if(job.currentPlanRules||points.size()<2)return;
    const auto result=productTryPlanChain(job,db,prototype,points,offset,view+1,
      input.walls[host.wall].wall.handle,u8"室内洞口定位尺寸","D13");
    if(!result)return;

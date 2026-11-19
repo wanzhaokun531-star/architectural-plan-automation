@@ -145,7 +145,11 @@ def main(argv=None):
             'outputSHA256': file_hash(drawing), 'dwgReopened': True, 'wholeDrawingTypography': True,
             'unresolved': receipt['unresolved'], 'paperIssues': remaining,
             'allApplicableVerified': not receipt['unresolved'] and not remaining})
-        print(report)
+        from wall_height_pipeline import rebind
+        from template_revision import execute_template_revision
+        final_sheets = rebind(sheets, file_hash(source), drawing, work / 'final-sheets.tsv')
+        finalized = execute_template_revision(drawing, final_sheets, work / 'finalize', root, skill)
+        print(finalized['report'])
         return
     raise RuntimeError('字体修订未完成；保留各次诊断，不发布未验证文件')
 

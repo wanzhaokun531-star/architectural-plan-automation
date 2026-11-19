@@ -55,19 +55,16 @@ void executePlanFurnitureJob(void* raw){
   readDrawing(saved,p.output);readDrawing(before,control);
   std::string protectedBefore;
   {Working context(&before);protectedBefore=wholeProtected(before,beforeScope,true);}
-  bool flat=true,zero=true,matched=true;
+  bool matched=true,nesting=true;
   {Working context(&saved);
    require(bcpproduct::samePublicGeometry(protectedBefore,wholeProtected(saved,afterScope,true)),"non-furniture or shared instance changed");
    productVerifyPlanFurniture(job,saved,items,{});
-   for(const auto& item:items){
-    const auto ref=open<AcDbBlockReference>(find(saved,item.output));
-    for(auto member:productFurnitureMembers(ref->blockTableRecord())){
-     const auto entity=open<AcDbEntity>(member);
-     flat=flat&&!entity->isKindOf(AcDbBlockReference::desc());
-     zero=zero&&symbolName(entity->layerId())==L"0";
-    }
+   if(p.fixture)for(const auto& h:fixtureExpected){
+    matched=matched&&beforeScope.count(h)&&afterScope.count(h);
+    const auto block=open<AcDbBlockReference>(find(saved,h));
+    const auto children=productFurnitureMembers(block->blockTableRecord());
+    nesting=nesting&&!children.empty()&&open<AcDbEntity>(children.front())->isKindOf(AcDbBlockReference::desc());
    }
-   if(p.fixture)for(const auto& h:fixtureExpected)matched=matched&&beforeScope.count(h)!=0;
   }
   if(!p.sheets.empty()){
    auto sheetJob=readJointPaperJob(p.source,p.sheets,p.output,p.report);
@@ -77,7 +74,7 @@ void executePlanFurnitureJob(void* raw){
    productPrintPlanLayouts(print,*opened,p.output,p.report);
    productStatus(acDocManager->appContextCloseDocument(opened),"close furniture plot");opened=nullptr;
   }
-  const auto passed=flat&&zero&&matched&&job.detailPending.empty();
+  const auto passed=nesting&&matched&&job.detailPending.empty();
   std::ostringstream pending;pending<<'[';
   for(std::size_t i=0;i<job.detailPending.size();++i){if(i)pending<<',';
    const auto& item=job.detailPending[i];pending<<"{\"category\":"<<jsonUtf8(bcpproduct::decodeMessage(item[0]))
@@ -85,7 +82,7 @@ void executePlanFurnitureJob(void* raw){
   pending<<']';
   writeNew(p.report/L"product-result.json","{\"completed\":true,\"sourceSHA256\":\""+sha(p.source)+
    "\",\"outputSHA256\":\""+sha(p.output)+"\",\"dwgReopened\":true,\"furnitureCount\":"+std::to_string(items.size())+
-   ",\"noNestedBlocks\":"+(flat?"true":"false")+",\"membersOnZero\":"+(zero?"true":"false")+
+   ",\"originalNestingPreserved\":"+(nesting?"true":"false")+
    ",\"expectedFurnitureCovered\":"+(matched?"true":"false")+",\"nonFurniturePreserved\":true,\"unresolved\":"+pending.str()+
    ",\"testPassed\":"+(passed?"true":"false")+"}");
  }catch(const std::exception& error){

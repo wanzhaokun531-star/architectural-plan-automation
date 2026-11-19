@@ -22,7 +22,15 @@ struct ProductOpeningAxisCheck {
  double terminal{},openingEdge{},normal{};
  bool vertical{};
 };
+struct ProductPlanAxisExpectation {
+ int panel{};bool vertical{};std::string number;double station{};bool negative{},positive{};
+ std::string original;std::vector<std::string> outputs;std::string issue;
+ std::vector<std::string> sourceLabels;std::map<int,std::string> sourceEndHandles,sourceFolds;
+ std::vector<std::string> pendingSources;
+};
 struct ProductPlanLayoutConfig {double scale{100},unitMM{1};std::vector<ProductPlanBounds> panels,placementAxes;std::vector<std::array<bcpproduct::PlanSideDatum,4>> sidePlacement;std::vector<ProductPlanRole> dimensions,axes,frames;std::map<std::pair<std::string,int>,std::string> axisFolds;std::map<std::string,std::string> axisOriginalHandles;std::map<std::string,std::vector<AcGePoint3d>> axisOriginalGrips;std::map<std::pair<int,int>,std::string> axisCircleConflicts;bool projectAssociations{true};bcpproduct::PlanPaperPolicy paper;
+ std::vector<ProductPlanAxisExpectation> expectedAxes;
+ std::map<std::string,std::string> axisLayoutFailures;
  std::map<std::string,bool> keepNegativeAxisEnd;
  std::map<std::string,std::vector<double>> sourceOpeningStations;
  std::map<std::pair<int,int>,ProductPerimeterExpected> expectedPerimeter;
@@ -200,6 +208,15 @@ void productVerifyPlanLayout(AcDbDatabase& db,const ProductPlanLayoutConfig& c,c
  first=true;
  for(const auto& role:c.axes){
   require(role.panel>=0&&role.panel<c.panels.size(),"final axis panel association");
+  const auto failed=c.axisLayoutFailures.find(role.handle);
+  if(failed!=c.axisLayoutFailures.end()){
+   if(!first)proof<<',';first=false;
+   proof<<"{\"handle\":\""<<role.handle<<"\",\"verified\":false,\"retainedPrevious\":true,\"reason\":"
+        <<jsonUtf8(bcpproduct::decodeMessage(failed->second))<<'}';
+   if(savedReadback&&evidence)productRecordRuleEvidence(*evidence,"A28",std::string("{\"object\":\"")+role.handle+
+      "\",\"result\":\"pending-retained-after-native-candidate-failure\"}");
+   continue;
+  }
   const auto native=id(role.handle);
   const auto grips=chainGrips(native);
   require(grips.size()==4||grips.size()==8,"final native plan axis grips");
@@ -224,27 +241,28 @@ void productVerifyPlanLayout(AcDbDatabase& db,const ProductPlanLayoutConfig& c,c
    const auto fold=productFoldPoints(db,c,role.handle,end.side);
    const auto anchor=fold.empty()?lead:fold.front();
    require(std::abs(productAxisNormal(anchor,vertical)-expectedLead)<tolerance,"final plan axis anchor differs from rules");
-   require(std::abs(productAxisStation(lead,vertical)-productAxisStation(centre,vertical))<tolerance,
-           "native straight tail must attach to the shifted circle");
+   if(fold.empty())require(std::abs(productAxisStation(lead,vertical)-productAxisStation(centre,vertical))<tolerance,
+           "unshifted native straight tail must stay on the real axis");
    if(!fold.empty()){
     const auto sign=end.sign;
-    const auto bend=productAxisNormal(fold[1],vertical)*sign;
-    require(fold.back().distanceTo(lead)<tolerance&&
-            std::abs(productAxisStation(fold[1],vertical)-productAxisStation(anchor,vertical))<tolerance&&
-            bend>productAxisFoldBandStart(db,c,role.panel,end.side,layout,id)+tolerance&&
-            sign*productAxisNormal(lead,vertical)>bend+tolerance&&
-            sign*productAxisNormal(lead,vertical)<sign*expectedCentre-layout.circleDiameter/2,
-            "saved axis fold must connect the real axis beyond dimension ink");
+    require(fold.size()==2&&fold.back().distanceTo(lead)<tolerance&&
+            std::abs(productAxisStation(lead,vertical)-productAxisStation(anchor,vertical))<tolerance&&
+            sign*productAxisNormal(lead,vertical)>productAxisFoldBandStart(db,c,role.panel,end.side,layout,id)+tolerance&&
+            sign*(productAxisNormal(lead,vertical)-productAxisNormal(anchor,vertical))>tolerance&&
+            std::abs(std::abs(productAxisNormal(centre,vertical)-productAxisNormal(lead,vertical))-
+                     std::abs(productAxisStation(centre,vertical)-productAxisStation(lead,vertical)))<tolerance,
+            "A28 requires one outer bend and a 45-degree radial native tail");
    }
    require(std::abs(productAxisNormal(centre,vertical)-expectedCentre)<tolerance,"final plan axis circle differs from rules");
    const auto circle=std::find_if(ink.circles.begin(),ink.circles.end(),[&](const auto& drawn){return drawn.centre.distanceTo(centre)<tolerance;});
    require(circle!=ink.circles.end(),"final axis rendered circle differs from grip");
    require(std::abs(circle->radius-layout.circleDiameter/2)<tolerance,"final plan axis circle radius differs from rules");
-   const auto junction=productAxisAtNormal(centre,vertical,expectedCentre-end.sign*circle->radius);
+   const auto junction=centre+(lead-centre).normal()*circle->radius;
    const auto at=[&](const auto& a,const auto& b){return a.distanceTo(b)<tolerance;};
-   require(std::any_of(ink.lines.begin(),ink.lines.end(),[&](const auto& line){
+   require(lead.distanceTo(centre)>circle->radius+tolerance&&std::any_of(ink.lines.begin(),ink.lines.end(),[&](const auto& line){
     return (at(line.first,lead)&&at(line.second,junction))||(at(line.second,lead)&&at(line.first,junction));
    }),"final plan axis rendered lead differs from rules");
+   if(!fold.empty())require(productAxisExternalStrokeCount(ink,centre,circle->radius)==1,"A28 radial tail contains an extra straight segment before the circle");
    if(savedReadback&&evidence){
     std::ostringstream leadProof;
     leadProof<<std::setprecision(17)<<"{\"panel\":"<<role.panel+1<<",\"side\":"<<end.side
@@ -355,8 +373,60 @@ void productVerifyPlanLayout(AcDbDatabase& db,const ProductPlanLayoutConfig& c,c
   }
  }
  proof<<"],\"frames\":"<<c.frames.size()<<",\"scope\":\"plan only; no elevations or sections module\"}";
- writeNew(report,proof.str());
+ if(!report.empty())writeNew(report,proof.str());
+ if(savedReadback&&evidence)for(const auto& issue:productAuditStoredAxisEnds(db,evidence->root/L"axis-expected-readback.json"))
+  productRecordPlanAxisFailure(*evidence,0,{},issue.first,issue.second);
 }
+void productCommitExpectedPlanAxes(ProductJob& job,AcDbDatabase& db,ProductPlanLayoutConfig& c){
+ const auto id=[&](const std::string& handle){return find(db,handle);};
+ for(auto& expected:c.expectedAxes){
+  if(expected.pendingSources.empty())continue;
+  const auto sources=expected.pendingSources;
+  try{
+   require(expected.issue.empty()&&expected.outputs.size()==static_cast<std::size_t>(expected.negative+expected.positive),
+           "complete staged source-axis replacement required");
+   for(const bool positive:{false,true})if(positive?expected.positive:expected.negative){
+    const int side=(expected.vertical?2:0)+(positive?1:0);
+    const auto conflict=c.axisCircleConflicts.find({expected.panel,side});
+    require(conflict==c.axisCircleConflicts.end(),conflict==c.axisCircleConflicts.end()?"":"joint A28 layout failed before source retirement");
+   }
+   auto check=c;check.axes.clear();check.dimensions.clear();check.frames.clear();check.expectedAxes.clear();
+   for(const auto& handle:expected.outputs){
+    require(!c.axisLayoutFailures.count(handle),"staged native axis layout failed");
+    require(productAxisCaption(id(handle))==bcpproduct::decodeMessage(expected.number),"staged axis differs from approved number");
+    const auto role=std::find_if(c.axes.begin(),c.axes.end(),[&](const auto& item){return item.handle==handle;});
+    require(role!=c.axes.end(),"staged axis role missing");check.axes.push_back(*role);
+   }
+   productVerifyPlanLayout(db,check,id,{});
+   std::vector<AcDbObjectId> previous;for(const auto& handle:sources)previous.push_back(id(handle));
+   for(const auto& [side,handle]:expected.sourceFolds)previous.push_back(id(handle));
+   productRetireAxisGroup(db,previous);
+   for(auto it=c.axisFolds.begin();it!=c.axisFolds.end();){
+    if(std::find(sources.begin(),sources.end(),it->first.first)!=sources.end())it=c.axisFolds.erase(it);else ++it;
+   }
+  }catch(const std::exception& error){
+   expected.issue=std::string("source retained after complete layout/commit failure: ")+error.what();
+   const std::set<std::string> candidates(expected.outputs.begin(),expected.outputs.end());
+   std::vector<AcDbObjectId> discard;
+   for(auto it=c.axisFolds.begin();it!=c.axisFolds.end();){
+    if(candidates.count(it->first.first)){discard.push_back(id(it->second));it=c.axisFolds.erase(it);}else ++it;
+   }
+   for(const auto& handle:candidates){const auto native=id(handle);if(!native.isErased())discard.push_back(native);c.axisOriginalHandles.erase(handle);c.axisLayoutFailures.erase(handle);}
+   productRetireAxisGroup(db,discard);
+   c.axes.erase(std::remove_if(c.axes.begin(),c.axes.end(),[&](const auto& role){return candidates.count(role.handle)!=0;}),c.axes.end());
+   for(const auto& handle:sources){
+    require(!id(handle).isErased(),"failed candidate commit lost a frozen source axis");
+    if(std::none_of(c.axes.begin(),c.axes.end(),[&](const auto& role){return role.handle==handle;}))c.axes.push_back({handle,expected.panel,expected.vertical?1:0,0});
+    c.axisOriginalHandles[handle]=expected.original;c.axisLayoutFailures[handle]=expected.issue;
+   }
+   expected.outputs.clear();
+   const int source=static_cast<std::size_t>(expected.panel)<job.layoutSourcePanels.size()?job.layoutSourcePanels[expected.panel]:expected.panel+1;
+   productRecordPlanAxisFailure(job,source,expected.number,expected.original,expected.issue);
+  }
+  expected.pendingSources.clear();
+ }
+}
+
 void productPlanLayout(AcDbDatabase& db,ProductPlanLayoutConfig& c,const std::function<AcDbObjectId(const std::string&)>& id,const fs::path& report={},ProductJob* job=nullptr){
  Working work(&db);const auto layout=bcpproduct::planAnnotationLayout(c.scale,c.unitMM,c.paper);const auto axisLayer=productPlanLayer(db,L"AXIS",3),pubLayer=productPlanLayer(db,L"PUB_DIM",25),defLayer=productPlanLayer(db,L"Defpoints",8,false);productPlanLayer(db,L"DOTE",24);productPlanLayer(db,L"A-房间名称",7);productPlanLayer(db,L"DIM_ELEV",3);productPlanLayer(db,L"DIM_SYMB",3);productPlanLayer(db,L"WINDOW_TEXT",7);
  productTraceAxisLayout(job,{},"dimension-locations-enter");
@@ -429,18 +499,26 @@ void productPlanLayout(AcDbDatabase& db,ProductPlanLayoutConfig& c,const std::fu
    productAxisEnd(panel,vertical,actual[base],actual[base+1]);
   productTraceAxisLayout(job,role.handle,"axis-label-returned");
  };
- c.axes.erase(std::remove_if(c.axes.begin(),c.axes.end(),[&](const auto& role){
-  try{fitAxis(role);return false;}
-  catch(const std::exception& error){
-   if(!job)throw;
-   const auto native=id(role.handle);
-   productStatus(editObject<AcDbEntity>(native)->erase(),"remove failed generated axis label");
-   productRecordPlanAxisFailure(*job,job->layoutSourcePanels.at(role.panel),{},role.handle,error.what());
-   return true;
+ if(job&&job->currentPlanRules&&!c.expectedAxes.empty()){productFreezeExpectedAxisEnds(db,c,layout);productBuildExpectedPlanAxes(*job,db,c,axisLayer,layout);}
+ else for(auto& role:c.axes){
+  const auto previous=role.handle;const auto native=id(previous);const auto original=chainGrips(native);
+  const auto trial=productCloneAxisLabel(db,native);auto candidate=role;candidate.handle=axisHandle(trial);
+  if(c.keepNegativeAxisEnd.count(previous))c.keepNegativeAxisEnd[candidate.handle]=c.keepNegativeAxisEnd.at(previous);
+  try{
+   fitAxis(candidate);
+   productStatus(editObject<AcDbEntity>(native)->erase(),"replace old axis only after complete candidate succeeds");
+   c.axisOriginalGrips[previous]=original;c.axisOriginalHandles[candidate.handle]=previous;role=candidate;
+  }catch(const std::exception& error){
+   if(!trial.isErased())productStatus(editObject<AcDbEntity>(trial)->erase(),"discard failed axis candidate only");
+   c.axisLayoutFailures[previous]=error.what();
+   if(job){const auto source=static_cast<std::size_t>(role.panel)<job->layoutSourcePanels.size()?job->layoutSourcePanels[role.panel]:static_cast<std::size_t>(role.panel)+1;
+    productRecordPlanAxisFailure(*job,source,{},previous,std::string("kept previous axis after candidate failure: ")+error.what());}
   }
- }),c.axes.end());
+ }
  productTraceAxisLayout(job,{},"circle-arrangement-enter");
  productArrangeAxisCircles(db,c,axisLayer,layout,id,job);
+ if(job&&!c.expectedAxes.empty())productCommitExpectedPlanAxes(*job,db,c);
+ if(job&&!c.expectedAxes.empty()){productWriteExpectedPlanAxes(*job,c);productFreezeExpectedAxisEnds(db,c,layout);}
  productTraceAxisLayout(job,{},"circle-arrangement-returned");
  const std::array<double,4> offsets{layout.start,layout.third,layout.second,layout.total};
  for(const auto& r:c.frames){require(r.panel>=0&&r.panel<c.panels.size()&&r.row>=0&&r.row<4,"frame role");auto e=editObject<AcDbPolyline>(id(r.handle));require(e->isClosed()&&e->numVerts()==4,"four closed plan projection frames");const auto corners=productPlanFrameCorners(productPlacementBounds(c,r.panel),offsets[r.row]);for(unsigned k=0;k<corners.size();++k)productStatus(e->setPointAt(k,corners[k]),"plan frame location");productStatus(e->setLayer(defLayer),"nonplot grey frame");productStatus(e->setColorIndex(256),"frame ByLayer");e->setPlinegen(Adesk::kTrue);}

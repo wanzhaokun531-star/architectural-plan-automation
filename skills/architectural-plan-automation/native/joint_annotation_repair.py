@@ -234,7 +234,7 @@ def local_paper_candidates(report, frames, issues, geometry):
     return result
 
 
-def publish(source_report, old_receipt, report, output, result):
+def publish(source_report, old_receipt, report, output, result, *, workspace=None):
     digest, cleared, remaining, notes = result
     old_checklist = Path(old_receipt["blockingChecklist"])
     closed = {f"{handle}/{part+1}" for _, handle, part, _ in cleared} | set(notes)
@@ -253,22 +253,31 @@ def publish(source_report, old_receipt, report, output, result):
              all(row["DWG SHA-256"] == old_receipt["outputSHA256"] for row in prior_rows)),
             "原正式版遗留清单与 DWG 不一致")
     rows = [row for row in prior_rows if row["源对象"] not in closed]
-    output.parent.mkdir(parents=True, exist_ok=True)
-    checklist = output.with_name(output.stem+"_遗留清单.csv")
-    require(not output.exists() and not checklist.exists(), "局部正式交付路径须为新文件")
-    if rows:
-        with checklist.open("x", encoding="utf-8-sig", newline="") as stream:
-            writer = csv.DictWriter(stream, fieldnames=fields)
-            writer.writeheader()
-            writer.writerows({**row, "DWG SHA-256": digest} for row in rows)
-    with output.open("xb") as stream:
-        stream.write((report / "candidate.dwg").read_bytes())
-    require(file_hash(output) == digest, "局部正式版发布指纹变化")
-    write_json(report / "joint-delivery-verification.json", {
-        "priorJob": str(source_report), "sourceSHA256": old_receipt["outputSHA256"], "outputSHA256": digest,
-        "cleared": sorted(cleared), "remaining": sorted(remaining), "notes": notes, "residuals": len(rows),
-        "checklistSHA256": file_hash(checklist) if rows else "",
-    })
+    # Local collision repair is an internal candidate. Every public delivery
+    # now goes through the same native wall reconciliation and final plotting.
+    from template_revision import execute_template_revision, publish_template_result
+    skill = Path(__file__).resolve().parents[1]
+    workspace = workspace or workspace_root(None, Path.cwd(), skill)
+    drawing = report / 'candidate.dwg'
+    pages = read(source_report / 'formal-layout-print-review.json')['pages']
+    sheets = report / 'joint-final-sheets.tsv'
+    sheets.write_text('PLANJOINT1 ' + digest + '\n' + ''.join(
+        f"SHEET {i} " + json.dumps(page['layout'], ensure_ascii=False) + '\n'
+        for i, page in enumerate(pages, 1)) + 'END\n', encoding='utf-8')
+    checklist = report / 'joint-prior-unresolved.csv'
+    with checklist.open('w', encoding='utf-8-sig', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows({**row, 'DWG SHA-256': digest} for row in rows)
+    finalized = execute_template_revision(drawing, sheets, report.parent / 'final-wall-and-template',
+                                           workspace, skill)
+    publish_template_result(finalized, output, prior_checklist=checklist)
+    write_json(report / 'joint-delivery-verification.json', {
+        'priorJob': str(source_report), 'sourceSHA256': old_receipt['outputSHA256'],
+        'outputSHA256': finalized['sha256'], 'wallHeightProof': finalized['wallHeightProof'],
+        'cleared': sorted(cleared), 'remaining': sorted(remaining), 'notes': notes,
+        'finalReport': finalized['report'], 'unresolved': finalized['unresolved']})
+
 
 
 def main():
@@ -319,7 +328,7 @@ def main():
                 failures.append({'attempt':number, 'error':str(exc)})
                 continue
             write_json(work/'paper-slot-attempts.json', failures)
-            publish(previous,old_receipt,attempt/'job',args.output.resolve(),result)
+            publish(previous,old_receipt,attempt/'job',args.output.resolve(),result,workspace=workspace)
             print(args.output.resolve())
             return
     for number in range(1, 4):
@@ -333,7 +342,7 @@ def main():
         break
     report = attempt / "job"
     result = verify_candidate(report, frames, issues, prior_report=previous)
-    publish(previous, old_receipt, report, args.output.resolve(), result)
+    publish(previous, old_receipt, report, args.output.resolve(), result, workspace=workspace)
     print(args.output.resolve())
 
 

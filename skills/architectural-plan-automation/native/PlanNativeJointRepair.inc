@@ -30,7 +30,7 @@ struct JointPaperJob {
  std::map<std::string,int> observed;
 };
 
-JointPaperJob readJointPaperJob(const fs::path& source,const fs::path& request,const fs::path& target,const fs::path& report){
+JointPaperJob readJointPaperJob(const fs::path& source,const fs::path& request,const fs::path& target,const fs::path& report,bool allowNoSheets=false){
  std::ifstream in(request);
  std::string tag,digest;
  require(bool(in>>tag>>digest)&&tag=="PLANJOINT1"&&digest==sha(source),"joint annotation plan must match the exact DWG");
@@ -79,7 +79,7 @@ JointPaperJob readJointPaperJob(const fs::path& source,const fs::path& request,c
    require(job.observed.emplace(handle,panel).second,"unique collision object");
   }else throw std::runtime_error("unknown joint annotation action");
  }
- require(tag=="END"&&!(in>>tag)&&!job.sheets.empty()&&job.sheets.size()<=12&&
+ require(tag=="END"&&!(in>>tag)&&(allowNoSheets||!job.sheets.empty())&&job.sheets.size()<=12&&
    job.chains.size()+job.notes.size()<=32,"complete bounded joint annotation plan");
  for(const auto& [handle,note]:job.notes)
   require(note.shift.length()<=1200||note.leader.has_value(),"relocated source note requires a leader back to its source area");

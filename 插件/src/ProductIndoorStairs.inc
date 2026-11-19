@@ -196,6 +196,7 @@ std::optional<double> productStairVisibleLength(AcDbObjectId id) {
 
 void productStairDimension(AcDbDatabase& db,AcDbDatabase* material,ProductStairRow& row,
  const AcGePoint3d& a,const AcGePoint3d& b,double side,double unit,double scale,const ProductJob& job) {
+ if(job.currentPlanRules)return;
  const auto paper=job.ruleCatalog?job.ruleCatalog->stairExtensionPaperMM:std::optional<double>{5.5};
  if(!material||!paper||std::abs(scale-100.)>1e-8)return;
  const auto expectedVisible=*paper*scale;

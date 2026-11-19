@@ -1363,16 +1363,17 @@ bool productVerifyExistingRoofAxis(AcDbDatabase& db,const ProductPlanRoof::Exist
    proof.axisFolds[{mark.label,mark.side}]=mark.fold;
    const auto vertices=productFoldPoints(db,proof,mark.label,mark.side);
    const auto normal=[&](const auto& point){return productAxisNormal(point,vertical);};
-   connected=vertices.size()==3&&vertices.front().distanceTo(outer)<=eps&&vertices.back().distanceTo(lead)<=eps&&
-    std::abs(productAxisStation(vertices[1],vertical)-station)<=eps&&
-    sign*(normal(vertices[1])-normal(vertices[0]))>eps&&sign*(normal(vertices[2])-normal(vertices[1]))>eps&&
-    std::abs(productAxisStation(lead,vertical)-productAxisStation(centre,vertical))<=eps;
+   connected=vertices.size()==2&&vertices.front().distanceTo(outer)<=eps&&vertices.back().distanceTo(lead)<=eps&&
+    std::abs(productAxisStation(lead,vertical)-station)<=eps&&sign*(normal(lead)-normal(outer))>eps&&
+    std::abs(std::abs(normal(centre)-normal(lead))-std::abs(productAxisStation(centre,vertical)-station))<=eps;
   }
   if(sign*(productAxisNormal(centre,vertical)-productAxisNormal(lead,vertical))<=eps||
      sign*(productAxisNormal(lead,vertical)-side.datum)<-eps||!connected)continue;
   const auto circle=std::find_if(ink.circles.begin(),ink.circles.end(),[&](const auto& item){return item.centre.distanceTo(centre)<=eps;});
   if(circle==ink.circles.end())continue;
-  const auto edge=productAxisAtNormal(centre,vertical,productAxisNormal(centre,vertical)-sign*circle->radius);
+  if(!mark.fold.empty()&&productAxisExternalStrokeCount(ink,centre,circle->radius)!=1)continue;
+  if(lead.distanceTo(centre)<=circle->radius+eps)continue;
+  const auto edge=centre+(lead-centre).normal()*circle->radius;
   if(std::any_of(ink.lines.begin(),ink.lines.end(),[&](const auto& stroke){
    return (stroke.first.distanceTo(lead)<=eps&&stroke.second.distanceTo(edge)<=eps)||
           (stroke.second.distanceTo(lead)<=eps&&stroke.first.distanceTo(edge)<=eps);
@@ -1634,7 +1635,7 @@ void productVerifyRoof(ProductJob& job,AcDbDatabase& db,const ProductPlanRoof& p
   }
   std::ostringstream row;
   row<<std::setprecision(17)<<"{\"panel\":"<<plan.panel<<",\"side\":"<<side.side
-     <<",\"eave\":\""<<side.eave<<"\",\"source\":\""<<side.source<<"\",\"sourceChains\":[\""
+     <<",\"datum\":"<<side.datum<<",\"eave\":\""<<side.eave<<"\",\"source\":\""<<side.source<<"\",\"sourceChains\":[\""
      <<side.sourceChains[0]<<"\",\""<<side.sourceChains[1]<<"\"],\"stations\":[";
   for(std::size_t i=0;i<side.stations.size();++i){if(i)row<<',';row<<side.stations[i];}
   row<<"],\"dimensions\":[\""<<side.dimensions[0]<<"\",\""<<side.dimensions[1]

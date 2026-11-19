@@ -1,6 +1,6 @@
 {
   "schema": "bcp.plan-text-indoor-location-rules.v1",
-  "effectiveDate": "2026-11-18",
+  "effectiveDate": "2026-11-19",
   "scope": "后续所有建筑平面项目；以各项目实际源构件和出图比例适配",
   "authority": "用户2026-11-05确认六项修订并要求计入通用规则；2026-11-06用户确认120毫米室内平开门墙垛示意，并要求写入平面尺寸规则；2026-11-13用户确认标准门垛及分墙厚的非标准门垛归整目标。",
   "implementationStatus": "百塘v10保留v9六项，另将三处旧楼梯/电梯线文尺寸替换真天正尺寸，实际净尺寸1103/1875/2500；PUB_DIM25及室内样式，保存重开及局部核图通过。正式插件接入另验。",
@@ -197,12 +197,12 @@
     "typographyRule": "L08",
     "mandatoryTypography": true,
     "textStyle": "_TCH_WINDOW",
-    "paperHeightMM": 4.0,
+    "paperHeightMM": 3.0,
     "fontFile": "simplex.shx",
     "bigFontFile": "gbcbig.shx",
     "widthFactor": 0.65,
-    "fixedHeight": 4.0,
+    "fixedHeight": 3.0,
     "layer": "A-WINDOW-TEXT",
-    "source": "user-confirmed-2026-11-18"
+    "source": "user-confirmed-2026-11-19"
   }
 }

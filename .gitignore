@@ -11,6 +11,17 @@ __pycache__/
 *.dwl
 *.dwl2
 /host/
+**/host/location.json
+**/host/machine.json
+**/host/worker-config.json
+**/local-fonts/
+**/runs/
+**/staging/
+.env
+.env.*
+**/auth.json
+**/credentials.json
+**/secrets.json
 
 # Current compiled Skill runtime
 !skills/architectural-plan-automation/tools/PlanNative.arx

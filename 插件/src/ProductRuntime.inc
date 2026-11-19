@@ -12,6 +12,7 @@ struct ConfirmedPlanRoom {
  double area;
 };
 struct ProductPlanPostcheckTextEdit;
+struct ProductPlanTableGroup {std::string kind;std::vector<std::string> members;std::size_t view{};bool assigned{};};
 struct ProductJob {
  ULONGLONG startedAtTick{GetTickCount64()};
  ProductPhase phase=ProductPhase::OpenWork;
@@ -25,10 +26,18 @@ struct ProductJob {
  double planDimensionScale{100},planDimensionUnitMM{1};
  double unifiedScale{100},unifiedUnitMM{1};
  bool unifiedPlan{};
+ bool currentPlanRules{};
+ std::set<std::string> protectedFurnitureMembers;
+ std::map<std::string,std::string> planOmissions;
+ std::set<std::string> interiorLooseLabels;
+ std::map<std::string,std::wstring> retainedAreaNames;
  bool allowRoomTextConversion{};
  std::map<std::wstring,unsigned> planPublicCommands;
  fs::path unifiedEntranceSteps,unifiedIndoorStairs,unifiedDetailConfirmations,unifiedFurnitureComponents,unifiedRoofPlan;
  fs::path unifiedFloorLevels;
+ fs::path unifiedDesignSources;
+ std::map<std::string,std::wstring> planAdoptedOpeningNumbers;
+ std::set<std::string> planBoundaryWalls;
  std::vector<ConfirmedPlanRoom> confirmedRooms;
  fs::path unifiedNewDimensions;
  fs::path unifiedPanelScope;
@@ -41,14 +50,15 @@ struct ProductJob {
  std::wstring planPostcheckMode{L"audit"};
  std::function<std::shared_ptr<const ProductPlanPostcheckTextEdit>(
    AcDbDatabase&,const ProductJob&,std::size_t,const std::string&)> planPostcheckTextRepair;
- std::function<void(AcDbDatabase&,const fs::path&)> planFinalDimensionCheck;
  AcDbObjectId approvedOpeningTextStyle;
 #endif
+ std::function<void(AcDbDatabase&,const fs::path&)> planFinalDimensionCheck;
  std::set<bcpproduct::PlanSourceInventory::Key> planPreservedDesign;
  std::set<std::string> planPostcheckKnownDimensions;
  std::string planBlockingChecklist;
  fs::path planDeliveredChecklist;
  std::vector<std::array<double,4>> planPrintWindows;
+ std::vector<ProductPlanTableGroup> planTables;
  std::size_t planPrintedPages{};
  bool planPrintGeometryChecked{};
  std::size_t planPrintDefects{};
@@ -241,7 +251,7 @@ std::map<std::wstring,std::wstring> productAssetSettings(const fs::path& root){
  for(const auto& pair:std::vector<std::pair<std::wstring,std::wstring>>{{L"cache",L"scheme.tsv"},{L"reference",L"reference.dwg"},{L"axisBank",L"axes.dwg"},{L"axisIndex",L"axes.tsv"},{L"layerStandard",L"layers.dwg"},{L"axisDecisions",L"axis-exclusions.tsv"},{L"interiorDimensionDecisions",L"interior.tsv"},{L"openingPrefixes",L"prefixes.tsv"}}){const auto path=root/pair.second;settings[pair.first]=path.wstring();const auto h=sha(path);settings[pair.first+L"Hash"]={h.begin(),h.end()};}return settings;
 }
 void productDependencies(){
- resbuf version{},secure{};require(acedGetVar(L"ACADVER",&version)==RTNORM&&version.restype==RTSTR,"AutoCAD version unavailable");const std::wstring ver=version.resval.rstring?version.resval.rstring:L"";if(version.resval.rstring)acutDelString(version.resval.rstring);require(ver.rfind(L"23.1",0)==0,"this release requires AutoCAD2020 R23.1");require(acedGetVar(L"SECURELOAD",&secure)==RTNORM&&secure.restype==RTSHORT&&secure.resval.rint==1,"keep SECURELOAD=1; use trusted installation paths");
+ resbuf version{},secure{};require(acedGetVar(L"ACADVER",&version)==RTNORM&&version.restype==RTSTR,"AutoCAD version unavailable");const std::wstring ver=version.resval.rstring?version.resval.rstring:L"";if(version.resval.rstring)acutDelString(version.resval.rstring);require(ver.rfind(L"23.1",0)==0,"this release requires AutoCAD2020 R23.1");require(acedGetVar(L"SECURELOAD",&secure)==RTNORM&&secure.restype==RTSHORT&&(secure.resval.rint==1||secure.resval.rint==2),"use trusted installation paths with secure loading enabled");
  resbuf sdi{};require(acedGetVar(L"SDI",&sdi)==RTNORM&&sdi.restype==RTSHORT&&sdi.resval.rint==0,"this release requires SDI=0 (multiple documents); no setting is changed automatically");
  const fs::path tangent=productSetting(L"tangentDirectory",L"C:\\Tangent\\TArchT20V8\\SYS23x64");
  const auto load=[&](const wchar_t* name){const auto path=tangent/name;wchar_t trusted[32768]{};require(acedFindTrustedFile(path.c_str(),trusted,32768)==RTNORM&&fs::weakly_canonical(trusted)==fs::weakly_canonical(path),"Tianzheng component is not trusted; configure AutoCAD trusted paths manually");require(acrxDynamicLinker->loadModule(path.c_str(),false,false),"installed Tianzheng component cannot be loaded");};
@@ -317,7 +327,7 @@ void productStart(const fs::path& source,const fs::path& output,const fs::path& 
  // this project profile is matched by actual public geometry, not by byte identity alone.
  {productDiagnostic.source=source;productDiagnostic.output=output;productDiagnostic.stage=L"输入建筑校核";AcDbDatabase input(false,true);status(input.readDwgFile(source.c_str(),AcDbDatabase::kForReadAndAllShare,false),"read input for project preflight");status(input.closeInput(true),"input preflight read complete");const auto actual=productInventory(input);productDiagnostic.input=productInventoryJson(actual);/* Legacy drafting presets are optional optimizations, never an input admission schema. Missing or nonmatching presets use the same geometry-driven entry. */if(!unified&&productSetting(L"useVerifiedProjectPreset",L"0")==L"1"&&fs::exists(profile/L"scheme.tsv")&&fs::exists(profile/L"resources.tsv")){try{settings=productAssetSettings(profile);plan=productPlan(settings);three=productMatchesThree(input,profile);dynamic=!three&&productMatchesTwoPlan(input,profile,actual.counts.objects);if(three||dynamic)generic=false;else{plan.sourceObjectCount=actual.counts.objects;verify(input,plan);generic=false;}}catch(const std::exception&){three=dynamic=false;generic=true;settings.clear();}}if(generic)require(actual.counts.walls>0,u8"E_NATIVE_CONTENT：未读到可处理的天正墙体；请检查所需构件组件及输入类型。新项目不按案例对象数量拒绝。");else if(three||dynamic)require(actual.proxies==0&&actual.generatedCarriers==0,"configured source contains proxies or generated axes");}
  if(dynamic&&!productBatch){productStartBatch(source,output,testReceipt);return;}
- auto job=std::make_unique<ProductJob>();job->threeInput=three;job->dynamicInput=dynamic;job->genericInput=generic;job->extendedInput=!dynamic&&plan.sourceObjectCount!=213;if(!dynamic)job->currentPlan=plan;job->panelIndex=productRequestedPanel;job->source=fs::weakly_canonical(source);job->output=fs::weakly_canonical(output);job->sourceHash=sha(source);job->profile=profile;job->unifiedPlan=unified;job->unifiedScale=scale;job->unifiedUnitMM=unit;job->unifiedEntranceSteps=entrance;job->unifiedIndoorStairs=stairs;productLoadRuleCatalog(*job,unified);job->testReceipt=testReceipt;job->validation=!testReceipt.empty();const auto token=std::to_wstring(GetCurrentProcessId())+L"_"+std::to_wstring(GetTickCount64());job->root=report.empty()?output.parent_path()/(output.stem().wstring()+L"_生成记录_"+token):report;if(report.empty())require(fs::create_directory(job->root),"unique generation directory");job->work=job->root/L"过程";for(const auto& stage:{L"foundation",L"join",L"caption"})require(fs::create_directories(job->work/stage),"create native product stage");job->sourceCopy=job->work/L"foundation/input.dwg";fs::copy_file(source,job->sourceCopy);require(sha(job->sourceCopy)==job->sourceHash,"input copy changed");job->generationConfig=job->work/L"foundation/generation.ini";settings[L"receiptDirectory"]=(job->work/L"foundation").wstring();productIni(job->generationConfig,settings);
+ auto job=std::make_unique<ProductJob>();job->threeInput=three;job->dynamicInput=dynamic;job->genericInput=generic;job->extendedInput=!dynamic&&plan.sourceObjectCount!=213;if(!dynamic)job->currentPlan=plan;job->panelIndex=productRequestedPanel;job->source=fs::weakly_canonical(source);job->output=fs::weakly_canonical(output);job->sourceHash=sha(source);job->profile=profile;job->unifiedPlan=unified;job->currentPlanRules=unified;job->unifiedScale=scale;job->unifiedUnitMM=unit;job->unifiedEntranceSteps=entrance;job->unifiedIndoorStairs=stairs;productLoadRuleCatalog(*job,unified);job->testReceipt=testReceipt;job->validation=!testReceipt.empty();const auto token=std::to_wstring(GetCurrentProcessId())+L"_"+std::to_wstring(GetTickCount64());job->root=report.empty()?output.parent_path()/(output.stem().wstring()+L"_生成记录_"+token):report;if(report.empty())require(fs::create_directory(job->root),"unique generation directory");job->work=job->root/L"过程";for(const auto& stage:{L"foundation",L"join",L"caption"})require(fs::create_directories(job->work/stage),"create native product stage");job->sourceCopy=job->work/L"foundation/input.dwg";fs::copy_file(source,job->sourceCopy);require(sha(job->sourceCopy)==job->sourceHash,"input copy changed");job->generationConfig=job->work/L"foundation/generation.ini";settings[L"receiptDirectory"]=(job->work/L"foundation").wstring();productIni(job->generationConfig,settings);
  job->planSourceDbmod=productDiagnostic.dbmod;
  job->unifiedDetailConfirmations=detailConfirmations;
  job->unifiedFurnitureComponents=furnitureComponents;

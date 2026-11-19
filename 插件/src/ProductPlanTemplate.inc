@@ -2,6 +2,7 @@
 struct ProductTemplateObject {
  std::string source,kind,donor,issue;
  std::wstring axisNumber;
+ std::vector<std::wstring> axisNumbers;
  std::vector<std::string> targets;
  std::vector<AcGePoint3d> stations,axisGrips;
  std::vector<double> values;
@@ -34,20 +35,23 @@ ProductTemplateRun productApplyNativeTemplate(ProductJob& job,AcDbDatabase& db){
  ProductTemplateRun run;run.templateHash=sha(path);
  require(run.templateHash=="3C6B19FAE21C1C5729D0E0000104DCADD9BA7A81560A31D74F0D576B2BD0DD2F", "approved template fingerprint differs");
  require(std::abs(job.unifiedScale-100.)<1e-8&&std::abs(job.unifiedUnitMM-1.)<1e-8,"template native adaptation currently requires millimetres at 1:100");
+ productMigrateTemplateAxisFolds(job,db);
+ for(const auto& issue:productRepairStoredAxisEnds(job,db)){ProductTemplateObject item;item.kind="axis-expected";item.source=issue.first;item.issue=issue.second;run.objects.push_back(std::move(item));}
  const auto sourceRows=productTypographyInventory(db);
  const auto sourceRoots=modelTypes(db);
  AcDbDatabase donor(false,true);status(donor.readDwgFile(path.c_str(),AcDbDatabase::kForReadAndAllShare,false),"read native template");status(donor.closeInput(true),"close template input");
  // Normalize a memory-only donor copy. Preserve the signed template and native geometry.
  {
   Working donorWork(&donor);
-  const auto font=productRestoreTypographyFont(donor,{L"_TCH_DIM",L"simplex.shx",L"gbcbig.shx",1.,0.,0},0);
+  const auto dimensionPolicy=productCurrentTypographyPolicy(job).at("_TCH_DIM");
+  const auto font=productRestoreTypographyFont(donor,productCurrentFont(dimensionPolicy),dimensionPolicy.fixedHeight);
   for(const auto& [name,id]:productPlanDimensionTableStyles(donor,job.dimensionStylePolicy.name)){
    require(!id.isNull(),"template dimension style absent");
    auto style=editObject<AcDbDimStyleTableRecord>(id);
    const bool base=name==job.dimensionStylePolicy.name;
    const auto factor=style->dimscale();require(factor>0,"positive native dimension text scale");
    status(style->setDimtxsty(font),"bind mandatory template dimension text style");
-   status(style->setDimtxt(base?2.8:280./factor),"restore mandatory nominal or effective dimension height");
+   status(style->setDimtxt(base?dimensionPolicy.paperHeight:dimensionPolicy.paperHeight*job.unifiedScale/job.unifiedUnitMM/factor),"restore mandatory nominal or effective dimension height");
   }
  }
  {AcDbObjectIdArray styles;const auto table=open<AcDbDimStyleTable>(donor.dimStyleTableId());
@@ -112,38 +116,44 @@ ProductTemplateRun productApplyNativeTemplate(ProductJob& job,AcDbDatabase& db){
   }catch(const std::exception& error){item.issue=error.what();item.targets.clear();for(auto id:wholeModelIds(db))if(!before.count(id))editObject<AcDbEntity>(id)->erase();}
   run.objects.push_back(std::move(item));
  }
+ const auto sourceAxisFolds=productFindAxisFolds(db);
+ auto storedAxisEnds=productReadAxisExpectedEnds(db);
+ ProductAxisTemplateBank axisBank(path);
  for(const auto& [h,type]:sourceRoots)if(type==L"TDbAxisLabelSet"){
   ProductTemplateObject item;item.source=ascii(h);item.kind="axis";const auto before=wholeModelIds(db);
   try{
    const auto original=find(db,item.source);auto entity=open<AcDbEntity>(original);if(!productPlanDimensionVisible(*entity))continue;
    std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*entity,leaves);item.axisGrips=chainGrips(original);
    const auto& g=item.axisGrips;require((g.size()==4||g.size()==8)&&!leaves.empty(),"unrecognized native axis shape");
-   require(std::all_of(leaves.begin(),leaves.end(),[&](const auto& x){return x.text==leaves.front().text;}),"axis end numbers differ");
-   item.axisNumber=leaves.front().text;auto material=axes.find(item.axisNumber);
-   if(material==axes.end())material=axes.find(L"A");require(material!=axes.end(),"template native axis donor absent");
-   item.donor=material->second.second;entity.reset();
+   for(std::size_t k=0;k<g.size();k+=4)item.axisNumbers.push_back(productAxisCaptionAt(original,g[k+1]));
+   item.axisNumber=item.axisNumbers.front();item.donor=axisBank.donorHandle(item.axisNumber);entity.reset();
+   std::vector<std::tuple<std::string,int,AcDbObjectId>> rebound;
    for(std::size_t k=0;k<g.size();k+=4){
-    auto id=productCloneAxisLabel(db,material->second.first);auto pg=chainGrips(id);
-    if(material->first!=item.axisNumber){
-     status(editObject<AcDbEntity>(id)->setVisibility(AcDb::kVisible),"show template axis for public renumber");
-     ads_name selected{};status(acdbGetAdsName(selected,id),"select exact cloned axis");wholeStagingView({pg[1]});
-     require(acedCommandS(RTSTR,L"TReAxisNo",RTENAME,selected,RTSTR,item.axisNumber.c_str(),RTSTR,L"",RTNONE)==RTNORM,"renumber actual template axis");
-     std::vector<ProductRoomLeaf> actual;productRoomLeaves(*open<AcDbEntity>(id),actual);
-     require(actual.size()==1&&actual.front().text==item.axisNumber,"native template axis business number differs");
-     const auto numbered=chainGrips(id);require(numbered.size()==pg.size()&&numbered[0].distanceTo(pg[0])<.01&&numbered[1].distanceTo(pg[1])<.01,"renumber moved template axis geometry");
+    const auto id=axisBank.create(db,item.axisNumbers[k/4],g[k],g[k+1],productPlanLayer(db,L"A-AXIS",3),item.axisNumber);
+    item.targets.push_back(axisHandle(id));
+    for(const auto& [key,foldHandle]:sourceAxisFolds.axisFolds)if(key.first==item.source){
+     const auto points=productFoldPoints(db,sourceAxisFolds,item.source,key.second);
+     if(points.back().distanceTo(g[k])>.01)continue;
+     require(points.size()==2,"obsolete double-bend axis route requires joint radial relayout; previous legal object retained");
+     const bool vertical=key.second>=2;const auto delta=g[k+1]-g[k];
+     require(std::abs(std::abs(delta.x)-std::abs(delta.y))<.01&&
+       std::abs(productAxisStation(points.front(),vertical)-productAxisStation(g[k],vertical))<.01,
+       "axis connector is not the required single radial bend");
+     const auto next=productAppendAxisFold(db,id,productPlanLayer(db,L"A-AXIS",3),key.second,points);
+     rebound.emplace_back(foldHandle,key.second,next);
     }
-    const auto a=pg[0]-pg[1],b=g[k]-g[k+1];
-    const auto angle=std::atan2(b.y,b.x)-std::atan2(a.y,a.x);
-    {auto e=editObject<AcDbEntity>(id);status(e->transformBy(AcGeMatrix3d::rotation(angle,AcGeVector3d::kZAxis,pg[1])),"orient template native axis");}
-    pg=chainGrips(id);{auto e=editObject<AcDbEntity>(id);status(e->transformBy(AcGeMatrix3d::translation(g[k+1]-pg[1])),"position template axis circle");status(e->setVisibility(AcDb::kVisible),"show template axis");}
-    pg=chainGrips(id);if(pg[0].distanceTo(g[k])>.01){const auto stretched=productAxisLabelWithTail(db,id,g[k]);status(editObject<AcDbEntity>(id)->erase(),"retire unstretched axis trial");id=stretched;}
-    pg=chainGrips(id);require(pg.size()==4&&pg[0].distanceTo(g[k])<.01&&pg[1].distanceTo(g[k+1])<.01,"template axis moved true tail or circle");
-    status(editObject<AcDbEntity>(id)->setLayer(productPlanLayer(db,L"A-AXIS",3)),"template axis role layer");item.targets.push_back(axisHandle(id));
    }
-   status(editObject<AcDbEntity>(original)->erase(),"retire old axis after template replacement");
+   // Rebind associations only when every end and its connector is available.
+   std::vector<AcDbObjectId> previous{original};
+   for(const auto& link:rebound)previous.push_back(find(db,std::get<0>(link)));
+   productRetireAxisGroup(db,previous);
+   for(auto& expected:storedAxisEnds)if(expected.handle==item.source){
+    for(std::size_t k=0;k<g.size();k+=4)if(expected.centre.distanceTo(g[k+1])<.01)expected.handle=item.targets[k/4];
+   }
   }catch(const std::exception& error){item.issue=error.what();item.targets.clear();for(auto id:wholeModelIds(db))if(!before.count(id))editObject<AcDbEntity>(id)->erase();}
   run.objects.push_back(std::move(item));
  }
+ if(!storedAxisEnds.empty())productSaveAxisExpectedEnds(db,storedAxisEnds);
  for(const auto id:materials)status(editObject<AcDbEntity>(id)->erase(),"retire template construction material");
  // Old invisible construction copies are not reusable template resources.
  for(const auto& row:sourceRows)if(!row.visible&&row.type==L"TDbDimension2"&&row.handle==row.root){

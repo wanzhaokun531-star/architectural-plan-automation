@@ -1,5 +1,5 @@
 {
-  "moduleSHA256": "508A94839F2F7E106292D0584D479B61F9DF3843D380B69854FD4A5770428DD1",
+  "moduleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
   "controlFrameRevision": {
     "moduleSHA256": "B3402DB3B731B18EF0CB3A64BEAA77CC66332D026C5D1D54F050041872EC71C7",
     "project": "邵府",
@@ -13,7 +13,14 @@
       0,
       0
     ],
-    "existingFrameHandlesPreservedInTemplateFinalizerRegression": 4
+    "existingFrameHandlesPreservedInTemplateFinalizerRegression": 4,
+    "publicationSummary": {
+      "contract": "plan.public-runtime-metadata.v1",
+      "localEvidencePreserved": true,
+      "localEvidenceCanonicalSHA256": "E714077F1268ECA055612F3F6F3A059A4D22EC9A5964B9351701CA8A8F744A07",
+      "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+      "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+    }
   },
   "templateSHA256": "3C6B19FAE21C1C5729D0E0000104DCADD9BA7A81560A31D74F0D576B2BD0DD2F",
   "plotterResources": {
@@ -28,11 +35,12 @@
       "FY-XS-2026.9-A1.ctb": "C39413CAFAAE72004225159833AC18A7FA677E33EE70831AEA962130DCF7DBD7"
     }
   },
-  "scope": "既有平面的模板原生终核与同版整套实打",
+  "scope": "当前模块 EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC：本轮实际验证为贺府4幅完整generate入口及邵府2幅template-finalize入口，包含各自同版整套实打和独立墙高读回。revise/audit仅协议兼容及共同终核继承，本轮未单独实跑。",
   "limits": [
-    "墙柱洞口等原建筑位置按源平面保持",
-    "尚无A1、新方案从零生成全流程实跑",
-    "嵌套旧尺寸和不可安全改写的关联文字逐项登记"
+    "实证仅限当前模块SHA及本轮贺府、邵府的冻结源图；其他输入、A1及其他比例需另行实测。",
+    "compatible表示协议可用；revise/audit的nativeModeVerified=false，不代表独立模式已实跑。",
+    "流程完成与全规则通过分别登记；publication、同版遗留清单及coverageComplete保留实际结果，不能宣称所有规则或任意项目均通过。",
+    "受保护家具、共享定义及不可安全改写的关联对象不强改，未覆盖域与实际缺项明确列入清单。"
   ],
   "projects": [
     {
@@ -43,7 +51,6 @@
       "verifiedModuleSHA256": "E812E2D8DC18AE0E57655AB13178F6065F1EE4BA63377B92FD2750D218F76331",
       "dimensions": 93,
       "axisSets": 76,
-      "nativeAudit": "D:\\Codex\\建筑施工图自动化\\outputs\\PLAN_DRAW_模板原生适配_20261117\\he-entry-v21\\text-repair\\attempt-01\\job\\template-native-readback.json",
       "paperChecks": 135,
       "paperIssues": 0,
       "paperCoverageIssues": 0,
@@ -74,7 +81,15 @@
         ]
       ],
       "checklistCount": 36,
-      "nativeQuitExitCode": 0
+      "nativeQuitExitCode": 0,
+      "localDetailFieldsOmitted": 1,
+      "publicationSummary": {
+        "contract": "plan.public-runtime-metadata.v1",
+        "localEvidencePreserved": true,
+        "localEvidenceCanonicalSHA256": "3541E969DA8C698BEE6EDB1A16457AEC5B1E5EF4143C935204D9D9089F224D50",
+        "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+        "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+      }
     },
     {
       "project": "刘府",
@@ -84,7 +99,6 @@
       "verifiedModuleSHA256": "E812E2D8DC18AE0E57655AB13178F6065F1EE4BA63377B92FD2750D218F76331",
       "dimensions": 81,
       "axisSets": 59,
-      "nativeAudit": "D:\\Codex\\建筑施工图自动化\\outputs\\PLAN_DRAW_模板原生适配_20261117\\liu-entry-v21\\text-repair\\attempt-01\\job\\template-native-readback.json",
       "paperChecks": 73,
       "paperIssues": 0,
       "paperCoverageIssues": 0,
@@ -109,7 +123,15 @@
         ]
       ],
       "checklistCount": 64,
-      "nativeQuitExitCode": 0
+      "nativeQuitExitCode": 0,
+      "localDetailFieldsOmitted": 1,
+      "publicationSummary": {
+        "contract": "plan.public-runtime-metadata.v1",
+        "localEvidencePreserved": true,
+        "localEvidenceCanonicalSHA256": "C72C468F273C72D5F8466CA99537F9A4BD358B78C87C362420F4114C86C0DC60",
+        "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+        "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+      }
     }
   ],
   "mandatoryTypographyRevision": {
@@ -123,29 +145,525 @@
     "printedLayouts": 2,
     "defpointsFrames": 8,
     "testsPassed": 52,
-    "paperInkIssues": [],
-    "otherDrawingIssues": [
+    "paperInkIssues": {
+      "recordCount": 0,
+      "categories": {},
+      "booleanStatusCounts": {},
+      "exitCodeCounts": {},
+      "detailsOmitted": true,
+      "localEvidencePreserved": true,
+      "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+      "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+    },
+    "otherDrawingIssues": {
+      "recordCount": 4,
+      "categories": {
+        "axis": 1,
+        "printed-segment-coverage": 3
+      },
+      "booleanStatusCounts": {},
+      "exitCodeCounts": {},
+      "detailsOmitted": true,
+      "localEvidencePreserved": true,
+      "localEvidenceCanonicalSHA256": "EA60F4B3CF3F81EF7427EAF23E1018457B2DFC99C7A1544B20B9E10AA5D8FFD8",
+      "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+    },
+    "scope": "本轮三套文字恢复与复核通过；全图其他遗留仍按实际清单记录",
+    "publicationSummary": {
+      "contract": "plan.public-runtime-metadata.v1",
+      "localEvidencePreserved": true,
+      "localEvidenceCanonicalSHA256": "34F99BB646E8D33EABE0149586FF8EF3B4CE4815D0AEF1FD869023DB81F5A151",
+      "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+      "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+    }
+  },
+  "currentPlanFlows": {
+    "date": "2026-11-19",
+    "moduleSHA256": "77E08C620549917D0DA77A22D642FEEAED45B4F00C066EC6614E9FC491F8367D",
+    "project": "衡南江口贺府",
+    "modes": {
+      "generate": {
+        "sourceSHA256": "07E628BDF7ACA6C9FB14C8982A338673200C4C18513BE4E3F8D5CF820FEDFC66",
+        "outputSHA256": "F18C584491BCDB6F17CB17EB71D79D67C0CF1BAD2BE41B35DF3806E80D43148F",
+        "originalFurniture": 52,
+        "nestedFurniture": 8,
+        "verifiedExteriorChains": 35,
+        "verifiedRoofChains": 8,
+        "printedLayouts": [
+          {
+            "layout": "平面图幅-1",
+            "PDFSHA256": "100DDCF62B04F69ECDB041DAF806234FDA6CC77ECF7DE67EB9D768731069C4D9"
+          },
+          {
+            "layout": "平面图幅-2",
+            "PDFSHA256": "F6C33082D85BD6C64CBE802B2C261CBA48125FD3697924012EA0DA1DDD0BD102"
+          },
+          {
+            "layout": "平面图幅-3",
+            "PDFSHA256": "A2CB8AC65AD339584E3DB97C7BB330C8481A8DB8A24D20ADB42134B2FBBB0ECB"
+          },
+          {
+            "layout": "平面图幅-4",
+            "PDFSHA256": "462A77413A95D96DA0172437BD38807E04BE19A5A4CAA05AD719DC211DE083E3"
+          }
+        ],
+        "p06Items": 160
+      },
+      "revise": {
+        "sourceSHA256": "BCF61580B053F18DD38929AA911FF574F7BB3C0ADBF3DC1F886D05FD0CC2DD14",
+        "outputSHA256": "D0DAB48462D6FE64A90A41BFE2D3865ED94342DFE6C30E5A0A9F06247E8F6C6F",
+        "originalFurniture": 52,
+        "nestedFurniture": 8,
+        "verifiedExteriorChains": 35,
+        "verifiedRoofChains": 8,
+        "printedLayouts": [
+          {
+            "layout": "平面图幅-1",
+            "PDFSHA256": "D44A97DC60D3CE2FD6479683A72889AB4B93A69807C0AB9FDC8C0F6401268A79"
+          },
+          {
+            "layout": "平面图幅-2",
+            "PDFSHA256": "4D034C535A0B99FCF04B94DE0E0BE8344ADF662DA8D671A5EF7114068FA1467B"
+          },
+          {
+            "layout": "平面图幅-3",
+            "PDFSHA256": "D172BE144C6D29855431C0F87A832DC6409D703A22761DE664508CFCD0563D72"
+          },
+          {
+            "layout": "平面图幅-4",
+            "PDFSHA256": "36DD1625E4F06527B9A84032FE0ECBAB611511F9EBF09C55D4DFC02454FB634F"
+          }
+        ],
+        "p06Items": 64
+      }
+    },
+    "localDetailFieldsOmitted": 1
+  },
+  "wallHeightFinalization": {
+    "mandatory": true,
+    "schema": "plan.final-wall-heights.v1",
+    "entry": "native/wall_height_pipeline.py",
+    "nativeMode": "wall-height",
+    "generationKeepsSourceFloorWallAssociations": true,
+    "finalIndependentReadback": true,
+    "maximumLocalRepairs": 2,
+    "heightOnlyPDF": false,
+    "localDetailFieldsOmitted": 1
+  },
+  "runtimeScopeHistory": [
+    {
+      "moduleSHA256": "40B589F71B5BCDD6703ED64E3815E367F378554124C76A932B5A889B524171CF",
+      "scope": "方案整图生成、成图通用修订及模板终核。当前实图样本为衡南江口贺府，A2、毫米模型、1:100。",
+      "limits": [
+        "墙柱洞口等原建筑位置按源平面保持",
+        "A1 及其他比例仍需实际项目核验。",
+        "嵌套旧尺寸和不可安全改写的关联文字逐项登记"
+      ],
+      "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+      "recordedOn": "2026-11-19"
+    }
+  ],
+  "currentRuntimeConsistencyRevision": {
+    "date": "2026-11-19",
+    "moduleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+    "previousTopLevelModuleSHA256": "40B589F71B5BCDD6703ED64E3815E367F378554124C76A932B5A889B524171CF",
+    "allCatalogRulesImplemented": false,
+    "modes": {
+      "generate": {
+        "compatible": true,
+        "nativeModeVerified": true,
+        "sharedFinalizerVerified": true,
+        "scope": "贺府冻结源图，完整 unattended generate 入口；四页同版实打及独立墙高读回。"
+      },
+      "template-finalize": {
+        "compatible": true,
+        "nativeModeVerified": true,
+        "sharedFinalizerVerified": true,
+        "scope": "贺府四幅及邵府两幅的实际模板末端；每个项目未通过项仍按同版清单。"
+      },
+      "revise": {
+        "compatible": true,
+        "nativeModeVerified": false,
+        "sharedFinalizerVerified": true,
+        "scope": "协议适配及共同终核继承；本轮未单独实跑 revise 入口，不以共同末端代称各修订子模式全通过。"
+      },
+      "audit": {
+        "compatible": true,
+        "nativeModeVerified": false,
+        "sharedFinalizerVerified": true,
+        "scope": "既有只读协议适配；本轮验证为共同终核的独立读回，未单独重跑 audit 模式。"
+      }
+    },
+    "projects": [
       {
-        "object": "27C",
-        "role": "axis",
-        "reason": "axis end numbers differ"
+        "project": "贺府",
+        "summary": {
+          "sha256": "6A814F01D63459D8FE020AEDF146231F7D8CF59C504172F0F0E3196FBA8315C0",
+          "localDetailFieldsOmitted": 1
+        },
+        "sourceSHA256": "07E628BDF7ACA6C9FB14C8982A338673200C4C18513BE4E3F8D5CF820FEDFC66",
+        "sourcePreserved": true,
+        "outputSHA256": "A9ACC76717CDCD12CC0513F09853B4F05735C3B991CF1462446D90DEA25B1A04",
+        "wallHeightProof": {
+          "sha256": "CF6EBB9DE831C65001B162DFF51EF8439E1D6D339D1BE0AFFB0989376A848EE4",
+          "localDetailFieldsOmitted": 1
+        },
+        "wallCount": 106,
+        "wallUnresolved": {
+          "recordCount": 0,
+          "categories": {},
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "pages": [
+          {
+            "sha256": "79A3F94266DCFCD11390547CB30C04B184443EB6CAC4DE6BEF44D9D4D99B9189",
+            "hashMatches": true,
+            "panel": 1,
+            "layout": "平面图幅-1",
+            "status": "plotted",
+            "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+            "paperScale": 1,
+            "viewportScale": 0.01,
+            "device": "FY-XS-2026.9-PDF.pc3",
+            "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+          },
+          {
+            "sha256": "834141576E0DB2342763C33E5B1867175A70EAC8B08B536B460E621729ED7BC0",
+            "hashMatches": true,
+            "panel": 2,
+            "layout": "平面图幅-2",
+            "status": "plotted",
+            "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+            "paperScale": 1,
+            "viewportScale": 0.01,
+            "device": "FY-XS-2026.9-PDF.pc3",
+            "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+          },
+          {
+            "sha256": "2201D23B83E26424DE6602B6736674B08C071D67786A501FF102F42FE71B3308",
+            "hashMatches": true,
+            "panel": 3,
+            "layout": "平面图幅-3",
+            "status": "plotted",
+            "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+            "paperScale": 1,
+            "viewportScale": 0.01,
+            "device": "FY-XS-2026.9-PDF.pc3",
+            "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+          },
+          {
+            "sha256": "D82742A336AA68372497EA9181EAFFF5327E5AAD9A41CEECD1BF001A23FF3F09",
+            "hashMatches": true,
+            "panel": 4,
+            "layout": "平面图幅-4",
+            "status": "plotted",
+            "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+            "paperScale": 1,
+            "viewportScale": 0.01,
+            "device": "FY-XS-2026.9-PDF.pc3",
+            "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+          }
+        ],
+        "dimensions": 72,
+        "dimensionSegments": 245,
+        "axisEnds": 57,
+        "axisVerified": 57,
+        "axisEvidence": {
+          "sha256": "00C634C6248266A3F452E21D30469886F6E584C52C5C6A7A128E13426F6BB690",
+          "localDetailFieldsOmitted": 1
+        },
+        "axisBindingBasis": "Expected-end inventory is independently checked by the same-version template-native readback; it has no standalone DWG SHA field.",
+        "defpointsFrames": 16,
+        "typographyObjects": 935,
+        "typographyVerified": 932,
+        "typographyUnresolved": {
+          "recordCount": 9,
+          "categories": {
+            "linked-note": 9
+          },
+          "booleanStatusCounts": {
+            "annotative": {
+              "true": 0,
+              "false": 3
+            },
+            "verified": {
+              "true": 0,
+              "false": 3
+            },
+            "vertical": {
+              "true": 0,
+              "false": 3
+            }
+          },
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "38E2EF08BB8743D5C1FA1B123CA36309CD63CEAA53D00BC2E788DE70060DA5DC",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "unitGlyphRepairs": {
+          "recordCount": 2,
+          "categories": {},
+          "booleanStatusCounts": {
+            "equivalentUnitOnly": {
+              "true": 2,
+              "false": 0
+            },
+            "recordedProtectedParametersEqual": {
+              "true": 2,
+              "false": 0
+            },
+            "verified": {
+              "true": 2,
+              "false": 0
+            }
+          },
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "83359CB39B86FA6096E2699E14585E22FA0B01C44B4F7CE42DD863BF66EC56E4",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "publication": {
+          "contract": "plan.publication-quality.v1",
+          "outputSHA256": "A9ACC76717CDCD12CC0513F09853B4F05735C3B991CF1462446D90DEA25B1A04",
+          "processingCompleted": true,
+          "delivered": true,
+          "checkedRulesPassed": true,
+          "coverageComplete": false,
+          "allRulesPassed": false,
+          "unknownCoverageRules": [
+            "D23",
+            "S01"
+          ],
+          "unresolvedCount": 50,
+          "status": "delivered-with-exceptions",
+          "localDetailFieldsOmitted": 2
+        },
+        "unresolved": {
+          "recordCount": 19,
+          "categories": {
+            "linked-note": 9,
+            "omission-coverage-D23": 1,
+            "omission-coverage-S01": 1,
+            "title-paper-bounds": 8
+          },
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "F623C6E91E8C7EC84E72EDF87B0DDF95C6A72266DA726D4362CA4B3E377D59BC",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "ruleEvidence": {
+          "sha256": "3408F613EAD17A9614B8583933DF6A593FB7308E7C7E290EA65FBB06594C2F1F",
+          "localDetailFieldsOmitted": 1
+        },
+        "allCatalogRulesImplemented": false,
+        "closures": {
+          "recordCount": 4,
+          "categories": {},
+          "booleanStatusCounts": {
+            "nativeQuitConfirmed": {
+              "true": 4,
+              "false": 0
+            }
+          },
+          "exitCodeCounts": {
+            "0": 4
+          },
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "C0AA21291226336D8FB11F115663224230D819282BCC48B41D7AADD469FAA621",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "historicalAttempts": {
+          "recordCount": 0,
+          "categories": {},
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "localDetailFieldsOmitted": 2,
+        "publicationSummary": {
+          "contract": "plan.public-runtime-metadata.v1",
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "470B843002095A74A0F84E7F4C28DB855D77382311A3D47D25EF7FCDCF78EC3A",
+          "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+          "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+        }
       },
       {
-        "object": "833/1",
-        "role": "printed-segment-coverage",
-        "reason": "图幅2第1段短尺寸未进入实打字形核验；斜向或未支持表达需单独处理，不能计为已通过"
-      },
-      {
-        "object": "833/3",
-        "role": "printed-segment-coverage",
-        "reason": "图幅2第3段短尺寸未进入实打字形核验；斜向或未支持表达需单独处理，不能计为已通过"
-      },
-      {
-        "object": "843/9",
-        "role": "printed-segment-coverage",
-        "reason": "图幅2第9段短尺寸未进入实打字形核验；斜向或未支持表达需单独处理，不能计为已通过"
+        "project": "邵府",
+        "summary": {
+          "sha256": "47997D7458FC378583BE327908C712624FE8383B766BA3D224C60300FD4035C8",
+          "localDetailFieldsOmitted": 1
+        },
+        "sourceSHA256": "498056C4A2DAF6EF5744B755598C697B57B5D12F073CE4166A9CD32CC9117E3A",
+        "sourcePreserved": true,
+        "outputSHA256": "F2BA6443BD72D11E565A8A08A7359AFD59E293817C4CAC5B310DFF29B0B4755B",
+        "wallHeightProof": {
+          "sha256": "34052496D7111C3F2FF2D812F8964189EE275DDE3EC45EE9EBED1ABB9C8790DC",
+          "localDetailFieldsOmitted": 1
+        },
+        "wallCount": 55,
+        "wallUnresolved": {
+          "recordCount": 0,
+          "categories": {},
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "pages": [
+          {
+            "sha256": "C590600D7E7F89A669FE10F59CDCB8D3437529F13C3F679B83945C27E12DE58E",
+            "hashMatches": true,
+            "panel": 1,
+            "layout": "邵府一层",
+            "status": "plotted",
+            "paper": "ISO_full_bleed_A3_(420.00_x_297.00_MM)",
+            "paperScale": 1,
+            "viewportScale": 0.01,
+            "device": "FY-XS-2026.9-PDF.pc3",
+            "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+          },
+          {
+            "sha256": "AF681992D62656CB01CC24B3FB1A753927478A7E684E884D12EA9A3C5A502A62",
+            "hashMatches": true,
+            "panel": 2,
+            "layout": "邵府二层",
+            "status": "plotted",
+            "paper": "ISO_full_bleed_A3_(420.00_x_297.00_MM)",
+            "paperScale": 1,
+            "viewportScale": 0.01,
+            "device": "FY-XS-2026.9-PDF.pc3",
+            "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+          }
+        ],
+        "dimensions": 32,
+        "dimensionSegments": 99,
+        "axisEnds": 0,
+        "axisVerified": 0,
+        "axisEvidence": {
+          "sha256": "A7BDDE5CBB1C50E82F098B2B70FB649A945565878A5525729038D0825692B170",
+          "localDetailFieldsOmitted": 1
+        },
+        "axisBindingBasis": "Expected-end inventory is independently checked by the same-version template-native readback; it has no standalone DWG SHA field.",
+        "defpointsFrames": 8,
+        "typographyObjects": 50,
+        "typographyVerified": 50,
+        "typographyUnresolved": {
+          "recordCount": 0,
+          "categories": {},
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "unitGlyphRepairs": {
+          "recordCount": 0,
+          "categories": {},
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "publication": {
+          "contract": "plan.publication-quality.v1",
+          "outputSHA256": "F2BA6443BD72D11E565A8A08A7359AFD59E293817C4CAC5B310DFF29B0B4755B",
+          "processingCompleted": true,
+          "delivered": true,
+          "checkedRulesPassed": true,
+          "coverageComplete": false,
+          "allRulesPassed": false,
+          "unknownCoverageRules": [
+            "D23",
+            "S01",
+            "A28"
+          ],
+          "unresolvedCount": 9,
+          "status": "delivered-with-exceptions",
+          "localDetailFieldsOmitted": 2
+        },
+        "unresolved": {
+          "recordCount": 5,
+          "categories": {
+            "axis-expected": 1,
+            "omission-coverage-D23": 1,
+            "omission-coverage-S01": 1,
+            "title-paper-coverage": 2
+          },
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "2626E6B162FAA2CEA1061211D672718309376135D2B30FADFBDC9ED2D72573A5",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "ruleEvidence": {
+          "sha256": "7316CA55E54C24CE4D4733752DC5389C4E3C379B67C3FB2EDB0DAE7420B378FA",
+          "localDetailFieldsOmitted": 1
+        },
+        "allCatalogRulesImplemented": false,
+        "closures": {
+          "recordCount": 3,
+          "categories": {},
+          "booleanStatusCounts": {
+            "nativeQuitConfirmed": {
+              "true": 3,
+              "false": 0
+            }
+          },
+          "exitCodeCounts": {
+            "0": 3
+          },
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "516EB7BF1585CFEE5981FDFAB07684830A242962B63B53F6934B559A34F9CA8E",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "historicalAttempts": {
+          "recordCount": 0,
+          "categories": {},
+          "booleanStatusCounts": {},
+          "exitCodeCounts": {},
+          "detailsOmitted": true,
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+          "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+        },
+        "localDetailFieldsOmitted": 2,
+        "publicationSummary": {
+          "contract": "plan.public-runtime-metadata.v1",
+          "localEvidencePreserved": true,
+          "localEvidenceCanonicalSHA256": "D080833BC92A702C855B2142B1A322720B376C03E8CCE39302ECFCB1A6A6E90A",
+          "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+          "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+        }
       }
     ],
-    "scope": "本轮三套文字恢复与复核通过；全图其他遗留仍按实际清单记录"
+    "scope": "Current two-project native runtime evidence; older sections retain their historical module identities."
+  },
+  "metadataPublication": {
+    "contract": "plan.public-runtime-metadata.v1",
+    "originalMetadataSHA256": "D2B12B8D3EBAA675D70C4D38AEEE2F971731C893241B9A69E8C8CBC34978D36D",
+    "localEvidencePreserved": true,
+    "functionalAdmissionUnchanged": true,
+    "scope": "Public validation summaries only; original local detailed evidence remains outside the repository."
   }
 }

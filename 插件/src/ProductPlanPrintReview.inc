@@ -56,6 +56,35 @@ std::wstring productSelectPlanPaper(AcDbPlotSettings& settings,AcDbPlotSettingsV
  throw std::runtime_error("plot window exceeds A1 at the drawing scale");
 }
 
+// Saved layouts and the actual PDF job use the same paper-space contract.
+std::wstring productApplyPlanLayoutPaper(AcDbPlotSettings& settings,AcDbPlotSettingsValidator& validator,
+ double width,double height){
+ const auto paper=productSelectPlanPaper(settings,validator,width,height,1.);
+ status(validator.setPlotPaperUnits(&settings,AcDbPlotSettings::kMillimeters),"formal paper millimetres");
+ status(validator.setPlotWindowArea(&settings,0,0,width,height),"formal paper frame window");
+ status(validator.setPlotType(&settings,AcDbPlotSettings::kWindow),"formal paper window");
+ status(validator.setUseStandardScale(&settings,false),"formal explicit paper scale");
+ status(validator.setCustomPrintScale(&settings,1,1),"formal one-to-one paper scale");
+ status(validator.setPlotCentered(&settings,true),"center complete formal frame");
+ return paper;
+}
+
+std::string productPlanPaperSettingsJson(const AcDbPlotSettings& settings){
+ double width{},height{},n{},d{},standard{},x{},y{},left{},bottom{},right{},top{},wx{},wy{},wr{},wt{};
+ status(settings.getPlotPaperSize(width,height),"paper size evidence");
+ status(settings.getCustomPrintScale(n,d),"custom paper scale evidence");
+ status(settings.getStdScale(standard),"standard paper scale evidence");
+ status(settings.getPlotOrigin(x,y),"paper origin evidence");
+ status(settings.getPlotPaperMargins(left,bottom,right,top),"paper margins evidence");
+ status(settings.getPlotWindowArea(wx,wy,wr,wt),"paper window evidence");
+ std::ostringstream out;out<<std::setprecision(12)<<"{\"units\":"<<static_cast<int>(settings.plotPaperUnits())
+  <<",\"useStandardScale\":"<<(settings.useStandardScale()?"true":"false")<<",\"standardScaleType\":"<<static_cast<int>(settings.stdScaleType())
+  <<",\"standardScale\":"<<standard<<",\"customScale\":["<<n<<','<<d<<"],\"rotation\":"<<static_cast<int>(settings.plotRotation())
+  <<",\"paperSize\":["<<width<<','<<height<<"],\"origin\":["<<x<<','<<y<<"],\"margins\":["<<left<<','<<bottom<<','<<right<<','<<top
+  <<"],\"window\":["<<wx<<','<<wy<<','<<wr<<','<<wt<<"],\"plotType\":"<<static_cast<int>(settings.plotType())
+  <<",\"centered\":"<<(settings.plotCentered()?"true":"false")<<'}';return out.str();
+}
+
 void productPrintPlanReview(ProductJob& job,AcApDocument& doc,const fs::path& candidate,
                             const fs::path& reportDirectory={}){
  if(!job.planPrintReview)return;
@@ -175,13 +204,7 @@ void productPrintPlanLayouts(ProductJob& job,AcApDocument& doc,const fs::path& c
    validator->refreshLists(&settings);
    if(job.planMode!="template-finalize")status(validator->setPlotCfgName(&settings,L"DWG To PDF.pc3"),"formal PDF device");
    validator->refreshLists(&settings);
-   const auto paper=productSelectPlanPaper(settings,*validator,sheet.paperWidth,sheet.paperHeight,1.);
-   status(validator->setPlotPaperUnits(&settings,AcDbPlotSettings::kMillimeters),"formal paper millimetres");
-   status(validator->setPlotWindowArea(&settings,0,0,sheet.paperWidth,sheet.paperHeight),"formal paper frame window");
-   status(validator->setPlotType(&settings,AcDbPlotSettings::kWindow),"formal paper window");
-   status(validator->setUseStandardScale(&settings,false),"formal explicit paper scale");
-   status(validator->setCustomPrintScale(&settings,1,1),"formal one-to-one paper scale");
-   status(validator->setPlotCentered(&settings,true),"center complete formal frame");
+   const auto paper=productApplyPlanLayoutPaper(settings,*validator,sheet.paperWidth,sheet.paperHeight);
    AcPlPlotInfo info;info.setLayout(layoutId);info.setOverrideSettings(&settings);
    AcPlPlotInfoValidator validation;validation.setMediaMatchingPolicy(AcPlPlotInfoValidator::kMatchEnabled);
    status(validation.validate(info),"validate actual formal PDF layout");
@@ -203,6 +226,7 @@ void productPrintPlanLayouts(ProductJob& job,AcApDocument& doc,const fs::path& c
    require(fs::is_regular_file(pdf)&&fs::file_size(pdf)>0,"formal paper PDF missing");passed=true;
    report<<",\"status\":\"plotted\",\"paper\":"<<jsonUtf8(paper)<<",\"file\":"<<jsonUtf8(pdf.filename().wstring())
     <<",\"sha256\":\""<<sha(pdf)<<"\",\"paperScale\":1,\"viewportScale\":"<<sheet.scale
+    <<",\"paperCoordinates\":"<<productPlanPaperSettingsJson(*info.validatedSettings())
     <<",\"device\":"<<jsonUtf8(effectiveDevice?effectiveDevice:L"")<<",\"plotStyle\":"<<jsonUtf8(effectiveStyle?effectiveStyle:L"");
   }catch(const std::exception& error){reason=error.what();report<<",\"status\":\"failed\",\"reason\":"<<jsonUtf8(bcpproduct::decodeMessage(reason));}
   report<<'}';

@@ -282,7 +282,9 @@ void productReconcileOldAnnotations(ProductJob& job,AcDbDatabase& db,const std::
   const bool unresolvedStyle=priorOpen.count(old.path)||std::any_of(targets.begin(),targets.end(),[&](const auto& handle){
    return priorOpen.count(handle);
   });
-  if(!old.visible){status="source-not-printed";reason=u8"源标注原为隐藏或不打印";}
+  if(job.planOmissions.count(old.handle)&&byPath.find(old.path)==byPath.end()){
+   targets.clear();status="omitted-by-rule";reason=u8"重开确认按现行规则清除的源对象已退出。";
+  }else if(!old.visible){status="source-not-printed";reason=u8"源标注原为隐藏或不打印";}
   else if(inScope){
    status="unclosed";
    reason=u8"重开后尚未找到能对应该源标注的合规对象";

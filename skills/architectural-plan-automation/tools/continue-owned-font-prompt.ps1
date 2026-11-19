@@ -1,4 +1,6 @@
-﻿param([Parameter(Mandatory=$true)][string]$Session,[switch]$Watch)
+﻿param([Parameter(Mandatory=$true)][string]$Session,[switch]$Watch,
+      [ValidateRange(1,3600)][int]$MaxSeconds=1380,
+      [ValidateRange(5,300)][int]$StalledPromptSeconds=90)
 $ErrorActionPreference='Stop'
 $r=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $Session 'isolation-host-receipt.json') | ConvertFrom-Json
 $own=Get-Process -Id $r.processId -ErrorAction Stop
@@ -9,6 +11,12 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 public static class OwnSourceFontPrompt112 {
+ static long previousPrompt;
+ public static bool SelectResponse(long window) {
+  if(window==0){previousPrompt=0;return false;}
+  if(previousPrompt==window)return false;
+  previousPrompt=window;return true;
+ }
  public delegate bool EnumProc(IntPtr w, IntPtr p);
  [DllImport("user32", CharSet=CharSet.Unicode)] static extern IntPtr OpenDesktop(string name,int flags,bool inherit,int access);
  [DllImport("user32")] static extern bool CloseDesktop(IntPtr h);
@@ -32,13 +40,6 @@ public static class OwnSourceFontPrompt112 {
    EnumDesktopWindows(d,(w,p)=>{
     if(!Owned(w,pid,thread))return true;
     var cls=Class(w);
-    if(cls=="#32770")Console.WriteLine("DIALOG title=["+Text(w)+"] owner="+GetWindow(w,4));
-    if(cls=="#32770")EnumChildWindows(w,(c,x)=>{
-     if(!Class(c).Contains("EDIT"))
-      Console.WriteLine("{0} {1} visible={2} {3}",Class(c),GetDlgCtrlID(c),IsWindowVisible(c),Text(c));
-     return true;
-    },IntPtr.Zero);
-
     if(cls=="#32770"&&Text(w)=="缺少 SHX 文件"){
      int prompt=0,buttons=0,other=0;IntPtr confirm=IntPtr.Zero;
      EnumChildWindows(w,(c,x)=>{
@@ -52,26 +53,49 @@ public static class OwnSourceFontPrompt112 {
     }
     return true;
    },IntPtr.Zero);
-   if(actions.Count!=1)return "";
+   if(actions.Count==0){SelectResponse(0);return "";}
+   if(actions.Count!=1)return "ambiguous owned SHX prompts";
    var a=actions[0];
    if(!Owned(a.Item1,pid,thread)||!Owned(a.Item2,pid,thread))return "";
-   if(a.Item3==1&&Class(a.Item1)=="#32770"&&Class(a.Item2)=="Button"&&Text(a.Item1)=="缺少 SHX 文件"&&Text(a.Item2)=="忽略缺少的 SHX 文件并继续")
-    return PostMessage(a.Item2,0x00F5,IntPtr.Zero,IntPtr.Zero)?"continued exact source SHX prompt":"";
+   if(a.Item3==1&&Class(a.Item1)=="#32770"&&Class(a.Item2)=="Button"&&Text(a.Item1)=="缺少 SHX 文件"&&Text(a.Item2)=="忽略缺少的 SHX 文件并继续") {
+    if(!SelectResponse(a.Item1.ToInt64()))return "waiting for owned SHX prompt to close";
+    return PostMessage(a.Item2,0x00F5,IntPtr.Zero,IntPtr.Zero)?"continued exact source SHX prompt":"owned SHX response failed";
+   }
    return "";
   }finally{CloseDesktop(d);}
  }
 }
 "@
-$rounds=if($Watch){16}else{1}
-for($round=0;$round -lt $rounds;$round++){
-if(Test-Path -LiteralPath (Join-Path $Session "isolation-final.json")){break}
-$kind=$null
-for($i=0;$i -lt 55;$i++){ if(Test-Path -LiteralPath (Join-Path $Session 'isolation-final.json')){break}; $kind=[OwnSourceFontPrompt112]::Handle($r.desktopName,$r.processId,$r.initialThreadId); if($kind){break}; Start-Sleep -Milliseconds 1000 }
-if ($kind) {
- @{pid=$r.processId;nonce=$r.nonce;action=$kind;scope='owned isolated CAD opening copied DWG only'} | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $Session 'owned-startup-prompts.jsonl') -Encoding utf8
- $kind
+$clock=[Diagnostics.Stopwatch]::StartNew()
+$lastClosed=0.0
+$lastProgress=0.0
+$progressStamp=''
+$deadline=if($Watch){$MaxSeconds}else{[Math]::Min(55,$MaxSeconds)}
+while($clock.Elapsed.TotalSeconds -lt $deadline){
+ if(Test-Path -LiteralPath (Join-Path $Session 'isolation-final.json')){break}
+ $own=Get-Process -Id $r.processId -ErrorAction SilentlyContinue
+ if(!$own){break}
+ if($own.StartTime.ToUniversalTime().ToFileTimeUtc().ToString() -ne $r.creationFileTime -or $own.Path -ne $r.executable){throw 'Owned CAD identity changed'}
+ # Only native stage receipts count as progress; our own click log never does.
+ $stage=Get-ChildItem -LiteralPath $Session -Filter '*.done' -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+ $stamp=if($stage){$stage.Name+':'+$stage.LastWriteTimeUtc.Ticks}else{''}
+ if($stamp -ne $progressStamp){$progressStamp=$stamp;$lastProgress=$clock.Elapsed.TotalSeconds}
+ $kind=[OwnSourceFontPrompt112]::Handle($r.desktopName,$r.processId,$r.initialThreadId)
+ if(!$kind){$lastClosed=$clock.Elapsed.TotalSeconds}
+ elseif($kind -eq 'continued exact source SHX prompt'){
+  @{pid=$r.processId;nonce=$r.nonce;action=$kind;elapsedSeconds=$clock.Elapsed.TotalSeconds;scope='owned copied DWG; missing dependency is not repaired or accepted'} |
+   ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $Session 'owned-startup-prompts.jsonl') -Encoding utf8
+  if(!$Watch){break}
+ }
+ if($kind -and $clock.Elapsed.TotalSeconds-[Math]::Max($lastClosed,$lastProgress) -ge $StalledPromptSeconds){
+  @{pid=$r.processId;nonce=$r.nonce;reason=$kind;status='stalled-font-prompt';elapsedSeconds=$clock.Elapsed.TotalSeconds} |
+   ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Session 'owned-font-watch-status.json') -Encoding utf8
+  break
+ }
+ Start-Sleep -Milliseconds 500
 }
-
-
-
+if($clock.Elapsed.TotalSeconds -ge $deadline -and $Watch){
+ @{pid=$r.processId;nonce=$r.nonce;status='font-watch-deadline';elapsedSeconds=$clock.Elapsed.TotalSeconds} |
+  ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Session 'owned-font-watch-status.json') -Encoding utf8
 }

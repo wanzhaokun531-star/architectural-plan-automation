@@ -438,12 +438,18 @@ void productAuditPerimeterReconciliation(ProductJob& job,AcDbDatabase& db,const 
  productWriteHandleArray(report,unreadable);
  report<<",\"verifiedInteriorDimensions\":";
  productWriteHandleArray(report,verifiedInteriors);
- const auto savedMasks=productMasks(db);
+ const auto allMasks=productMasks(db);
+ std::vector<std::string> savedMasks,originalFurnitureMasks;
+ for(const auto& handle:allMasks){
+  if(job.currentPlanRules&&job.protectedFurnitureMembers.count(handle))originalFurnitureMasks.push_back(handle);
+  else savedMasks.push_back(handle);
+ }
  std::ostringstream masks;
  masks<<"{\"scope\":\"all-local-block-definitions-including-model-space\",\"sourceWipeouts\":";
  productWriteHandleArray(masks,sourceMasks);
  masks<<",\"reopenedWipeouts\":";
  productWriteHandleArray(masks,savedMasks);
+ masks<<",\"preservedFurnitureMembers\":";productWriteHandleArray(masks,originalFurnitureMasks);
  masks<<",\"savedReopened\":true,\"report\":\"perimeter-source-reconciliation.json\",\"result\":\""
       <<(savedMasks.empty()?"verified-no-local-wipeouts":"pending-local-wipeouts")<<"\"}";
  productRecordRuleEvidence(job,"D19",masks.str());

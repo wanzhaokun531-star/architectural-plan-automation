@@ -50,6 +50,78 @@ def require(condition, message):
         raise JobError(message)
 
 
+def verify_owned_host_closure(attempt, *, module=None, workspace=None):
+    """Require an identity-bound normal terminal state before using any receipt."""
+    attempt = Path(attempt)
+    try:
+        binding = read_json(attempt / 'host.json')
+        session = Path(binding['session']).resolve()
+        nonce = binding['nonce']
+        require(isinstance(nonce, str) and len(nonce) == 32 and
+                all(c in '0123456789abcdef' for c in nonce) and
+                session.name == 'isolated-plan-portable-' + nonce[:8], '宿主终态身份无效')
+        if workspace is not None:
+            require(session.parent == (host_location(Path(workspace)).parent / 'runs').resolve(),
+                    '宿主终态不属于本工作区')
+        if module is not None:
+            require(binding.get('moduleSHA256') == file_hash(module), '宿主终态模块指纹不符')
+        launched = read_json(session / 'isolation-host-receipt.json')
+        terminal = read_json(session / 'isolation-final.json')
+        require(launched.get('contract') == 'stage1.isolated-host-launch.v1' and
+                terminal.get('contract') == 'stage1.isolated-host-final.v1', '宿主终态契约不符')
+        for record in (launched, terminal):
+            require(record.get('nonce') == nonce and Path(record['session']).resolve() == session and
+                    record.get('desktopName') == 'CodexS1_' + nonce, '宿主终态nonce/session/桌面身份不一致')
+        require(type(launched.get('processId')) is int and launched['processId'] > 0 and
+                terminal.get('processId') == launched['processId'], '宿主启动与退出进程身份不一致')
+        true_fields = ('workerCreated', 'workerExited', 'readyIdentityConfirmed', 'nativeQuitConfirmed',
+                       'monitorStartedBeforeWorker', 'monitorStarted', 'monitorStopped',
+                       'eventFileWritten', 'desktopClosed', 'processHandlesClosed')
+        false_fields = ('forcedTermination', 'timedOut', 'inputDesktopChanged',
+                        'switchDesktopCalled', 'userCadTouched', 'stillRunningOwnedWorker')
+        zero_fields = ('workerExitCode', 'inputDesktopReadErrors', 'droppedEvents',
+                       'workerForegroundEvents', 'workerUserDesktopShowEvents', 'workerForegroundSamples')
+        failures = [key for key in true_fields if terminal.get(key) is not True]
+        failures += [key for key in false_fields if terminal.get(key) is not False]
+        failures += [key for key in zero_fields if type(terminal.get(key)) is not int or terminal[key] != 0]
+        if terminal.get('monitorError') not in (None, '') or terminal.get('supervisorErrors') != []:
+            failures.append('monitor/supervisorErrors')
+        # Events belonging to existing CAD processes are retained for attribution;
+        # they are not attributed to this worker by this terminal-state check.
+        require(not failures, '宿主未正常隔离退出：' + ', '.join(failures) +
+                '；workerExitCode=' + str(terminal.get('workerExitCode')))
+        return terminal
+    except (JobError, OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+        raise RetryableHostError(f'自有宿主终态不能复用业务回执：{error}') from error
+
+
+def finish_owned_attempt(attempt, actions, *, primary_error=None, module=None, workspace=None):
+    """Complete every cleanup action without replacing the original business error."""
+    failures = []
+    for action in actions:
+        try:
+            action()
+        except Exception as error:
+            failures.append(str(error))
+    try:
+        verify_owned_host_closure(attempt, module=module, workspace=workspace)
+    except RetryableHostError as error:
+        failures.append(str(error))
+    if not failures:
+        return
+    message = '；'.join(failures)
+    if primary_error is not None:
+        if hasattr(primary_error, 'add_note'):
+            primary_error.add_note('自有宿主清理/终态另有问题，原业务错误保持：' + message)
+        try:
+            write_json(Path(attempt) / 'host-cleanup-errors.json',
+                       {'primaryError': str(primary_error), 'cleanupErrors': failures})
+        except (OSError, ValueError):
+            pass
+        return
+    raise RetryableHostError(message)
+
+
 def ps_command(script, *arguments):
     return ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script), *map(str, arguments)]
 
@@ -66,7 +138,7 @@ def packaged_host_inputs(workspace):
         return ()
     host = workspace / 'host'
     setup = host / 'machine.json'
-    require(setup.is_file(), '尚未配置本机 CAD，请先运行 tools/Install-PlanDraw.ps1')
+    require(setup.is_file(), '隔离宿主缺少 host/machine.json。请使用实际宿主发行包的配置入口；本Skill不附安装器。')
     return (setup, host / 'bridge/PlanBridge.arx', host / 'bridge/bridge.sha256',
             *(host / 'controller' / name for name in
               ('run_quiet_job.py', '启动隔离桌面宿主.ps1', 'IsolatedCadHostNative.cs')))
@@ -81,6 +153,55 @@ def bridge_ini_text(host, session, nonce, configuration, tool):
             f'[worker]\nnonce={nonce}\nsession={session}\nexpectedProfile={configuration["profile"]}\n'
             f'supportComponent={configuration["supportComponent"]}\nearlyNativeAutoload=1\n'
             f'[stage2]\nmodule={tool}\n')
+
+
+def trusted_only_worker_profile(configuration):
+    """Use only the installed trusted paths in a separate CAD worker profile."""
+    import winreg
+    root = configuration['profileRegistry']
+    original = configuration['profile']
+    require(original.startswith('CodexS1Native_') and '\\' not in original and '/' not in original,
+            '隔离配置名称无效')
+    profile = original + '_PlanTrusted'
+    parent = winreg.HKEY_CURRENT_USER
+    source = root + '\\' + original
+    target = root + '\\' + profile
+    original_values = source + r'\Variables'
+    with winreg.OpenKey(parent, original_values) as values:
+        trusted = winreg.QueryValueEx(values, 'TRUSTEDPATHS')[0]
+        security, kind = winreg.QueryValueEx(values, 'SECURELOAD')
+        require(kind in (winreg.REG_SZ, winreg.REG_DWORD) and str(security) in ('1', '2'),
+                '安装配置的安全加载策略无效')
+    def copy_settings(old, new):
+        with winreg.OpenKey(parent, old) as src, winreg.CreateKeyEx(parent, new, 0, winreg.KEY_WRITE) as dst:
+            children, value_count, _ = winreg.QueryInfoKey(src)
+            for i in range(value_count):
+                name, value, kind = winreg.EnumValue(src, i)
+                winreg.SetValueEx(dst, name, 0, kind, value)
+            for i in range(children):
+                name = winreg.EnumKey(src, i)
+                copy_settings(old + '\\' + name, new + '\\' + name)
+    # This profile belongs to the installed worker. Never broaden TRUSTEDPATHS
+    # or approve unsigned applications registered by unrelated CAD tools.
+    try:
+        with winreg.OpenKey(parent, target) as dest:
+            require(winreg.QueryValueEx(dest, 'PlanDrawSourceProfile')[0] == original,
+                    '同名 CAD 配置已有其他所有者')
+    except FileNotFoundError:
+        try:
+            with winreg.OpenKey(parent, target):
+                raise JobError('专用 CAD 配置已存在且缺少来源标记')
+        except FileNotFoundError:
+            copy_settings(source, target)
+            with winreg.OpenKey(parent, target, 0, winreg.KEY_SET_VALUE) as dest:
+                winreg.SetValueEx(dest, 'PlanDrawSourceProfile', 0, winreg.REG_SZ, original)
+    with winreg.OpenKey(parent, target + r'\Variables', 0, winreg.KEY_QUERY_VALUE | winreg.KEY_SET_VALUE) as values:
+        require(winreg.QueryValueEx(values, 'TRUSTEDPATHS')[0] == trusted,
+                '测试配置的受信目录与安装配置不同，请核对专用宿主')
+        winreg.SetValueEx(values, 'SECURELOAD', 0, kind, '2' if kind == winreg.REG_SZ else 2)
+        actual, actual_kind = winreg.QueryValueEx(values, 'SECURELOAD')
+        require(str(actual) == '2' and actual_kind == kind, '专用宿主的安全加载策略未生效')
+    return profile
 
 
 def restore_default_profile(session):
@@ -226,7 +347,7 @@ class AttachedWorker:
 def resume_owned_plan(workspace, module, attempt, resources):
     binding = attempt / 'host.json'
     if not binding.is_file():
-        return
+        raise RetryableHostError('续跑缺少自有宿主身份记录')
     prior = read_json(binding)
     session = Path(prior['session']).resolve()
     nonce = prior['nonce']
@@ -236,6 +357,7 @@ def resume_owned_plan(workspace, module, attempt, resources):
             prior['moduleSHA256'] == file_hash(module), '保存点中的自有宿主来源与模块不一致')
     receipt = session / 'isolation-host-receipt.json'
     if not receipt.is_file() or (session / 'isolation-final.json').is_file():
+        verify_owned_host_closure(attempt, module=module, workspace=workspace)
         return
     ownership = read_json(receipt)
     require(ownership.get('contract') == 'stage1.isolated-host-launch.v1' and ownership['nonce'] == nonce and
@@ -247,9 +369,11 @@ def resume_owned_plan(workspace, module, attempt, resources):
     reply = subprocess.check_output(['powershell.exe', '-NoProfile', '-Command', identity_probe],
                                     creationflags=subprocess.CREATE_NO_WINDOW, encoding='utf-8')
     if not reply.strip():
+        verify_owned_host_closure(attempt, module=module, workspace=workspace)
         return
     identity = json.loads(reply)
     if identity != {key: ownership[key] for key in ('executable', 'creationFileTime')}:
+        verify_owned_host_closure(attempt, module=module, workspace=workspace)
         return  # PID has since been reused. This process is outside the saved attempt.
     sys.path.insert(0, str(host))
     native = importlib.import_module('run_quiet_job')
@@ -263,16 +387,22 @@ def resume_owned_plan(workspace, module, attempt, resources):
         if (session / 'native-dispatch.intent.json').is_file():
             await_file(attempt / 'job/product-result.json', launcher, PLAN_JOB_TIMEOUT_SECONDS)
     finally:
-        close_worker((session, host / '启动隔离桌面宿主.ps1'), launcher, native, ready,
-                     resources / 'reference.dwg', nonce)
-        cfg = read_json(session / 'worker-config.json')
-        bridge = Path(cfg['stagedARX'])
-        tool = bridge.parent / f'PlanNative_{nonce[:8]}.arx'
-        retire_staging(session, (bridge, tool, bridge.with_suffix('.ini'), tool.with_suffix('.ini')), nonce)
-        restore_default_profile(session)
+        def retire():
+            cfg = read_json(session / 'worker-config.json')
+            bridge = Path(cfg['stagedARX'])
+            tool = bridge.parent / f'PlanNative_{nonce[:8]}.arx'
+            retire_staging(session, (bridge, tool, bridge.with_suffix('.ini'), tool.with_suffix('.ini')), nonce)
+        finish_owned_attempt(attempt, (
+            lambda: close_worker((session, host / '启动隔离桌面宿主.ps1'), launcher, native, ready,
+                                 resources / 'reference.dwg', nonce),
+            retire, lambda: restore_default_profile(session)),
+            primary_error=sys.exc_info()[1], module=module, workspace=workspace)
 
 
 def run_owned_plan(workspace, module, source, attempt, configuration):
+    from runtime_preflight import inspect_runtime
+    runtime = inspect_runtime(Path(__file__).resolve().parents[1], workspace, configuration.get('mode'))
+    require(runtime['ready'], '隔离宿主依赖不完整：' + '，'.join(runtime['missing']))
     host = host_location(workspace)
     sys.path.insert(0, str(host))
     native = importlib.import_module('run_quiet_job')
@@ -284,14 +414,17 @@ def run_owned_plan(workspace, module, source, attempt, configuration):
         frozen = read_json(host.parent / 'machine.json')
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, frozen['profileRegistry']) as key:
             frozen['previousDefaultProfile'] = winreg.QueryValue(key, None)
+        if frozen.get('planTrustedLocationsOnly') is True:
+            frozen['profile'] = trusted_only_worker_profile(frozen)
         existing_bridge = host.parent / 'bridge/PlanBridge.arx'
         frozen = dict(frozen, binarySHA256=(existing_bridge.parent / 'bridge.sha256').read_text('ascii').strip(),
                       earlyNativeAutoload=True)
         require(all(Path(frozen[key]).is_file() for key in ('acadPath', 'template', 'supportComponent')),
                 '本机 CAD、模板或天正组件路径已失效，请重新运行安装脚本')
     else:
-        template = workspace / '阶段1/runs/isolated-autocad-20261110-153955'
-        frozen = read_json(template / 'worker-config.json')
+        configuration_path = Path(runtime['workerConfig'])
+        template = configuration_path.parent
+        frozen = read_json(configuration_path)
         retired = template / 'staging-final-archive'
         existing_bridge = retired / Path(frozen['stagedARX']).name
     require(file_hash(existing_bridge) == frozen['binarySHA256'], '隔离宿主桥接模块指纹不一致')
@@ -390,10 +523,15 @@ def run_owned_plan(workspace, module, source, attempt, configuration):
             native_error = report / 'plan-native-error.json'
             if native_error.is_file():
                 raise JobError(f'PLAN_DRAW：{read_json(native_error).get("error", "原生执行失败")}')
-            receipt = await_file(report / 'product-result.json', launcher, PLAN_JOB_TIMEOUT_SECONDS)
             require(file_hash(control) == file_hash(source) == original, '运行前后的源 DWG 指纹不一致')
-            if receipt.get('completed') is not True:
-                raise JobError(f'PLAN_DRAW：{receipt.get("error", "原生执行失败")}')
+            if configuration.get('mode') == 'audit':
+                audit = await_file(report / 'plan-native-audit.json', launcher, PLAN_JOB_TIMEOUT_SECONDS)
+                require(audit.get('sourceSHA256') == original and audit.get('drawingWritten') is False and
+                        not (report / 'candidate.dwg').exists(), '只读复核源指纹或写盘状态异常')
+            else:
+                receipt = await_file(report / 'product-result.json', launcher, PLAN_JOB_TIMEOUT_SECONDS)
+                if receipt.get('completed') is not True:
+                    raise JobError(f'PLAN_DRAW：{receipt.get("error", "原生执行失败")}')
         except TimeoutError as error:
             raise RetryableHostError(str(error)) from error
         except RuntimeError as error:
@@ -403,12 +541,18 @@ def run_owned_plan(workspace, module, source, attempt, configuration):
                 raise
             raise JobError(str(error)) from error
         finally:
-            close_worker((session, supervisor), launcher, native, ready, Path(configuration['resources']) / 'reference.dwg', nonce)
-            if font_prompt is not None and font_prompt.poll() is None:
-                font_prompt.terminate()
-                try:
-                    font_prompt.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    write_json(session / 'owned-font-helper-end-timeout.json', {'nonce': nonce})
-            retire_staging(session, (staged_bridge, staged_tool, bridge_ini, tool_ini), nonce)
-            restore_default_profile(session)
+            def stop_font_helper():
+                if font_prompt is not None and font_prompt.poll() is None:
+                    font_prompt.terminate()
+                    try:
+                        font_prompt.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        write_json(session / 'owned-font-helper-end-timeout.json', {'nonce': nonce})
+                        raise
+            finish_owned_attempt(attempt, (
+                lambda: close_worker((session, supervisor), launcher, native, ready,
+                                     Path(configuration['resources']) / 'reference.dwg', nonce),
+                stop_font_helper,
+                lambda: retire_staging(session, (staged_bridge, staged_tool, bridge_ini, tool_ini), nonce),
+                lambda: restore_default_profile(session)),
+                primary_error=sys.exc_info()[1], module=module, workspace=workspace)

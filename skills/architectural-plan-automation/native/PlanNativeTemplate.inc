@@ -1,3 +1,7 @@
+#include "../../../插件/src/ProductFinalPlanOmissions.inc"
+#include "../../../插件/src/ProductPlanFontDependencies.inc"
+#include "../../../插件/src/ProductPlanRiskGlyphs.inc"
+
 struct PlanControlFrame {
  int panel,row;
  std::string handle;
@@ -9,8 +13,14 @@ struct PlanTemplateRequest {
  fs::path source,output,report,resources,sheets;
  ProductTemplateRun run;
  std::vector<ProductTypographyIssue> issues;
+ ProductFinalOmissionContext omissionContext;
+ ProductFontDependencyCleanup fontCleanup;
+ std::vector<ProductPlanUnitGlyphRepair> unitGlyphRepairs;
+ std::vector<ProductPlanTableGroup> tables;
+ std::vector<std::size_t> tableSourcePanels;
  std::set<std::string> annotationScope;
  std::string protectedAfter;
+ std::vector<ProductFurnitureItem> layeredFurniture;
  fs::path frameDatums;
  bool framesOnly{};
  std::vector<PlanControlFrame> frames;
@@ -20,15 +30,15 @@ struct PlanTemplateRequest {
 };
 
 struct PlanTemplateTextSpec {ProductDimensionFont font;double modelHeight{};};
-std::optional<PlanTemplateTextSpec> planTemplateTextSpec(const ProductSourceAnnotation& row,const std::string& role){
+std::optional<PlanTemplateTextSpec> planTemplateTextSpec(const ProductJob& job,const ProductSourceAnnotation& row,const std::string& role){
  if(role=="dimension"||role=="special-direction")return {};
- PlanTemplateTextSpec spec{{L"FY_HZ",L"tssdeng.shx",L"hztxt.shx",.7,0.,0},400.};
- if(role=="opening-label")spec={{L"_TCH_WINDOW",L"simplex.shx",L"gbcbig.shx",.65,0.,0},400.};
+ const auto policy=productCurrentTypographyPolicy(job);
+ PlanTemplateTextSpec spec{productCurrentFont(policy.at("FY_HZ")),productTypographyModelHeight(job,"FY_HZ")};
+ if(role=="opening-label")spec={productCurrentFont(policy.at("_TCH_WINDOW")),productTypographyModelHeight(job,"_TCH_WINDOW")};
  else if(role=="special-title-block")spec={{L"FYTK-HZ",L"tssdeng.shx",L"hztxt.shx",.8,0.,0},350.};
  else if(role=="special-drawing-title")spec={{L"FY_FS",L"simsun.ttc",L"",.7,0.,0},700.};
  else if(role=="special-survey-elevation")spec={{L"FY_DIM",L"simplex.shx",L"hztxt.shx",.7,0.,0},350.};
  else if(role=="special-scale-or-slope")spec.modelHeight=400.;
- else if(role=="special-area-superscript")spec.modelHeight=0.;
  const auto body=productTypographyText(row);
 
  return spec;
@@ -46,9 +56,9 @@ AcDbObjectId planTemplateCopyFrameDefinition(AcDbDatabase& db,AcDbObjectId origi
   auto entity=open<AcDbEntity>(pair.value());if(const auto* child=AcDbBlockReference::cast(entity.get())){const auto old=child->blockTableRecord();entity.reset();const auto next=planTemplateCopyFrameDefinition(db,old,copied,depth+1);status(editObject<AcDbBlockReference>(pair.value())->setBlockTableRecord(next),"isolate nested title block");}}
  return result;
 }
-void planTemplateIsolateFrames(AcDbDatabase& db){
+void planTemplateIsolateFrames(AcDbDatabase& db,const std::set<std::string>& furniture){
  std::set<std::string> roots;
- for(const auto& row:productTypographyInventory(db))if(row.visible&&productTypographyRole(db,row)=="special-title-block")roots.insert(row.root);
+ for(const auto& row:productTypographyInventory(db))if(row.visible&&!furniture.count(row.handle)&&!furniture.count(row.root)&&productTypographyRole(db,row)=="special-title-block")roots.insert(row.root);
  for(const auto& root:roots){const auto id=find(db,root);auto block=open<AcDbBlockReference>(id);const auto original=block->blockTableRecord();
   std::vector<ProductRoomLeaf> before;productRoomLeaves(*block,before);block.reset();std::map<AcDbObjectId,AcDbObjectId> copied;
   const auto replacement=planTemplateCopyFrameDefinition(db,original,copied);status(editObject<AcDbBlockReference>(id)->setBlockTableRecord(replacement),"retain title instance placement");
@@ -58,11 +68,11 @@ void planTemplateIsolateFrames(AcDbDatabase& db){
 
 void planTemplateOtherText(ProductJob& job,AcDbDatabase& db,std::vector<ProductTypographyIssue>& issues){
  std::set<std::string> done;
- for(const auto& row:productTypographyInventory(db))if(row.visible&&done.insert(row.handle).second){
-  const auto role=productTypographyRole(db,row);const auto spec=planTemplateTextSpec(row,role);
+ for(const auto& row:productTypographyInventory(db))if(row.visible&&!job.protectedFurnitureMembers.count(row.handle)&&done.insert(row.handle).second){
+  const auto role=productTypographyRole(db,row);const auto spec=planTemplateTextSpec(job,row,role);
   if(!spec||role=="general"||role=="opening-label"||role=="linked-note")continue;
   try{
-   const auto font=productRestoreTypographyFont(db,spec->font,role=="opening-label"?4.:0);
+   const auto font=productRestoreTypographyFont(db,spec->font,role=="opening-label"?productCurrentTypographyPolicy(job).at("_TCH_WINDOW").fixedHeight:0);
    auto height=spec->modelHeight*productTypographySpaceFactor(db,row)/productTypographyInstanceScale(db,row);
    if(height==0){std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*open<AcDbEntity>(find(db,row.handle)),leaves);if(!leaves.empty())height=leaves.front().height;}
    auto editable=row;if(role=="special-area"||row.type==L"TDbDrawingName")editable.kind="template-mixed-text";
@@ -71,15 +81,102 @@ void planTemplateOtherText(ProductJob& job,AcDbDatabase& db,std::vector<ProductT
  }
 }
 
-void planTemplateAuditText(AcDbDatabase& db,const fs::path& drawing,const fs::path& report,std::vector<ProductTypographyIssue>& issues){
- std::ostringstream out;out<<std::setprecision(12)<<"{\"outputSHA256\":\""<<sha(drawing)<<"\",\"savedReopened\":true,\"objects\":[";bool first=true;
- const auto record=[&](const std::string& object,const std::string& role,const PlanTemplateTextSpec& spec,std::vector<ProductRoomLeaf> leaves,double scale){
+// The body is still FY_HZ/4.0. A true squared-metre exponent is recognized
+// through the independent glyph geometry, not merely a special-area role or 2.
+bool planTemplatePairedAreaSuperscript(const std::vector<ProductRoomLeaf>& leaves,std::size_t index){
+ if(index==0||index>=leaves.size()||leaves[index].text!=L"2")return false;
+ std::wstring contents;for(const auto& leaf:leaves)contents+=leaf.text;
+ if(contents.find(L"面积")==std::wstring::npos)return false;
+ const auto& body=leaves[index-1];const auto& exponent=leaves[index];
+ if(!std::regex_match(body.text,std::wregex(L"[0-9]+(?:\\.[0-9]+)?[mM]"))||!body.bounds||!exponent.bounds||
+    body.height<=0||std::abs(exponent.height-body.height*.5)>.001||body.style!=exponent.style||
+    std::abs(std::remainder(exponent.rotation-body.rotation,2*3.141592653589793))>1e-8)return false;
+ const AcGeVector3d along(std::cos(body.rotation),std::sin(body.rotation),0),up(-along.y,along.x,0);
+ const auto offset=exponent.anchor-body.anchor;const double rise=offset.dotProduct(up);
+ if(offset.dotProduct(along)<=0||rise<body.height*.1||rise>body.height*1.1)return false;
+ const auto project=[&](const AcDbExtents& box){
+  std::pair<double,double> range{std::numeric_limits<double>::max(),-std::numeric_limits<double>::max()};
+  for(double x:{box.minPoint().x,box.maxPoint().x})for(double y:{box.minPoint().y,box.maxPoint().y}){
+   const double value=AcGeVector3d(x-body.anchor.x,y-body.anchor.y,0).dotProduct(along);
+   range.first=std::min(range.first,value);range.second=std::max(range.second,value);
+  }return range;
+ };
+ const auto bodyRange=project(*body.bounds),exponentRange=project(*exponent.bounds);
+ const double gap=exponentRange.first-bodyRange.second;
+ return gap>=-body.height*.1&&gap<=body.height*.6;
+}
+
+void planTemplateAuditTitlePaperBounds(ProductJob& job,AcDbDatabase& db,const fs::path& drawing,
+ const fs::path& report,const std::vector<ProductSourceAnnotation>& rows,std::vector<ProductTypographyIssue>& issues){
+ struct Paper {int panel{};std::wstring name;AcDbObjectId owner;double x{},y{},right{},top{};std::size_t count{},empty{},unread{};std::string reason,coordinates{"null"};};
+ std::vector<Paper> papers;bool coverage=true;
+ for(const auto& [panel,sheet]:job.planSheetLayouts){Paper paper;paper.panel=panel;paper.name=sheet.name;
+  try{const auto id=acdbHostApplicationServices()->layoutManager()->findLayoutNamed(sheet.name.c_str(),&db);
+   const auto layout=open<AcDbLayout>(id);paper.owner=layout->getBlockTableRecordId();paper.coordinates=productPlanPaperSettingsJson(*layout);double width{},height{},n{},d{},activeScale{};
+   status(layout->getPlotPaperSize(width,height),"read saved title-paper size");status(layout->getCustomPrintScale(n,d),"read saved title-paper scale");
+   if(layout->useStandardScale())status(layout->getStdScale(activeScale),"read active standard paper scale");else if(d>0)activeScale=n/d;
+   require(layout->plotPaperUnits()==AcDbPlotSettings::kMillimeters&&std::abs(activeScale-1.)<1e-8,"title-paper coordinates need actual millimetre 1:1 layout");
+   double marginLeft{},marginBottom{},marginRight{},marginTop{},originX{},originY{};
+   status(layout->getPlotPaperMargins(marginLeft,marginBottom,marginRight,marginTop),"read saved paper margins");
+   status(layout->getPlotOrigin(originX,originY),"read saved paper origin");
+   require(std::max({std::abs(marginLeft),std::abs(marginBottom),std::abs(marginRight),std::abs(marginTop)})<.001,
+    "nonzero printable margins need their own physical-paper transform");
+   if(layout->plotRotation()==AcDbPlotSettings::k90degrees||layout->plotRotation()==AcDbPlotSettings::k270degrees)std::swap(width,height);
+   require(width>0&&height>0,"invalid actual paper bounds");paper.right=width;paper.top=height;
+   if(layout->plotType()==AcDbPlotSettings::kWindow){
+    status(layout->getPlotWindowArea(paper.x,paper.y,paper.right,paper.top),"read saved paper plot window");
+    require(std::abs(paper.right-paper.x-width)<.01&&std::abs(paper.top-paper.y-height)<.01,"paper plot window is not the full physical sheet");
+    require(layout->plotCentered()||(std::abs(originX)<.001&&std::abs(originY)<.001),"unresolved noncentered paper-window origin");
+   }else require(layout->plotType()==AcDbPlotSettings::kLayout&&std::abs(originX)<.001&&std::abs(originY)<.001,"unresolved paper-origin transform");
+  }catch(const std::exception& e){paper.reason=e.what();coverage=false;}papers.push_back(std::move(paper));
+ }
+ std::ostringstream out;out<<std::setprecision(12)<<"{\"contract\":\"plan.title-paper-bounds.v1\",\"outputSHA256\":\""<<sha(drawing)
+  <<"\",\"savedReopened\":true,\"scope\":\"confirmed paper-space title-block text-leaf entities; physical paper edge only; model tables and cell fitting are separate\",\"objects\":[";bool first=true;
+ for(const auto& row:rows)if(row.visible&&productTypographyRole(db,row)=="special-title-block"){
+  const auto owner=open<AcDbEntity>(find(db,row.root))->ownerId();
+  const auto selected=std::find_if(papers.begin(),papers.end(),[&](const auto& paper){return paper.owner==owner;});
+  if(selected==papers.end())continue;auto& paper=*selected;++paper.count;std::string reason=paper.reason;
+  const auto text=productTypographyText(row);const bool noInk=text.empty();if(noInk)++paper.empty;
+  std::array<double,4> excess{};
+  if(noInk)reason.clear();
+  else if(!row.bounds){reason="nonempty title-block text leaf has no reliable actual extent";++paper.unread;coverage=false;}
+  else if(reason.empty()){const auto& box=*row.bounds;excess={std::max(0.,paper.x-box.minPoint().x),std::max(0.,box.maxPoint().x-paper.right),
+     std::max(0.,paper.y-box.minPoint().y),std::max(0.,box.maxPoint().y-paper.top)};
+   if(*std::max_element(excess.begin(),excess.end())>.01){std::ostringstream why;why<<u8"图签文字超出实际纸面边界，布局="<<productUtf8(paper.name)
+     <<", left/right/bottom/top(mm)="<<excess[0]<<'/'<<excess[1]<<'/'<<excess[2]<<'/'<<excess[3];reason=why.str();}}
+  // Shared unknown coordinates/extent coverage belong to one layout item.
+  // Keep per-object items only for a measured, real paper-edge overrun.
+  if(!noInk&&paper.reason.empty()&&row.bounds&&!reason.empty())issues.push_back({row.path,"title-paper-bounds",reason});
+  if(!first)out<<',';first=false;out<<"{\"object\":\""<<row.path<<"\",\"panel\":"<<paper.panel<<",\"layout\":"<<jsonUtf8(paper.name)
+   <<",\"text\":"<<jsonUtf8(text)<<",\"nativeType\":"<<jsonUtf8(row.type)<<",\"noInk\":"<<(noInk?"true":"false")
+   <<",\"applicable\":"<<(noInk?"false":"true")
+   <<",\"paperBounds\":["<<paper.x<<','<<paper.y<<','<<paper.right<<','<<paper.top<<"],\"bounds\":";
+  if(row.bounds)out<<'['<<row.bounds->minPoint().x<<','<<row.bounds->minPoint().y<<','<<row.bounds->maxPoint().x<<','<<row.bounds->maxPoint().y<<']';else out<<"null";
+  out<<",\"overrunMM\":["<<excess[0]<<','<<excess[1]<<','<<excess[2]<<','<<excess[3]<<"],\"verified\":"<<(noInk?"null":reason.empty()?"true":"false")
+   <<",\"reason\":"<<jsonUtf8(bcpproduct::decodeMessage(reason))<<'}';
+ }
+ out<<"],\"layouts\":[";first=true;
+ for(const auto& paper:papers){if(!first)out<<',';first=false;if(!paper.count)coverage=false;
+  std::string reason=paper.reason;if(reason.empty()&&paper.unread)reason="nonempty title-block leaves have unread extents: "+std::to_string(paper.unread);
+  out<<"{\"panel\":"<<paper.panel<<",\"layout\":"<<jsonUtf8(paper.name)<<",\"textLeafCount\":"<<paper.count
+   <<",\"inkLeafCount\":"<<paper.count-paper.empty<<",\"emptyLeafCount\":"<<paper.empty<<",\"unreadExtentCount\":"<<paper.unread
+   <<",\"paperCoordinates\":"<<paper.coordinates<<",\"reason\":"<<jsonUtf8(bcpproduct::decodeMessage(reason))<<'}';
+  if(!paper.count||!reason.empty())issues.push_back({"layout:"+std::to_string(paper.panel),"title-paper-coverage",
+   reason.empty()?u8"纸空间未识别到可逐叶复核的图签文字；模型表格验收不能代替此覆盖":reason});
+ }
+ out<<"],\"expectedCoverageKnown\":"<<(!papers.empty()&&coverage?"true":"false")<<'}';writeNew(report/L"plan-title-paper-readback.json",out.str());
+}
+
+void planTemplateAuditText(ProductJob& job,AcDbDatabase& db,const fs::path& drawing,const fs::path& report,std::vector<ProductTypographyIssue>& issues){
+ std::ostringstream out;out<<std::setprecision(12)<<"{\"outputSHA256\":\""<<sha(drawing)<<"\",\"savedReopened\":true,\"policySHA256\":\""<<productCurrentTypographyPolicy(job).sourceHash<<"\",\"objects\":[";bool first=true;
+ const auto record=[&](const std::string& object,const std::string& role,const PlanTemplateTextSpec& spec,std::vector<ProductRoomLeaf> leaves,double scale,double paperUnits,const std::wstring& nativeType){
   bool good=!leaves.empty();std::string reason;
-  if(!first)out<<',';first=false;out<<"{\"object\":\""<<object<<"\",\"role\":\""<<role<<"\",\"glyphs\":[";
+  if(!first)out<<',';first=false;out<<"{\"object\":\""<<object<<"\",\"role\":\""<<role<<"\",\"nativeType\":"<<jsonUtf8(nativeType)<<",\"unitsPerPaperMM\":"<<paperUnits<<",\"glyphs\":[";
   for(std::size_t k=0;k<leaves.size();++k){const auto& leaf=leaves[k];if(k)out<<',';
-   const auto actual=productReadDimensionFont(leaf.style);const bool font=productTypographyFontMatches(leaf.style,spec.font,(role=="opening-label"||role=="native-opening-label")?4.:0);
+   const auto actual=productReadDimensionFont(leaf.style);const bool font=productTypographyFontMatches(leaf.style,spec.font,(role=="opening-label"||role=="native-opening-label")?productCurrentTypographyPolicy(job).at("_TCH_WINDOW").fixedHeight:0);
    const auto height=leaf.height*scale;
-   const double expected=(role=="special-area"&&(leaf.text==L"2"||leaf.text==L"²")&&leaves.size()>1)?spec.modelHeight*.5:
+   const bool squared=role=="special-area"&&nativeType==L"TDbText"&&object.find('/')==std::string::npos&&std::abs(scale-1)<1e-9&&planTemplatePairedAreaSuperscript(leaves,k);
+   const double expected=squared?spec.modelHeight*.5:
     (role=="special-drawing-title"&&std::regex_match(leaf.text,std::wregex(L"1[:：][0-9]+")))?spec.modelHeight*5./7.:spec.modelHeight;
    // Native opening glyphs include Tianzheng's own aspect conversion.
    // The requested font width is the referenced style's xScale.
@@ -89,23 +186,55 @@ void planTemplateAuditText(AcDbDatabase& db,const fs::path& drawing,const fs::pa
    open<AcDbTextStyleTableRecord>(leaf.style)->font(family,bold,italic,charset,pitch,kind);
    out<<"{\"text\":"<<jsonUtf8(leaf.text)<<",\"style\":"<<jsonUtf8(actual.name)<<",\"font\":"<<jsonUtf8(actual.primary)
     <<",\"fontFamily\":"<<jsonUtf8(family.kACharPtr())
-    <<",\"bigFont\":"<<jsonUtf8(actual.big)<<",\"styleWidth\":"<<actual.width<<",\"renderedWidth\":"<<leaf.width<<",\"width\":"<<width<<",\"height\":"<<height<<",\"expectedHeight\":"<<expected<<'}';
+    <<",\"bigFont\":"<<jsonUtf8(actual.big)<<",\"styleWidth\":"<<actual.width<<",\"renderedWidth\":"<<leaf.width<<",\"width\":"<<width<<",\"height\":"<<height<<",\"expectedHeight\":"<<expected
+    <<",\"anchor\":["<<leaf.anchor.x<<','<<leaf.anchor.y<<','<<leaf.anchor.z<<"],\"rotation\":"<<leaf.rotation<<",\"bounds\":";
+   if(leaf.bounds)out<<'['<<leaf.bounds->minPoint().x<<','<<leaf.bounds->minPoint().y<<','<<leaf.bounds->minPoint().z<<','
+     <<leaf.bounds->maxPoint().x<<','<<leaf.bounds->maxPoint().y<<','<<leaf.bounds->maxPoint().z<<']';else out<<"null";
+   const auto definition=open<AcDbTextStyleTableRecord>(leaf.style);auto* annotation=AcDbAnnotativeObjectPE::cast(definition->queryX(AcDbAnnotativeObjectPE::desc()));
+   out<<",\"fixedHeight\":"<<definition->textSize()<<",\"oblique\":"<<definition->obliquingAngle()<<",\"flags\":"<<static_cast<unsigned>(definition->flagBits())
+      <<",\"annotative\":"<<(annotation&&annotation->annotative(definition.get())?"true":"false")<<",\"vertical\":"<<(definition->isVertical()?"true":"false")<<'}';
   }
-  if(!good){reason=u8"模板用途字体定义或有效字高不符；保留正文与构件关联，未计为通过";issues.push_back({object,role,reason});}
+  if(!good){reason=role=="linked-note"?
+   u8"关联引注内部字体或字高不符；当前没有已验证的独立公开改字接口，保留原文、引线、锚点及关联，未计为通过":
+   u8"模板用途字体定义、实际字宽或有效字高不符；保留正文与构件关联，未计为通过";issues.push_back({object,role,reason});}
   out<<"],\"verified\":"<<(good?"true":"false")<<",\"reason\":"<<jsonUtf8(bcpproduct::decodeMessage(reason))<<'}';
  };
- for(const auto& row:productTypographyInventory(db))if(row.visible){
-  const auto role=productTypographyRole(db,row);auto spec=planTemplateTextSpec(row,role);if(!spec)continue;
-  try{std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*open<AcDbEntity>(find(db,row.handle)),leaves);
-   spec->modelHeight*=productTypographySpaceFactor(db,row);record(row.path,role,*spec,leaves,productTypographyInstanceScale(db,row));
+ ProductJob protectedItems;productProtectFurnitureMembers(protectedItems,db);
+ const auto textRows=productTypographyInventory(db);
+ for(const auto& row:textRows)if(row.visible&&!protectedItems.protectedFurnitureMembers.count(row.handle)){
+  const auto role=productTypographyRole(db,row);auto spec=planTemplateTextSpec(job,row,role);if(!spec)continue;
+  try{std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*open<AcDbEntity>(find(db,row.handle)),leaves,0,true);
+   spec->modelHeight*=productTypographySpaceFactor(db,row);record(row.path,role,*spec,leaves,productTypographyInstanceScale(db,row),job.unifiedScale/job.unifiedUnitMM*productTypographySpaceFactor(db,row),row.type);
   }catch(const std::exception& e){issues.push_back({row.path,role,e.what()});}
  }
  for(const auto& [h,type]:modelTypes(db))if(type==L"TDbOpening"||type==L"TDbGroupOpening"){
   const auto entity=open<AcDbEntity>(find(db,ascii(h)));if(!productPlanDimensionVisible(*entity))continue;
-  std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*entity,leaves);if(leaves.empty())continue;
-  record(ascii(h),"native-opening-label",{{L"_TCH_WINDOW",L"simplex.shx",L"gbcbig.shx",.65,0.,0},400.},leaves,1.);
+  std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*entity,leaves,0,true);if(leaves.empty())continue;
+  record(ascii(h),"native-opening-label",{productTypographyOpeningFont(job),productTypographyModelHeight(job,"_TCH_WINDOW")},leaves,1.,job.unifiedScale/job.unifiedUnitMM,type);
  }
  out<<"]}";writeNew(report/L"template-typography-readback.json",out.str());
+ planTemplateAuditTitlePaperBounds(job,db,drawing,report,textRows,issues);
+}
+
+void planRequireProtectedGeometry(const fs::path& report,const std::string& before,const std::string& after,const char* reason){
+ if(bcpproduct::samePublicGeometry(before,after))return;
+ writeNew(report/L"protected-before.json",before);
+ writeNew(report/L"protected-after.json",after);
+ throw std::runtime_error(reason);
+}
+
+std::vector<ProductFurnitureItem> planLayeredFurniture(AcDbDatabase& db){
+ std::vector<ProductFurnitureItem> items;
+ for(const auto& [h,type]:modelTypes(db)){
+  const auto handle=ascii(h);const auto id=find(db,handle);
+  const auto entity=open<AcDbEntity>(id);const auto layer=symbolName(entity->layerId());
+  if(layer!=L"A-家具"&&layer!=L"A-洁具、厨具")continue;
+  ProductFurnitureItem item;item.output=handle;item.layer=layer;
+  std::set<AcDbObjectId> stack;std::ostringstream signature;signature<<std::fixed<<std::setprecision(6);bool kitchen=false;
+  require(productFurnitureStructure(id,true,stack,signature,item.members,kitchen),"cannot record original layered furniture");
+  item.signature=signature.str();items.push_back(std::move(item));
+ }
+ return items;
 }
 
 std::optional<ProductPlanBounds> planControlRectangle(const AcDbPolyline& e){
@@ -126,6 +255,68 @@ ProductPlanBounds planFrameOffset(const ProductPlanBounds& b,double n){return {b
 bool planFrameCoincides(const ProductPlanBounds& a,const ProductPlanBounds& b){
  return std::abs(a.xmin-b.xmin)<.01&&std::abs(a.ymin-b.ymin)<.01&&std::abs(a.xmax-b.xmax)<.01&&std::abs(a.ymax-b.ymax)<.01;
 }
+// A roof with no control frames can supply its own datum when its actual
+// closed eave and the two measured TCH axis rows agree on every side.
+std::vector<ProductPlanBounds> planRoofFrameDatums(ProductJob& job,AcDbDatabase& db,
+ const ProductPlanBounds& window,double scale,int panel){
+ const auto policy=productLoadPlanPaperPolicy(job,1./scale,1.);
+ const auto spacing=bcpproduct::planAnnotationLayout(1./scale,1.,policy);
+ std::vector<ProductPlanBounds> outlines;
+ std::vector<std::pair<ProductJob::SourceDimension,double>> chains;
+ for(const auto& [h,type]:modelTypes(db)){
+  if(type!=L"AcDbPolyline"&&type!=L"TDbDimension2")continue;
+  const auto key=ascii(h);const auto entity=open<AcDbEntity>(find(db,key));
+  if(!productPlanDimensionVisible(*entity))continue;
+  AcDbExtents b;if(entity->getGeomExtents(b)!=Acad::eOk)continue;
+  const auto centre=b.minPoint()+(b.maxPoint()-b.minPoint())*.5;
+  if(centre.x<window.xmin||centre.x>window.xmax||centre.y<window.ymin||centre.y>window.ymax)continue;
+  if(type==L"TDbDimension2"){
+   auto chain=productReadSourceDimension(db,key,.02);
+   if(!chain.readable||chain.points.size()<2)continue;
+   TemplateParts parts(entity.get());double gap=0;
+   if(entity->explode(parts.values)==Acad::eOk&&!parts.values.isEmpty()){
+    const auto* part=AcDbAlignedDimension::cast(static_cast<AcRxObject*>(parts.values[0]));
+    if(part)gap=part->dimexo()*part->dimscale();
+   }
+   chains.emplace_back(std::move(chain),gap);
+  }else{
+   const auto layer=symbolName(entity->layerId());
+   if(!AcDbPolyline::cast(entity.get())->isClosed()||
+      (_wcsicmp(layer.c_str(),L"ROOF")&&layer.find(L"檐口")==std::wstring::npos))continue;
+   outlines.push_back({b.minPoint().x,b.minPoint().y,b.maxPoint().x,b.maxPoint().y});
+  }
+ }
+ std::vector<ProductPlanBounds> matches;
+ std::ostringstream audit;audit<<std::setprecision(17)<<"{\"panel\":"<<panel<<",\"chains\":"<<chains.size()<<",\"outlines\":[";
+ bool firstOutline=true;
+ for(const auto& box:outlines){
+  if(!firstOutline)audit<<',';firstOutline=false;audit<<"{\"bounds\":["<<box.xmin<<','<<box.ymin<<','<<box.xmax<<','<<box.ymax<<"],\"pairs\":[";
+  bool allSides=true;
+  for(int side=0;side<4;++side){
+   const int sign=side%2?1:-1;const double datum=productPlanDatum(box,side);
+   std::array<std::vector<std::pair<double,double>>,2> endpoints;
+   const auto along=[&](const auto& p){return side<2?p.y:p.x;};
+   const auto normal=[&](const auto& p){return side<2?p.x:p.y;};
+   for(const auto& [chain,gap]:chains){
+    const double offset=sign*(normal(chain.baseline)-datum);
+    const auto& a=chain.points.front();const auto& b=chain.points.back();
+    if(std::abs(normal(a)-normal(b))>.02||std::abs(along(a)-along(b))<1.)continue;
+    if(std::abs(std::accumulate(chain.values.begin(),chain.values.end(),0.)-std::abs(along(a)-along(b)))>.02)continue;
+    const bool eaveWitness=gap>=0&&std::abs(sign*(normal(a)-datum)+gap-spacing.start)<.02&&offset>0;
+    if(chain.values.size()==1&&(std::abs(offset-spacing.total)<.02||eaveWitness))endpoints[0].emplace_back(std::min(along(a),along(b)),std::max(along(a),along(b)));
+    if(chain.values.size()>1&&(std::abs(offset-spacing.second)<.02||eaveWitness))endpoints[1].emplace_back(std::min(along(a),along(b)),std::max(along(a),along(b)));
+   }
+   if(side)audit<<',';audit<<'['<<endpoints[0].size()<<','<<endpoints[1].size()<<']';
+   allSides=allSides&&endpoints[0].size()==1&&endpoints[1].size()==1&&
+    std::abs(endpoints[0][0].first-endpoints[1][0].first)<.02&&std::abs(endpoints[0][0].second-endpoints[1][0].second)<.02;
+  }
+  audit<<"]}";if(allSides)matches.push_back(box);
+ }
+ audit<<"]}";writeNew(job.root/(L"roof-frame-datums-"+std::to_wstring(panel)+L".json"),audit.str());
+ return matches;
+}
+
+
 std::vector<PlanControlFrame> planTemplateFrames(ProductJob& job,AcDbDatabase& db,const fs::path& file,const fs::path& source){
  std::map<int,ProductPlanBounds> confirmed;
  if(!file.empty()){
@@ -134,7 +325,7 @@ std::vector<PlanControlFrame> planTemplateFrames(ProductJob& job,AcDbDatabase& d
    ProductPlanBounds b;int panel;require(bool(in>>panel>>b.xmin>>b.ymin>>b.xmax>>b.ymax)&&job.planSheetLayouts.count(panel)&&
     b.xmin<b.xmax&&b.ymin<b.ymax&&confirmed.emplace(panel,b).second,"invalid or duplicate frame datum");
   }
-  require(tag=="END"&&!(in>>hash)&&confirmed.size()==job.planSheetLayouts.size(),"incomplete frame datum file");
+  require(tag=="END"&&!(in>>hash)&&!confirmed.empty(),"incomplete frame datum file");
  }
  std::map<std::string,ProductPlanBounds> boxes;
  for(const auto& [h,type]:modelTypes(db))if(type==L"AcDbPolyline"){
@@ -156,7 +347,12 @@ std::vector<PlanControlFrame> planTemplateFrames(ProductJob& job,AcDbDatabase& d
     bool complete=true;for(int row=1;row<4;++row)if(handles(planFrameOffset(inner,row*8./scale)).size()!=1)complete=false;
     if(complete)groups.push_back(planFrameOffset(inner,-18./scale));
    }
-   require(groups.size()==1,"four unique plan frames or confirmed per-side datums required");datum=groups.front();
+   if(groups.empty()){
+    const ProductPlanBounds window{centre.x-vp->width()/(2*scale),centre.y-vp->height()/(2*scale),
+                                   centre.x+vp->width()/(2*scale),centre.y+vp->height()/(2*scale)};
+    groups=planRoofFrameDatums(job,db,window,scale,panel);
+   }
+   require(groups.size()==1,"four unique plan frames or measured per-side datums required");datum=groups.front();
   }
   require(inView(datum),"frame datum outside assigned plan viewport");
   for(int row=0;row<4;++row){
@@ -176,7 +372,11 @@ std::vector<PlanControlFrame> planTemplateFrames(ProductJob& job,AcDbDatabase& d
  }
  // Reuse the production dashed pattern and LTSCALE compensation, per sheet scale.
  const auto layer=productPlanLayer(db,L"Defpoints",8,false);
- {auto l=editObject<AcDbLayerTableRecord>(layer);l->setIsOff(false);status(l->setIsFrozen(false),"thaw frame layer");}
+ {
+  auto l=editObject<AcDbLayerTableRecord>(layer);
+  if(l->isOff())l->setIsOff(false);
+  if(l->isFrozen())status(l->setIsFrozen(false),"thaw frozen frame layer");
+ }
  for(const auto& [panel,sheet]:job.planSheetLayouts){
   ProductPlanLayoutConfig config;
   for(const auto& f:result)if(f.panel==panel){
@@ -221,12 +421,13 @@ void planTemplateLayers(ProductJob& job,AcDbDatabase& db){
  require(role=="END","complete template layer policy");
  for(const auto& [h,type]:modelTypes(db)){
   auto entity=open<AcDbEntity>(find(db,ascii(h)));const auto old=symbolName(entity->layerId());std::wstring target;
+  if(old==L"A-家具"||old==L"A-洁具、厨具")continue;
   if(type==L"TDbWall")target=L"A-WALL";
   else if(type==L"TDbColumn")target=L"A-COLUMN";
   else if(type==L"TDbOpening"||type==L"TDbGroupOpening")target=L"A-WINDOW";
   else if(type==L"AcDbLine"&&symbolName(entity->linetypeId())==L"DOTE")target=L"A-DOTE";
   else if(old==L"A-房间名称")target=old;
-  else if(old==L"A-家具"||old==L"A-洁具、厨具")target=old;
+
   if(!target.empty()){
    const auto id=entity->objectId();entity.reset();auto edit=editObject<AcDbEntity>(id);
    status(edit->setLayer(layers.at(target)),"template semantic layer");status(edit->setColorIndex(256),"template semantic ByLayer color");
@@ -287,7 +488,7 @@ void planTemplatePlotSettings(ProductJob& job,AcDbDatabase& db){
  for(const auto& [panel,sheet]:job.planSheetLayouts){
   const auto id=manager->findLayoutNamed(sheet.name.c_str(),&db);auto layout=editObject<AcDbLayout>(id);
   validator->refreshLists(layout.get());status(validator->setPlotCfgName(layout.get(),pc3.filename().c_str()),"bind template PDF device");
-  validator->refreshLists(layout.get());productSelectPlanPaper(*layout,*validator,sheet.paperWidth,sheet.paperHeight,1.);
+  validator->refreshLists(layout.get());productApplyPlanLayoutPaper(*layout,*validator,sheet.paperWidth,sheet.paperHeight);
   const auto selectedStyle=std::max(sheet.paperWidth,sheet.paperHeight)>594.1?L"FY-XS-2026.9-A1.ctb":L"FY-XS-2026.9-A3 A4.ctb";
   const auto styleStatus=validator->setCurrentStyleSheet(layout.get(),selectedStyle);
   require(styleStatus==Acad::eOk,("bind template CTB status="+std::to_string(styleStatus)+" CTBmode="+std::to_string(db.plotStyleMode())).c_str());
@@ -301,10 +502,26 @@ void finishPlanTemplate(void* raw){
  try{
   // Keep the command document alive; close owned drawing databases before module unload.
   AcDbDatabase saved(false,true);readDrawing(saved,p.output);Working w(&saved);
-  require(bcpproduct::samePublicGeometry(p.protectedAfter,planTypographyProtected(saved,p.annotationScope)),"template non-annotation objects changed on independent reopen");
+  planRequireProtectedGeometry(p.report,p.protectedAfter,planTypographyProtected(saved,p.annotationScope),"template non-annotation objects changed on independent reopen");
+  if(!p.framesOnly){ProductJob check;check.root=p.report;check.currentPlanRules=true;productVerifyPlanFurniture(check,saved,p.layeredFurniture,{});}
   planVerifyControlFrames(saved,p);
   if(!p.framesOnly){
-  planTemplateAuditText(saved,p.output,p.report,p.issues);
+  ProductJob typographyJob;typographyJob.profile=p.resources;typographyJob.root=p.report;
+  productProtectFurnitureMembers(typographyJob,saved);
+  const auto auditSheets=readJointPaperJob(p.source,p.sheets,p.output,p.report);jointPaperSheets(typographyJob,saved,auditSheets);
+  typographyJob.planTables=p.tables;typographyJob.layoutSourcePanels=p.tableSourcePanels;
+  productAuditPlanTables(typographyJob,saved);
+  for(const auto& issue:typographyJob.detailPending)p.issues.push_back({issue[1],"table-coverage",issue[2]});
+  for(const auto& issue:productAuditStoredAxisEnds(saved,p.report/L"axis-expected-readback.json"))p.issues.push_back({issue.first,"axis-expected",issue.second});
+  const auto dependencyIssues=productAuditPlanFontDependencies(saved,p.fontCleanup,p.output,p.report);
+  p.issues.insert(p.issues.end(),dependencyIssues.begin(),dependencyIssues.end());
+  planTemplateAuditText(typographyJob,saved,p.output,p.report,p.issues);
+  const auto unitGlyphIssues=productAuditPlanUnitGlyphRepairs(saved,p.unitGlyphRepairs,p.output,p.report);
+  p.issues.insert(p.issues.end(),unitGlyphIssues.begin(),unitGlyphIssues.end());
+  const auto riskGlyphIssues=productAuditRiskGlyphs(typographyJob,saved,p.output,p.report);
+  p.issues.insert(p.issues.end(),riskGlyphIssues.begin(),riskGlyphIssues.end());
+  for(const auto& issue:productAuditFinalPlanOmissions(typographyJob,saved,p.omissionContext,p.output,p.report))
+   p.issues.push_back({issue.object,issue.role,issue.reason});
   std::ostringstream audit;audit<<"{\"savedReopened\":true,\"sourceSHA256\":\""<<sha(p.source)<<"\",\"outputSHA256\":\""<<sha(p.output)
    <<"\",\"templateSHA256\":\""<<p.run.templateHash<<"\",\"objects\":[";bool first=true;
   for(auto& item:p.run.objects){
@@ -320,7 +537,10 @@ void finishPlanTemplate(void* raw){
      }else{const auto g=chainGrips(id);const auto k=static_cast<std::size_t>(&handle-item.targets.data())*4;
       require(g.size()==4&&g[0].distanceTo(item.axisGrips[k])<.01&&g[1].distanceTo(item.axisGrips[k+1])<.01,"reopened axis position differs");
       std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*e,leaves);require(!leaves.empty(),"reopened native axis glyph absent");
-      for(const auto& leaf:leaves)require(leaf.text==item.axisNumber&&productTypographyFontMatches(leaf.style,{L"_TCH_AXIS",L"COMPLEX",L"GBCBIG",1,0,0},0),"reopened native axis font differs");
+      const auto endIndex=static_cast<std::size_t>(&handle-item.targets.data());
+      const auto& expectedNumber=endIndex<item.axisNumbers.size()?item.axisNumbers[endIndex]:item.axisNumber;
+      require(productAxisCaption(id)==expectedNumber,"reopened complete native axis number differs");
+      for(const auto& leaf:leaves)require(productTypographyFontMatches(leaf.style,{L"_TCH_AXIS",L"COMPLEX",L"GBCBIG",1,0,0},0),"reopened native axis font differs");
      }
     }
    }catch(const std::exception& error){item.issue=error.what();}
@@ -369,21 +589,30 @@ void executePlanTemplate(std::unique_ptr<PlanTemplateRequest> p){
  AcDbDatabase reference(false,true);readDrawing(reference,p->resources/L"reference.dwg");
  for(const auto& row:productTypographyInventory(db))p->annotationScope.insert(row.root);
  for(const auto& [h,type]:modelTypes(db))if(type==L"TDbAxisLabelSet"||type==L"TDbOpening"||type==L"TDbGroupOpening")p->annotationScope.insert(ascii(h));
+ for(const auto& fold:productFindAxisFolds(db).axisFolds)p->annotationScope.insert(fold.second);
  p->frames=planTemplateFrames(job,db,p->frameDatums,p->source);
  for(const auto& f:p->frames)p->annotationScope.insert(f.handle);
+ p->layeredFurniture=planLayeredFurniture(db);
+ productProtectFurnitureMembers(job,db);
+ p->omissionContext=productPrepareFinalPlanOmissions(job,db);
+ if(!p->omissionContext.views.empty()){
+  productCapturePlanTables(job,db,p->omissionContext.views);p->tables=job.planTables;
+  for(const auto& sheet:job.planSheetLayouts){const auto vp=open<AcDbViewport>(find(db,sheet.second.viewport));const auto c=vp->viewTarget();const auto offset=vp->viewCenter();
+   p->tableSourcePanels.push_back(1+bcpproduct::nearestGenericView(p->omissionContext.views,{c.x+offset.x,c.y+offset.y}));}
+ }
+ p->annotationScope.insert(p->omissionContext.cleanupScope.begin(),p->omissionContext.cleanupScope.end());
  const auto protectedBefore=planTypographyProtected(db,p->annotationScope);
- planTemplateIsolateFrames(db);
+ productCleanFinalPlanOmissions(job,db,p->omissionContext);
+ planTemplateIsolateFrames(db,job.protectedFurnitureMembers);
  p->issues=productNormalizeWholePlanTypography(job,db,reference);
  std::map<std::wstring,std::vector<AcDbObjectId>> openingGroups;
  for(const auto& [h,type]:modelTypes(db))if(type==L"TDbOpening"||type==L"TDbGroupOpening"){
   const auto id=find(db,ascii(h));const auto e=open<AcDbEntity>(id);if(!productPlanDimensionVisible(*e))continue;
   std::vector<ProductRoomLeaf> leaves;productRoomLeaves(*e,leaves);if(!leaves.empty())openingGroups[type].push_back(id);
  }
- for(const auto& [type,ids]:openingGroups)if(!productNativeLabelHeight(db,ids,400./85.)){
-  for(const auto id:ids){std::vector<double> heights;productOpeningTextHeights(*open<AcDbEntity>(id),heights);
-   if(heights.size()==1&&std::abs(heights[0]-400.)<.01)continue;
-   if(!productNativeLabelHeight(db,{id},400./85.))p->issues.push_back({axisHandle(id),"native-opening-label",u8"公开文字高度字段未能读回有效字高400（纸面4.0）；保留原生洞口并继续"});
-  }
+ for(const auto& [type,ids]:openingGroups){
+  const auto problems=productEnsureEffectiveOpeningHeight(db,ids,productTypographyModelHeight(job,"_TCH_WINDOW"));
+  p->issues.insert(p->issues.end(),problems.begin(),problems.end());
  }
  planTemplateOtherText(job,db,p->issues);
  for(const auto& [handle,change]:sheetJob.chains){
@@ -399,16 +628,20 @@ void executePlanTemplate(std::unique_ptr<PlanTemplateRequest> p){
   }catch(const std::exception& e){for(const auto& [part,point]:change.textPositions)if(part<n)moveDimensionGrip(id,static_cast<int>(n+3+part),original[n+3+part]);p->issues.push_back({handle,"text-repair",e.what()});}
  }
  p->run=productApplyNativeTemplate(job,db);
- const auto finalFonts=productRestorePlanTypography(db,reference,true);
+ const auto finalFonts=productRestorePlanTypography(job,db,reference,true);
  productSynchronizePlanDimensionTable(job,db,reference,finalFonts.dim);
+ productCleanFinalPlanOmissions(job,db,p->omissionContext);
  {std::ostringstream state;state<<"{\"objects\":[";bool first=true;for(const auto& item:p->run.objects){if(!first)state<<',';first=false;
   state<<"{\"source\":\""<<item.source<<"\",\"kind\":\""<<item.kind<<"\",\"targets\":"<<item.targets.size()<<",\"issue\":"<<jsonUtf8(bcpproduct::decodeMessage(item.issue))<<'}';}
   state<<"]}";writeNew(p->report/L"template-adaptation-progress.json",state.str());}
  for(const auto& item:p->run.objects)for(const auto& target:item.targets)p->annotationScope.insert(target);
- require(bcpproduct::samePublicGeometry(protectedBefore,planTypographyProtected(db,p->annotationScope)),"template annotations changed unrelated source geometry");
+ for(const auto& fold:productFindAxisFolds(db).axisFolds)p->annotationScope.insert(fold.second);
+ planRequireProtectedGeometry(p->report,protectedBefore,planTypographyProtected(db,p->annotationScope),"template annotations changed unrelated source geometry");
  planTemplateLayers(job,db);
  planTemplateTitleClearance(job,db,p->issues);
+ p->unitGlyphRepairs=productRepairPlanUnitGlyphs(job,db,p->issues);
  planTemplatePlotSettings(job,db);
+ p->fontCleanup=productCleanUnusedMissingPlanFonts(db);
  p->protectedAfter=planTypographyProtected(db,p->annotationScope);
  status(db.saveAs(p->output.c_str(),false,AcDb::kDHL_CURRENT),"save template-native final drawing");
  acDocManager->executeInApplicationContext(finishPlanTemplate,p.release());

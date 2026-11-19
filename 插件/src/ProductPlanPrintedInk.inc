@@ -152,7 +152,9 @@ void productWritePrintedInkRequest(ProductJob& job,AcDbDatabase& db,
    std::vector<bool> shortSegments(values.size(),false);
    for(std::size_t i=0;i<values.size();++i){
     const auto stationLength=std::abs(along(grips[i+3])-along(grips[i+2]))*frame.ratio;
-    shortSegments[i]=stationLength<=4.5;
+    // Native transformed stations can put an exact 450 mm just above 4.5 mm
+    // on paper. Match the final reader's tolerance so the boundary is covered.
+    shortSegments[i]=stationLength<=4.5+1e-6;
    }
    if(!modelReview&&!priorCollisions.count({panel,handle})&&
       std::find(shortSegments.begin(),shortSegments.end(),true)==shortSegments.end())continue;

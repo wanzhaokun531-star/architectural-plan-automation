@@ -12,8 +12,9 @@ SKILL = INSTALLED_SKILLS / 'architectural-annotation-rules'
 PLAN_SKILL = ROOT / 'skills/architectural-plan-automation'
 PLAN_FILES = ('SKILL.md', 'references/rules.md', 'references/project-parameters.md',
               'references/acceptance.md', 'references/rule-index.md', 'references/native-tools.md',
+              'references/runtime-consistency.md', 'references/design-sources.md',
               'references/template-standard.md')
-REVISION = '2026-11-18'
+REVISION = '2026-11-19'
 VERSION = '0.2.2'
 MASTER = ROOT / 'docs/规则汇编_20261105/建筑施工图平面自动化通用规则_20261105.json'
 SPACING = ROOT / 'docs/平面外围尺寸与轴号间距规则_20261105.json'
@@ -25,9 +26,11 @@ ANNOTATION_RULES = {'PD01': 'D01', 'PD09': 'TL11', 'PD11': 'D28', 'PD13': 'D23',
                     'PA07': 'A12', 'PA11': 'A18', 'PA18': 'A25', 'PA19': 'A26', 'PA20': 'A27', 'PA21': 'A28',
                     'PA22': 'A29', 'PA23': 'A30', 'PA24': 'A14',
                     'PA25': 'A31', 'PA26': 'A32', 'PE01': 'B04', 'PB03': 'D29',
-                    'PT02': 'L06', 'PT03': 'N06', 'PT04': 'L08'}
+                    'PT02': 'L06', 'PT03': 'N06', 'PT04': 'L08',
+                    'PD20': 'D31', 'PD21': 'QA11', 'PT05': 'O09'}
 ANNOTATION_INSERT_AFTER = {'PD18': 'PD17', 'PD19': 'PD18', 'PA25': 'PA24', 'PA26': 'PA25',
-                           'PT02': 'PT01', 'PT03': 'PT02', 'PT04': 'PT03'}
+                           'PT02': 'PT01', 'PT03': 'PT02', 'PT04': 'PT03',
+                           'PD20': 'PD19', 'PD21': 'PD20', 'PT05': 'PT04'}
 PLAN_RULE_BINDINGS = {'ruleSource': 'G09', 'sourceAnnotationDispositionRule': 'G06',
                       'axisLeadRule': 'A28', 'areaPartitionRule': 'S03',
                       'perimeterRowsRule': 'D01', 'roofThirdRowRule': 'D27',
@@ -46,7 +49,10 @@ PLAN_RULE_BINDINGS = {'ruleSource': 'G09', 'sourceAnnotationDispositionRule': 'G
                       'exteriorStepDefaultsRule': 'C20', 'sourceTextPlacementPriorityRule': 'L06',
                       'planTextTypographyRule': 'N06',
                       'openingLabelTypographyRule': 'L08',
-                      'architecturalPlanAcceptanceRule': 'P04', 'formalDeliveryRule': 'P06'}
+                      'architecturalPlanAcceptanceRule': 'P04', 'formalDeliveryRule': 'P06',
+                      'openingDesignSourceRule': 'O09', 'buildingPerimeterScopeRule': 'D31',
+                      'openingAndBoundaryWallAcceptanceRule': 'QA11'}
+PROJECT_POLICY_FIELDS = ('openingDesignSourcePolicy', 'buildingPerimeterScopePolicy', 'boundaryWallPlanPolicy', 'wallHeightFinalizationPolicy')
 EXECUTION_RULES = tuple(dict.fromkeys((*ANNOTATION_RULES.values(), *PLAN_RULE_BINDINGS.values())))
 PRECEDENCE = ['用户最新明确确认', '现行平面主汇编', '历史项目与版本记录按原范围查阅']
 ENTRY_AXIS_RULES = {'crossFloorWallAxis': 'A30', 'previouslyUnnumberedAxisReview': 'A31',
@@ -63,6 +69,20 @@ RETIRED_PLACEMENT_FIELDS = ('datum', 'axisDatumSelection', 'automaticOutwardShif
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest().upper()
+
+
+def typography_execution(standard_path):
+    """Derive the native contract from the same policy used by the final reader."""
+    standard = read_json(standard_path)
+    styles = {row['name']: row for row in standard['finalTypographyPolicy']['styles']}
+    rows = ['PLANFONTS1 ' + sha(standard_path)]
+    for name in ('FY_HZ', '_TCH_DIM', '_TCH_WINDOW'):
+        style = styles[name]
+        values = [style['heightMM'], style['width'], style['fixedHeight']]
+        if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in values) or min(values[:2]) <= 0 or values[2] < 0:
+            raise ValueError('Invalid typography policy: ' + name)
+        rows.append('STYLE ' + ' '.join([name, style['font'], style['bigFont'], *(format(x, '.17g') for x in values)]))
+    return '\n'.join([*rows, 'END', ''])
 
 
 def read_json(path):
@@ -132,6 +152,15 @@ def replace_rule_line(text, prefix, line):
     return updated
 
 
+def pending_typography_row(master):
+    rows = [row for section in master['sections'] if '待补参数与后续决策' in section['title']
+            for block in section['blocks'] if block['kind'] == 'table'
+            for row in block['args'][1] if len(row) == 2 and row[1].startswith('尚未统一的其他字高字宽')]
+    if len(rows) != 1 or not all(key in rows[0][1] for key in ('N06', 'L08', 'Y10')):
+        raise ValueError('待补参数表应引用已确认的三套文字规则 N06、L08、Y10')
+    return '| ' + ' | '.join(rows[0]) + ' |'
+
+
 def render_annotation_rules(text, rules):
     for alias, rule_id in ANNOTATION_RULES.items():
         line = annotation_line(alias, rule_id, rules)
@@ -146,6 +175,12 @@ def render_annotation_rules(text, rules):
                               text, flags=re.M)
         if count != 1:
             raise ValueError('Missing or duplicate annotation rule ' + rule_id)
+    text = text.replace('| 四道排布参考 | 仅计算，不生成实体 | 不适用 |',
+                        '| 四道实体辅助框 | Defpoints，每幅四道 | ACI8灰色虚线，模型可见、不打印 |')
+    text = text.replace('门窗编号按L08及模板书面要求，住宅纸面2.8mm、其他3.0mm；_TCH_WINDOW用tssdeng.shx加hztxt.shx、宽0.65。',
+                        '门窗编号按现行L08、PT04及模板书面要求，所有项目纸面3.0mm；_TCH_WINDOW用simplex.shx加gbcbig.shx、宽0.65、固定样式高度3.0。')
+    text = text.replace('所有项目纸面4.0mm；_TCH_WINDOW用simplex.shx加gbcbig.shx、宽0.65、固定样式高度4.0。',
+                        '所有项目纸面3.0mm；_TCH_WINDOW用simplex.shx加gbcbig.shx、宽0.65、固定样式高度3.0。')
     return text
 
 
@@ -219,12 +254,15 @@ def opening_label_typography(rule):
               'textStyle': match[1], 'paperHeightMM': float(match[2])}
     if match[1] == '_TCH_WINDOW':
         result.update(fontFile='simplex.shx', bigFontFile='gbcbig.shx',
-                      widthFactor=0.65, fixedHeight=4.0, layer='A-WINDOW-TEXT',
-                      source='user-confirmed-2026-11-18')
+                      widthFactor=0.65, fixedHeight=float(match[2]), layer='A-WINDOW-TEXT',
+                      source='user-confirmed-2026-11-19')
     return result
 
 
 def project_execution_rules(execution, rules, dimension_policy, template_policy=None, cleanup_policy=None):
+    master = read_json(MASTER)
+    for field in PROJECT_POLICY_FIELDS:
+        execution[field] = master[field]
     execution['planRuleBindings'] = {field: rules[rule_id] for field, rule_id in PLAN_RULE_BINDINGS.items()}
     execution['planTextTypography'] = plan_text_typography(rules['N06'])
     execution.setdefault('roomTextAndArea', {})['typographyRule'] = 'N06'
@@ -352,6 +390,9 @@ def exterior_step_defaults(rule):
 
 def verify_machine_rules(entry, rules, dimension_policy):
     master = read_json(MASTER)
+    for field in PROJECT_POLICY_FIELDS:
+        if entry.get(field) != master[field]:
+            raise ValueError('Stale mandatory project policy: ' + field)
     cleanup = master.get('annotationCleanupPolicy')
     if cleanup:
         room = entry.get('roomTextAndArea', {})
@@ -481,7 +522,7 @@ def verify_execution_rules(master):
     if master['precedence'] != PRECEDENCE:
         raise ValueError('Stale master precedence for G09')
     perimeter = read_json(PERIMETER_CONTENT)
-    if perimeter.get('applicabilityRules') != {rule_id: rules[rule_id] for rule_id in ('D01', 'D27', 'QA10')}:
+    if perimeter.get('applicabilityRules') != {rule_id: rules[rule_id] for rule_id in ('D01', 'D27', 'QA10', 'D31', 'QA11')}:
         raise ValueError('Stale perimeter applicability rules: D01, D27 or QA10')
     interior = read_json(INTERIOR_DIMENSIONS)
     if interior.get('dimensionStylePolicy') != master['dimensionStylePolicy']:
@@ -504,11 +545,18 @@ def verify_execution_rules(master):
 
 def verify_installed_skills():
     master = read_json(MASTER)
+    if pending_typography_row(master) not in MASTER.with_suffix('.md').read_text('utf-8-sig').splitlines():
+        raise ValueError('主汇编待补参数表的文字规则与 JSON 不一致')
     annotation = (SKILL / 'references/plan.md').read_text('utf-8-sig')
     installed = INSTALLED_SKILLS / PLAN_SKILL.name
     for directory in (PLAN_SKILL, installed):
         verify_rule_content(master, annotation, directory)
         verify_template_assets(directory / 'assets/annotation-template', master)
+    verify_template_assets(SKILL / 'assets/annotation-template', master)
+    for name in ('template-runtime.json', 'plotters/manifest.json', 'plotters/layers.tsv',
+                 'plotters/FY-XS-2026.9-PDF.pc3', 'plotters/FY-XS-2026.9-A3 A4.ctb', 'plotters/FY-XS-2026.9-A1.ctb'):
+        if sha(SKILL / 'assets' / name) != sha(PLAN_SKILL / 'assets' / name):
+            raise ValueError('Annotation and plan runtime resources differ: ' + name)
     verify_execution_rules(master)
     manifest = read_json(PLAN_SKILL / 'package-manifest.json')
     if manifest != read_json(installed / 'package-manifest.json') or any(
@@ -537,6 +585,8 @@ def sync_installed_skills():
     execution_text = execution_markdown.read_text('utf-8-sig')
     master_markdown = MASTER.with_suffix('.md')
     master_text = master_markdown.read_text('utf-8-sig')
+    master_text = replace_rule_line(master_text, '| 下一轮对应功能前 | 尚未统一的其他字高字宽',
+                                    pending_typography_row(master))
     execution = read_json(ENTRY)
     execution['axes']['mainAxisContinuityPolicy'] = master['mainAxisContinuityPolicy']
     for rule_id in EXECUTION_RULES:
@@ -551,7 +601,10 @@ def sync_installed_skills():
     execution['effectiveDate'] = REVISION
     execution['skill']['sourceVersion'] = REVISION + ' 平面主汇编同步'
     perimeter = read_json(PERIMETER_CONTENT)
-    perimeter['applicabilityRules'] = {rule_id: rules[rule_id] for rule_id in ('D01', 'D27', 'QA10')}
+    perimeter['applicabilityRules'] = {rule_id: rules[rule_id] for rule_id in ('D01', 'D27', 'QA10', 'D31', 'QA11')}
+    perimeter['dimensionStylePolicy'] = master['dimensionStylePolicy']
+    for field in PROJECT_POLICY_FIELDS:
+        perimeter[field] = master[field]
     perimeter['effectiveDate'] = REVISION
     write_text(PERIMETER_CONTENT, json.dumps(perimeter, ensure_ascii=False, indent=2) + '\n')
     interior = read_json(INTERIOR_DIMENSIONS)
@@ -582,15 +635,20 @@ def sync_installed_skills():
                                   nominalPaperTextHeightMM=2.8, widthFactor=1.0)
         fonts['openingNumber'] = {
             'style': '_TCH_WINDOW', 'font': 'simplex.shx', 'bigFont': 'gbcbig.shx',
-            'widthFactor': 0.65, 'nominalPaperTextHeightMM': 4.0, 'fixedHeight': 4.0,
+            'widthFactor': 0.65, 'nominalPaperTextHeightMM': template['textProfiles']['openingNumber']['heightMM'],
+            'fixedHeight': template['textProfiles']['openingNumber']['fixedHeight'],
             'source': 'annotation-template/standard.json:finalTypographyPolicy',
         }
         fonts['roleProfiles'] = template['textProfiles']
         write_text(fonts_path, json.dumps(fonts, ensure_ascii=False, indent=2) + '\n')
+        native_fonts = PLAN_SKILL / 'assets/annotation-template/typography.tsv'
+        write_text(native_fonts, typography_execution(native_fonts.with_name('standard.json')))
+        manifest.setdefault('assets/annotation-template/typography.tsv', '')
     sync_unified_catalog(PLAN_SKILL / 'assets/plan-policy', master)
     (PLAN_SKILL / 'assets/plan-policy/execution.tsv').write_text(
         executable_policy(master, read_json(SPACING)), encoding='ascii')
     for name in ('assets/plan-policy/all-plan-rules.json', 'assets/plan-policy/rule-catalog.tsv',
+                 'native/runtime_preflight.py', 'assets/runtime-capabilities.json',
                  'assets/axes.dwg', 'assets/axes.tsv', 'tools/Invoke-PlanJointRepair.ps1',
                  'tools/joint_annotation_search.py', 'tools/joint_annotation_slots.py', 'native/joint_annotation_repair.py',
                  'native/wall_height_revision.py', 'native/dimension_revision.py'):
@@ -608,10 +666,23 @@ def sync_installed_skills():
 
     write_text(annotation_path, annotation)
     common_path = annotation_path.parent / 'common.md'
-    write_text(common_path, replace_rule_line(common_path.read_text('utf-8-sig'), '| 平面尺寸标注 |',
-               '| 平面尺寸标注 | 按模板出图遵循原生样件实际引用 | 明确统一为 `_TCH_DIM` 时按 PD18 检查独立重开后的样式表及图面尺寸，两处均实际引用 `_TCH_DIM` |'))
+    common = replace_rule_line(common_path.read_text('utf-8-sig'), '| 平面尺寸标注 |',
+               '| 平面尺寸标注 | 所有项目按Y10统一_TCH_DIM、纸面2.8、宽1 | 复制拉伸真实模板对象及完整依赖；原始读回仅溯源，独立重开核样式表和逐段实际字形 |')
+    common = common.replace('门窗自身号住宅2.8/其他3.0', '门窗自身号统一3.0').replace('门窗自身号统一4.0', '门窗自身号统一3.0')
+    common = replace_rule_line(common, '| 平面门窗编号字高 |',
+               '| 平面门窗编号字高 | 所有项目3.0；_TCH_WINDOW、宽0.65、固定高度3.0 | simplex＋gbcbig，按L08及PT04；立剖面另按其规则 |')
+    write_text(common_path, common)
     write_text(annotation_path.parent / 'template-standard.md',
                (PLAN_SKILL / 'references/template-standard.md').read_text('utf-8-sig'))
+    for relative in ('annotation-template/standard.json', 'annotation-template/native-readback.json', 'annotation-template/typography.tsv',
+                     'annotation-template/平面标注.dwg', 'template-runtime.json', 'plotters/manifest.json',
+                     'plotters/layers.tsv', 'plotters/FY-XS-2026.9-PDF.pc3',
+                     'plotters/FY-XS-2026.9-A3 A4.ctb', 'plotters/FY-XS-2026.9-A1.ctb'):
+        origin = PLAN_SKILL / 'assets' / relative
+        target = SKILL / 'assets' / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.is_file() or sha(target) != sha(origin):
+            shutil.copyfile(origin, target)
     for name in ('plan.md', 'common.md', 'template-standard.md'):
         provenance['reference_sha256'][name] = sha(annotation_path.parent / name).lower()
     write_text(provenance_path, json.dumps(provenance, ensure_ascii=False, indent=2) + '\n')
@@ -655,6 +726,8 @@ def verify_template_assets(folder, master):
         return
     if read_json(folder / 'standard.json') != standard:
         raise ValueError('Template resource policy differs from master')
+    if (folder / 'typography.tsv').read_text('ascii') != typography_execution(folder / 'standard.json'):
+        raise ValueError('Native typography execution differs from current rule parameters')
     if sha(folder / standard['dwg']).lower() != standard['sha256'].lower():
         raise ValueError('Template DWG fingerprint differs')
     evidence = read_json(folder / 'native-readback.json')
@@ -679,7 +752,7 @@ def sync(resources):
                        policy / 'plan-automation-skill/assets/annotation-template'):
             folder.mkdir(parents=True, exist_ok=True)
             for origin in (PLAN_SKILL / 'assets/annotation-template').iterdir():
-                if origin.is_file():
+                if origin.is_file() and origin.resolve() != (folder / origin.name).resolve():
                     shutil.copyfile(origin, folder / origin.name)
     for name in PLAN_FILES:
         target = policy / 'plan-automation-skill' / name
@@ -700,7 +773,7 @@ def sync(resources):
     data['perimeter']['sidePlacement'] = placement
     data.get('controlFrames', {}).pop('datum', None)
     data['perimeter']['totalEndpoints'] = '本侧有效墙柱轴首末；第二道同边界，保留真实偏心段'
-    data['axes']['representationPolicy'] = '逐根按服务构件与有效范围确认轴位；范围不明的可靠原表达留在源台账。整图深化按 A26 删除全部已识别的源轴实体并重建。'
+    data['axes']['representationPolicy'] = '逐根按服务构件与有效范围确认轴位；冻结源轴与模板候选对应，候选验证成功后按 A26 逐组退出旧表达。失败保留合法原件并列清单，不叠加同位新轴号；范围不明的原表达留在源台账。'
     data['axes']['mainAxisContinuityPolicy'] = master.get('mainAxisContinuityPolicy')
     project_execution_rules(data, master_rules(master), master['dimensionStylePolicy'],
                             master.get('annotationTemplatePolicy'), master.get('annotationCleanupPolicy'))

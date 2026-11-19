@@ -1,6 +1,6 @@
 {
   "schema": "plan.annotation-template-standard.v1",
-  "effectiveDate": "2026-11-18",
+  "effectiveDate": "2026-11-19",
   "dwg": "平面标注.dwg",
   "sha256": "3c6b19fae21c1c5729d0e0000104dcadd9ba7a81560a31d74f0d576b2bd0dd2f",
   "scope": "architectural-plan-only",
@@ -766,9 +766,9 @@
       "style": "_TCH_WINDOW",
       "font": "simplex.shx",
       "bigFont": "gbcbig.shx",
-      "heightMM": 4.0,
+      "heightMM": 3.0,
       "width": 0.65,
-      "fixedHeight": 4.0,
+      "fixedHeight": 3.0,
       "nativeOwnNumber": true
     }
   },
@@ -955,10 +955,18 @@
     "rulesAndResourcesUpdated": true,
     "nativeEngineAdaptationVerified": true,
     "newProjectPlotVerified": false,
-    "verifiedScope": "贺府、刘府已有平面的模板原生终核，完整范围及模块指纹见 ../template-runtime.json"
+    "verifiedScope": "贺府、刘府已有平面的模板原生终核，完整范围及模块指纹见 ../template-runtime.json",
+    "latestRuleRevision": "2026-11-19",
+    "latestRuleIDs": [
+      "L08",
+      "O09",
+      "D31",
+      "QA11"
+    ],
+    "latestRuleNativeImplementationVerified": false
   },
   "finalTypographyPolicy": {
-    "authority": "user-confirmed-2026-11-18",
+    "authority": "user-confirmed-2026-11-19",
     "restoreAfterEveryImport": true,
     "verifyActualGlyphsAfterReopen": true,
     "styles": [
@@ -982,9 +990,9 @@
         "name": "_TCH_WINDOW",
         "font": "simplex.shx",
         "bigFont": "gbcbig.shx",
-        "heightMM": 4.0,
+        "heightMM": 3.0,
         "width": 0.65,
-        "fixedHeight": 4.0
+        "fixedHeight": 3.0
       }
     ]
   }

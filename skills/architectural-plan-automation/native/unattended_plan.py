@@ -14,7 +14,7 @@ import sys
 import tempfile
 
 from owned_plan_host import (JobError, RetryableHostError, file_hash, packaged_host_inputs, read_json, require,
-                             resume_owned_plan, run_owned_plan, write_json)
+                             resume_owned_plan, run_owned_plan, write_json, verify_owned_host_closure)
 
 
 @contextlib.contextmanager
@@ -47,6 +47,7 @@ def verified_candidate(attempt, source_hash, *, require_complete_plot=False):
         return None
     if not receipt.get('completed'):
         return None
+    verify_owned_host_closure(attempt)
     drawing = Path(receipt['output']).resolve(strict=True)
     require(drawing.parent == report and Path(receipt['records']).resolve() == report and drawing.suffix.lower() == '.dwg',
             '生成回执指向了作业目录以外的文件')
@@ -253,15 +254,11 @@ def execute_plan(source, output, work, settings, run_attempt, *, resume_attempt=
 
 
 def workspace_root(explicit, cwd, skill):
-    if not explicit and (skill / 'host/controller/run_quiet_job.py').is_file():
-        return skill.resolve()
-    roots = [Path(explicit)] if explicit else [cwd, *cwd.parents, *skill.parents, Path('D:/Codex/建筑施工图自动化')]
-    for root in roots:
-        if (root / 'host/controller/run_quiet_job.py').is_file():
-            return root.resolve()
-        if (root / '阶段1/原生接口探测/run_quiet_job.py').is_file():
-            return root.resolve()
-    raise JobError('没有找到平面 Skill 配套的 AutoCAD 隔离宿主工作区')
+    from runtime_preflight import discover_workspace
+    try:
+        return discover_workspace(explicit, cwd, skill)
+    except (OSError, ValueError) as error:
+        raise JobError(str(error)) from error
 
 
 def project_bindings(profile):
@@ -275,7 +272,29 @@ def project_bindings(profile):
         require(len(fields) == 3, '项目参数行必须绑定一个明确文件')
         included = (profile.parent / fields[2]).resolve(strict=True)
         bindings[str(included)] = file_hash(included)
+        if fields[1] == 'designSources':
+            from design_sources import adoption_bindings
+            bindings.update(adoption_bindings(included))
     return bindings
+
+
+def project_design_sources(profile, source):
+    if profile is None:
+        return None
+    lines = Path(profile).read_text(encoding='utf-8-sig').splitlines()
+    require(lines and lines[0].split() == ['PLANPROJECT1', file_hash(source)],
+            '项目资料必须绑定本轮源 DWG')
+    found = []
+    for line in lines[1:]:
+        fields = shlex.split(line, posix=True)
+        if len(fields) == 3 and fields[:2] == ['FILE', 'designSources']:
+            found.append((Path(profile).parent / fields[2]).resolve(strict=True))
+    require(len(found) <= 1, '项目逐樘资料采用表重复')
+    if found:
+        from design_sources import adoption_bindings
+        adoption_bindings(found[0], source)
+        return found[0]
+    return None
 
 
 def source_project_parameters(source):
@@ -299,9 +318,145 @@ def plan_resource_files(resources):
                   if path.suffix.lower() not in {'.dwl', '.dwl2'} and path.is_file())
 
 
+def verify_final_plan_scope(prepared_report, finalized):
+    """Follow the same original objects through preparation and every saved template pass."""
+    final_report = Path(finalized['report'])
+    original = read_json(prepared_report / 'plan-furniture-readback.json')
+    omission = read_json(prepared_report / 'plan-omissions-readback.json')
+    require(original.get('savedReopened') and omission.get('savedReopened'), '缺少准备图独立重开的对象回执')
+    expected = {item['object']: item['targetLayer'] for item in original['items']}
+    require(len(expected) == len(original['items']) and
+            all(item['geometryVerified'] and item['layerVerified'] for item in original['items']),
+            '准备图的家具身份、结构或归层复核失败')
+    removed = {item['handle'] for item in omission['removed'] if item['result'] == 'verified-absent'}
+    for location in finalized.get('history', [final_report]):
+        report = Path(location)
+        saved = read_json(report / 'plan-furniture-readback.json')
+        actual = {item['object']: item for item in saved['items']}
+        require(saved.get('savedReopened') and all(handle in actual and
+                actual[handle]['geometryVerified'] and actual[handle]['layerVerified'] and
+                actual[handle]['targetLayer'] == target for handle, target in expected.items()),
+                '模板重开后不能逐件对上原家具结构、句柄或目标图层')
+        transferred = read_json(report / 'template-native-readback.json')
+        live = {handle for row in transferred['objects'] for handle in (row['source'], *row['targets'])}
+        require(removed.isdisjoint(live), '已清除的旧标注再次出现在模板交接回执中')
+    digest = file_hash(Path(finalized['drawing']))
+    require(digest == finalized['sha256'] == read_json(final_report / 'formal-layout-print-review.json')['outputSHA256'],
+            '对象复核与同版试印指纹不一致')
+    # The catalog describes common preparation actions across module versions.
+    # Record the current module's object evidence separately against the final plotted DWG.
+    cases = {}
+    for key in ('D23', 'S01'):
+        handles = sorted(row['handle'] for row in omission['removed']
+                         if row.get('rule') == key and row['result'] == 'verified-absent')
+        cases[key] = {'action': 'remove-interior-dimensions' if key == 'D23' else 'remove-room-area-labels',
+                      'scope': '本次源图明确识别并退场的对象及模板交接回执',
+                      'removedSourceHandles': handles, 'savedReopened': True}
+    cases['Y09'] = {'action': 'assign-original-furniture-layer',
+                    'verifiedOriginalLayers': dict(sorted(expected.items()))}
+    cases['NC17'] = {'action': 'verify-original-furniture-structure', 'verifiedOriginalHandles': sorted(expected),
+                     'scope': '每次保存重开核原句柄、定义、成员、属性、变换及原几何，外层图层按用途验收'}
+    write_json(final_report / 'plan-current-rules-final.json', {
+        'schema': 'plan.final-rule-evidence.v1', 'outputSHA256': digest,
+        'furnitureVerified': len(expected), 'removedSourceHandles': sorted(removed), 'ruleEvidence': cases,
+        'scope': '本版实证仅覆盖列明对象。各图幅和其他事项按最终模板、实打及 P06 同版清单复核。'})
+
+
+def execute_ordinary_revision(source, output, work, workspace, skill, module, config):
+    from template_revision import execute_template_revision, publish_template_result
+    from wall_height_pipeline import reconcile_wall_heights, floor_levels_from_project
+    source, work, output = Path(source).resolve(strict=True), Path(work).resolve(), Path(output).resolve()
+    work.mkdir(parents=True, exist_ok=True)
+    files = {str(p): file_hash(p) for p in (module, *plan_resource_files(skill / 'assets'),
+                                             *packaged_host_inputs(workspace))}
+    if config.get('projectParameters'):
+        files.update(project_bindings(Path(config['projectParameters'])))
+    source_hash = file_hash(source)
+    identity = {'sourceSHA256': source_hash, 'inputFilesSHA256': files, 'configuration': config}
+    with job_lock(work / 'revision.lock'):
+        state_file = work / 'revision-job.json'
+        state = read_json(state_file) if state_file.is_file() else dict(identity=identity, attempts=[])
+        require(state['identity'] == identity, '修订暂存目录已绑定其他版本或任务')
+        for number in range(1, 4):
+            attempt = work / f'revision-{number:02}'
+            report = attempt / 'job'
+            if attempt.exists():
+                if (attempt / 'host.json').is_file() and not (report / 'product-result.json').is_file():
+                    try:
+                        resume_owned_plan(workspace, module, attempt, skill / 'assets')
+                    except RetryableHostError:
+                        continue
+            else:
+                state['attempts'].append(attempt.name)
+                write_json(state_file, state)
+                try:
+                    run_owned_plan(workspace, module, source, attempt, config)
+                except RetryableHostError:
+                    continue
+            if not (report / 'product-result.json').is_file():
+                continue
+            try:
+                verify_owned_host_closure(attempt, module=module, workspace=workspace)
+            except RetryableHostError:
+                continue
+            receipt = read_json(report / 'product-result.json')
+            require(receipt.get('completed') and receipt.get('reopened'), receipt.get('error') or '通用修订未完成保存重开')
+            drawing = report / 'candidate.dwg'
+            digest = file_hash(drawing)
+            require(source_hash == file_hash(source) == receipt['sourceSHA256'] and digest == receipt['outputSHA256']
+                    and all(file_hash(p) == h for p, h in files.items()), '修订源图、成图或输入资源指纹已变化')
+            furniture = read_json(report / 'plan-furniture-readback.json')
+            omissions = read_json(report / 'plan-omissions-readback.json')
+            require(furniture.get('savedReopened') and omissions.get('savedReopened') and
+                    all(x['geometryVerified'] and x['layerVerified'] for x in furniture['items']),
+                    '修订缺少家具和旧标注的独立重开凭据')
+            layouts = receipt['layouts']
+            require(layouts and len(layouts) == len(set(layouts)), '原图没有可核实的出图布局或布局冲突')
+            sheets = work / 'revision-sheets.tsv'
+            sheets.write_text('PLANJOINT1 ' + digest + '\n' + ''.join(
+                f'SHEET {i} {json.dumps(name, ensure_ascii=False)}\n' for i, name in enumerate(layouts, 1)) +
+                'END\n', encoding='utf-8')
+            prior = []
+            carried = checklist_path(source)
+            if not carried.is_file():
+                adjacent = source.parent / '待确认清单.csv'
+                if adjacent.is_file():
+                    carried = adjacent
+            if carried.is_file():
+                with carried.open(encoding='utf-8-sig', newline='') as stream:
+                    rows = list(csv.DictReader(stream))
+                if carried == checklist_path(source):
+                    require(all(row.get('DWG SHA-256', '').upper() == source_hash for row in rows),
+                            '修订源图与其同名遗留清单指纹不同')
+                prior = [row for row in rows if row.get('DWG SHA-256','').upper() == source_hash]
+            remaining = [(row.get('源对象') or row.get('对象',''), row.get('类别') or row.get('实际部位',''),
+                          row.get('问题与原因') or row.get('原因') or row.get('问题','')) for row in prior]
+            remaining.extend((handle, category, reason) for category, handle, reason in receipt['pending'])
+            staging = report / 'revision-unresolved.csv'
+            with staging.open('w', encoding='utf-8-sig', newline='') as stream:
+                writer = csv.writer(stream)
+                writer.writerow(('对象','类别','原因','DWG SHA-256'))
+                writer.writerows((*row, digest) for row in dict.fromkeys(remaining))
+            levels_file = floor_levels_from_project(config.get('projectParameters'), source)
+            wall_expected = None
+            if levels_file:
+                wall_expected = reconcile_wall_heights(source, work / 'project-wall-basis', workspace, skill, module,
+                                                        floor_levels=levels_file, repair=False)['expected']
+            result = execute_template_revision(drawing, sheets, work / 'template-finalize', workspace, skill,
+                                               module=module, wall_expected=wall_expected)
+            require(file_hash(source) == source_hash, '修订过程中源图发生变化')
+            verify_final_plan_scope(report, result)
+            publish_template_result(result, output, prior_checklist=staging)
+            return output
+        raise JobError('通用修订未取得可验证的原生回执，保留暂存目录以便续验')
+
+
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', required=True, type=Path)
+    parser.add_argument('--mode', choices=('generate','revise'), default='generate')
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--workspace-root', type=Path)
     parser.add_argument('--work-directory', type=Path)
@@ -317,27 +472,42 @@ def main(argv=None):
     require(not missing_modules, '本机 Python 缺少实际打印分析依赖：' + ', '.join(missing_modules))
 
     skill = Path(__file__).resolve().parents[1]
-    workspace = workspace_root(args.workspace_root, Path.cwd(), skill)
     source, output = args.source.resolve(), formal_output(args.output).resolve()
     resources = skill / 'assets'
     module = (args.module or skill / 'tools/PlanNative.arx').resolve(strict=True)
-    if args.template_sheets:
+    from runtime_preflight import module_compatibility
+    project = (args.project_parameters.resolve(strict=True) if args.project_parameters else source_project_parameters(source))
+    design_sources = project_design_sources(project, source)
+    effective_mode = 'generate' if design_sources else args.mode
+    template_only = bool(args.template_sheets) and not design_sources
+    capability = module_compatibility(skill, module, 'template-finalize' if template_only else effective_mode)
+    require(capability['compatible'], capability['reason'] + ' 保留原图，继续只读查漏或已验证的副本终核；禁止用旧破坏性路径生成后再修补。')
+    workspace = workspace_root(args.workspace_root, Path.cwd(), skill)
+    project = (args.project_parameters.resolve(strict=True) if args.project_parameters else source_project_parameters(source))
+    from wall_height_pipeline import floor_levels_from_project
+    floor_levels = floor_levels_from_project(project, source)
+    if template_only:
         from template_revision import execute_template_revision, publish_template_result
         work = args.work_directory or workspace / 'outputs/.plan-template-jobs' / file_hash(source)[:24]
         result = execute_template_revision(source, args.template_sheets.resolve(strict=True), work,
-                                           workspace, skill, module=module)
+                                           workspace, skill, module=module, floor_levels=floor_levels)
         publish_template_result(result, output, prior_checklist=checklist_path(source))
         print(output)
         return
     ink_analyzer = (skill / 'tools/check_plan_print_ink.py').resolve(strict=True)
     project = (args.project_parameters.resolve(strict=True) if args.project_parameters else
                source_project_parameters(source))
-    config = {'acceptance': 'architectural-plan', 'delivery': 'formal', 'mode': 'generate', 'printReview': '1',
+    config = {'acceptance': 'architectural-plan', 'delivery': 'formal', 'mode': effective_mode, 'printReview': '1',
               'scale': '100', 'unitMM': '1', 'plotStyle': args.plot_style, 'resources': str(resources),
               'plotInkAnalyzer': str(ink_analyzer), 'plotInkPython': sys.executable, 'roomTextConversion': '1',
               'postcheckMode': args.postcheck_mode, 'templatePreparation': '1'}
     if project:
         config['projectParameters'] = str(project)
+    if args.mode == 'revise' and not design_sources:
+        key = hashlib.sha256((str(output) + file_hash(source) + file_hash(module)).encode('utf-8')).hexdigest()[:24]
+        work = args.work_directory or workspace / 'outputs/.plan-revise-jobs' / key
+        print(execute_ordinary_revision(source, output, work, workspace, skill, module, config))
+        return
     joint_search = ink_analyzer.with_name('joint_annotation_search.py').resolve(strict=True)
     files = {str(path): file_hash(path) for path in (module, ink_analyzer, joint_search, *plan_resource_files(resources))}
     files.update({str(path): file_hash(path) for path in packaged_host_inputs(workspace)})
@@ -381,15 +551,34 @@ def main(argv=None):
             key = (side['view'], side['side'])
             require(key not in sides, '辅助框排布基准重复')
             sides[key] = side['coordinate']
+        roof_file = layout_file.with_name('roof-plan-readback.json')
+        if roof_file.is_file():
+            roof = read_json(roof_file)
+            for side in roof.get('existingAxisDimensions', []):
+                if side.get('savedReopened') and side.get('result') == 'verified-two-native-axis-distance-chains' and 'datum' in side:
+                    sides.setdefault((side['panel'], side['side']), side['datum'])
         rows = []
         for index, page in enumerate(pages, 1):
             panel = page['panel']
-            require(all((panel, side) in sides for side in range(4)), '图幅缺少已核实的辅助框基准')
+            present = [(panel, side) in sides for side in range(4)]
+            if not any(present):
+                continue
+            require(all(present), '图幅四侧辅助框基准不完整')
             bounds = ' '.join(str(sides[panel, side]) for side in (0, 2, 1, 3))
             rows.append(f'PANEL {index} {bounds}')
-        frame_datums = work / 'template-frame-datums.tsv'
-        frame_datums.write_text('PLANFRAMES1 ' + file_hash(result) + '\n' + '\n'.join(rows) + '\nEND\n', encoding='ascii')
-    finalized = execute_template_revision(result, sheets, work / 'template-finalize', workspace, skill, module=module, frame_datums=frame_datums)
+        if rows:
+            frame_datums = work / 'template-frame-datums.tsv'
+            frame_datums.write_text('PLANFRAMES1 ' + file_hash(result) + '\n' + '\n'.join(rows) + '\nEND\n', encoding='ascii')
+    from wall_height_pipeline import prepared_wall_basis
+    wall_expected = prepared_wall_basis(result, Path(prepared['report']))
+    finalized = execute_template_revision(result, sheets, work / 'template-finalize', workspace, skill, module=module,
+                                           frame_datums=frame_datums, wall_expected=wall_expected)
+    verify_final_plan_scope(Path(prepared['report']), finalized)
+    if design_sources:
+        from design_sources import verify_final_sources
+        guard_inputs()
+        verify_final_sources(Path(prepared['report']), finalized, work, workspace, skill, module, design_sources)
+        guard_inputs()
     publish_template_result(finalized, output, prior_checklist=checklist_path(result))
     print(output)
     if checklist_path(output).is_file():

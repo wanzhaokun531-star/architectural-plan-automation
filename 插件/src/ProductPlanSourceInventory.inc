@@ -40,7 +40,7 @@
   add(panel,"floor-datum","",{"B04","SE02"},u8"本幅完成面标高",u8"缺楼层身份、完成面依据或原生标高回读");
   add(panel,"story-height","",{"B04","SE02"},u8"本幅层高独立于完成面标高",
       u8"须核该图幅楼层归属、已确认层高、相邻楼面差或规则默认值");
-  add(panel,"net-domain","",{"S01","S03","S06","QA09"},u8"本幅墙内边、无名区及计量口径",
+  if(!job.currentPlanRules)add(panel,"net-domain","",{"S01","S03","S06","QA09"},u8"本幅墙内边、无名区及计量口径",
       u8"需核闭合净域、无名区用途、连通分区以及建筑面积口径");
   for(int side=0;side<4;++side)
    add(panel,"perimeter",std::string(1,"WESN"[side]),{"D01","D02","D03","D04","D06","QA10"},
@@ -99,7 +99,7 @@
   const bool confirmedArea=std::any_of(job.confirmedRooms.begin(),job.confirmedRooms.end(),[&](const auto& room){
    return room.panel==panel&&room.source==name.source;
   });
-  if(confirmedArea||role==ProductRoomRole::indoor||role==ProductRoomRole::wet||role==ProductRoomRole::washing)
+  if(!job.currentPlanRules&&(confirmedArea||role==ProductRoomRole::indoor||role==ProductRoomRole::wet||role==ProductRoomRole::washing))
    add(panel,"room-area",name.source,{"S03","S05","QA09"},productUtf8(name.text),
        u8"未证实本用途对应的独立或已确认合算净域、净面积及成图落字");
   if(name.text!=L"阳台"&&name.text!=L"露台")continue;

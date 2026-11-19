@@ -2,6 +2,7 @@
 #include <regex>
 #include <string_view>
 #include "PlanRuleCatalog.h"
+#include "PlanTypographyPolicy.h"
 #include "PlanRoomDomainJoin.h"
 #include "PlanAnnotationPolicy.h"
 #include "PlanOpeningStationPolicy.h"

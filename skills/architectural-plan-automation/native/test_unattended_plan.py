@@ -4,9 +4,10 @@ from pathlib import Path
 
 from unattended_plan import (
     JobError, RetryableHostError, execute_plan, file_hash, plan_resource_files, source_project_parameters,
-    workspace_root, write_json,
+    workspace_root, write_json, verify_final_plan_scope, project_design_sources, project_bindings,
 )
 from owned_plan_host import bridge_ini_text, packaged_host_inputs
+from test_owned_plan_host import write_closed_host
 
 
 class UnattendedPlanTests(unittest.TestCase):
@@ -21,9 +22,37 @@ class UnattendedPlanTests(unittest.TestCase):
         self.work = self.root / 'internal'
         self.options = {'moduleSHA256': 'test-module', 'resourcesSHA256': 'test-resources'}
 
+    def test_final_pass_must_keep_original_furniture_identity_and_removed_annotation_absent(self):
+        prepared = self.root / 'prepared'
+        final = self.root / 'final'
+        prepared.mkdir()
+        final.mkdir()
+        drawing = final / 'candidate.dwg'
+        drawing.write_bytes(b'saved native drawing')
+        digest = file_hash(drawing)
+        item = {'object': 'C1', 'targetLayer': 'A-家具', 'geometryVerified': True, 'layerVerified': True}
+        furniture = {'savedReopened': True, 'items': [item]}
+        write_json(prepared / 'plan-furniture-readback.json', furniture)
+        write_json(prepared / 'plan-omissions-readback.json', {
+            'savedReopened': True, 'removed': [{'handle': 'D1', 'result': 'verified-absent'}]})
+        write_json(final / 'formal-layout-print-review.json', {'outputSHA256': digest})
+        write_json(final / 'template-native-readback.json', {'objects': []})
+        result = {'report': str(final), 'drawing': str(drawing), 'sha256': digest}
+        write_json(final / 'plan-furniture-readback.json', {'savedReopened': True, 'items': []})
+        with self.assertRaises(JobError):
+            verify_final_plan_scope(prepared, result)
+        write_json(final / 'plan-furniture-readback.json', furniture)
+        write_json(final / 'template-native-readback.json', {'objects': [{'source': 'D1', 'targets': ['A9']}]})
+        with self.assertRaises(JobError):
+            verify_final_plan_scope(prepared, result)
+        write_json(final / 'template-native-readback.json', {'objects': []})
+        verify_final_plan_scope(prepared, result)
+        self.assertTrue((final / 'plan-current-rules-final.json').is_file())
+
     def evidence(self, attempt, *, formal=True, wrong_print=False, wrong_ink=False, bad_checklist=False):
         report = attempt / 'job'
         report.mkdir(parents=True)
+        write_closed_host(attempt)
         drawing = report / 'candidate.dwg'
         drawing.write_bytes(b'verified-dwg')
         pdf = report / 'layout.pdf'
@@ -99,7 +128,7 @@ class UnattendedPlanTests(unittest.TestCase):
         (legacy / 'run_quiet_job.py').touch()
         self.assertEqual(workspace_root(None, source_workspace, package), package)
         self.assertEqual(workspace_root(source_workspace, source_workspace, package), source_workspace)
-        with self.assertRaisesRegex(JobError, 'Install-PlanDraw'):
+        with self.assertRaisesRegex(JobError, 'machine.json'):
             packaged_host_inputs(package)
         configuration = {'profile': 'CodexS1Native_installed', 'supportComponent': str(self.root / 'vendor.arx')}
         write_json(host / 'machine.json', configuration)
@@ -135,6 +164,28 @@ class UnattendedPlanTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
         self.assertEqual(self.run_plan(lambda _: self.fail('already generated')), self.output)
         self.assertEqual(self.run_plan(lambda _: self.fail('already delivered')), self.output)
+
+    def test_completed_business_receipt_from_crashed_host_retries_then_resumes(self):
+        attempts = []
+        def execute(directory):
+            attempts.append(directory)
+            self.evidence(directory)
+            if len(attempts) == 1:
+                write_closed_host(directory, workerExitCode=3221225477)
+        self.assertEqual(self.run_plan(execute), self.output)
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(self.run_plan(lambda _: self.fail('normal final attempt must be reused')), self.output)
+
+    def test_three_crashed_hosts_with_success_receipts_never_publish(self):
+        attempts = []
+        def execute(directory):
+            attempts.append(directory)
+            self.evidence(directory)
+            write_closed_host(directory, workerExitCode=3221225477)
+        with self.assertRaisesRegex(JobError, '重试次数已用完'):
+            self.run_plan(execute)
+        self.assertEqual(len(attempts), 3)
+        self.assertFalse(self.output.exists())
 
     def test_running_attempt_can_be_reattached_at_the_saved_checkpoint(self):
         def interrupted(directory):
@@ -172,6 +223,17 @@ class UnattendedPlanTests(unittest.TestCase):
         self.assertEqual(source_project_parameters(self.source), profile)
         self.source.write_bytes(b'revised source')
         self.assertIsNone(source_project_parameters(self.source))
+
+    def test_design_source_route_is_source_bound_and_locks_nested_files(self):
+        evidence=self.root/'openings.csv';evidence.write_text('id,width,height',encoding='utf-8')
+        adoption=self.root/'design.tsv'
+        adoption.write_text(f'PLANDESIGN1 {file_hash(self.source)}\nFILE table {file_hash(evidence)} "{evidence.as_posix()}"\nEND\n',encoding='utf-8')
+        profile=self.root/'project.tsv'
+        profile.write_text(f'PLANPROJECT1 {file_hash(self.source)}\nFILE designSources "design.tsv"\nEND\n',encoding='utf-8')
+        self.assertEqual(project_design_sources(profile,self.source),adoption)
+        self.assertIn(str(evidence),project_bindings(profile))
+        self.source.write_bytes(b'different source')
+        with self.assertRaises(JobError):project_design_sources(profile,self.source)
 
     def test_print_hash_mismatch_blocks_publication(self):
         for mismatch in ('wrong_print', 'wrong_ink'):

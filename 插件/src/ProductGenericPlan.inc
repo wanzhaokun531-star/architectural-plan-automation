@@ -1,4 +1,4 @@
-﻿// Geometry-driven fallback. No project handle/count/coordinate is an admission
+// Geometry-driven fallback. No project handle/count/coordinate is an admission
 // condition. Resource drawings provide annotation objects, never architecture.
 struct GenericNativeWall {bcp::Wall wall;bool low{},orthogonal{};double total{};};
 struct GenericNativeColumn {std::string handle;AcGePoint3d centre;double halfX{},halfY{};};
@@ -128,6 +128,7 @@ struct ProductPlanFloorAlignment {
 #include "ProductPerimeterReconciliation.inc"
 #include "ProductProjectAxes.inc"
 #include "ProductPlanPanelOwnership.inc"
+#include "ProductPlanTableGroups.inc"
 #include "ProductPlanSourceDimensions.inc"
 #include "ProductPlanSourceInventory.inc"
 #include "ProductPlanSourceText.inc"
@@ -136,9 +137,11 @@ struct ProductPlanFloorAlignment {
 #endif
 #include "ProductPlanDatums.inc"
 #include "ProductPlanOldAnnotations.inc"
+#include "ProductPlanOmissions.inc"
 #include "ProductPlanDimensionReplacement.inc"
 #include "ProductPlanTypography.inc"
 #include "ProductPlanTemplate.inc"
+#include "ProductPlanDesignSources.inc"
 #ifdef PLAN_STANDALONE_ENTRY
 #include "ProductPlanDeliveryReview.inc"
 #endif
@@ -464,6 +467,9 @@ struct ProductLooseNotePlacement {
  std::string handle;
  std::vector<AcGePoint3d> before,after;
  std::wstring text;
+ std::optional<AcGePoint3d> insertion;
+ AcGeVector3d direction;
+ int attachment{};
 };
 
 std::wstring productConstructionNoteContents(AcDbObjectId id){
@@ -575,7 +581,12 @@ std::vector<ProductLooseNotePlacement> productArrangeConstructionNotes(ProductJo
   }
   for(auto& [source,datum]:job.planRegisteredDatums)if(datum.output==handle)datum.points=after;
   for(auto& item:roof.imported)if(item.handle==handle)item.points=after;
-  placements.push_back({handle,before,after,value});
+  ProductLooseNotePlacement placed{handle,before,after,value};
+  if(!leader){
+   const auto native=open<AcDbMText>(id);placed.insertion=native->location();
+   placed.direction=native->direction();placed.attachment=static_cast<int>(native->attachment());
+  }
+  placements.push_back(std::move(placed));
  }
  return placements;
 }
@@ -939,6 +950,10 @@ void productCheckPlanPrintGeometry(ProductJob& job,AcDbDatabase& db,
   const auto point=owner!=input.titles.end()?owner->anchor:centre;
   Ink row{ascii(handle),ownerOf(point),bounds,{},
    type==L"TDbDimension2"||AcDbDimension::cast(entity.get())!=nullptr,entity->layerId()};
+  for(const auto& table:job.planTables)if(table.assigned&&
+   std::find(table.members.begin(),table.members.end(),row.handle)!=table.members.end()){
+   row.view=table.view;break;
+  }
   if(const auto* polyline=AcDbPolyline::cast(entity.get());polyline&&polyline->isClosed()&&
      polyline->numVerts()==4&&std::abs(polyline->thickness())<1e-8){
    std::array<AcGePoint3d,4> vertices;
@@ -1243,8 +1258,9 @@ void productAuditGenericAxes(ProductJob& job,AcDbDatabase& db,const ProductPlanL
     const auto id=find(db,role.handle);
     const auto object=open<AcDbEntity>(id);
     native&=!object->isAProxy()&&std::wstring(object->isA()->name())==L"TDbAxisLabelSet";
-    readAxisLeaves(*object,axis.label,0,texts,circles);
     const auto grips=chainGrips(id);
+    AxisInk actualInk;axisInkLeaves(*object,actualInk);circles+=static_cast<int>(actualInk.circles.size());
+    for(std::size_t k=0;k+1<grips.size();k+=4)if(productAxisCaptionAt(id,grips[k+1])==bcpproduct::decodeMessage(axis.label))++texts;
     for(std::size_t i=0;i+1<grips.size();i+=4){
      const auto side=productAxisEnd(bounds,axis.vertical,grips[i],grips[i+1]).side;
      (side%2?positive:negative)=true;
@@ -1399,13 +1415,12 @@ void productFinishGeneric(){
   tick=now;
  };
  auto input=productReadGenericInput(job,db);const auto original=modelTypes(db);
+ auto designSources=productApplyDesignSources(job,db,input);
  stamp("native-source-read");
  const auto sourceMasks=job.unifiedPlan?productMasks(db):std::vector<std::string>{};
  const auto sourcePerimeterWitnesses=job.unifiedPlan?productPerimeterSourceWitnesses(db,job):std::vector<ProductPerimeterSourceWitness>{};
- const auto sourceAxisOccupants=job.unifiedPlan?productAxisOccupancy(db):std::vector<ProductAxisOccupant>{};
- std::set<std::string> reservedAxisNumbers;
- for(const auto& occupant:sourceAxisOccupants)
-  reservedAxisNumbers.insert(occupant.numbers.begin(),occupant.numbers.end());
+ auto sourceAxisOccupants=job.unifiedPlan?productAxisOccupancy(db):std::vector<ProductAxisOccupant>{};
+ const auto unmappedSourceAxisGroups=job.unifiedPlan?productUnmappedSourceAxisGroups(db):std::vector<std::pair<std::string,std::string>>{};
  std::vector<bcp::Wall> walls;for(const auto& w:input.walls)walls.push_back(w.wall);const auto views=bcpproduct::discoverGenericViews(walls);require(!views.empty(),"current native plan components");
  productRecordRulePanels(job,views);
  const auto sourceGeometry=job.unifiedPlan?productCapturePlanSourceGeometry(db,input,views):std::vector<ProductPlanSourceGeometry>{};
@@ -1418,6 +1433,12 @@ void productFinishGeneric(){
  auto ownership=job.unifiedPlan?productIdentifyPlanPanels(input,views,job.unifiedUnitMM):
    std::vector<ProductPanelOwnership>{};
  productApplyPlanPanelScope(job,input,views,ownership);
+ if(job.unifiedPlan){
+  const auto axisPolicy=productLoadPlanPaperPolicy(job,job.unifiedScale,job.unifiedUnitMM);
+  productAssignSourceAxisViews(sourceAxisOccupants,views,job.unifiedUnitMM,
+    bcpproduct::planAnnotationLayout(job.unifiedScale,job.unifiedUnitMM,axisPolicy).circleCentre);
+  for(auto& source:sourceAxisOccupants)if(source.view)source.view=ownership[*source.view].parentPanel.value_or(*source.view);
+ }
  auto axisViews=views;
  // Keep source component identities for reconciliation. Attached components
  // nevertheless serve their owning floor's axes and perimeter stations.
@@ -1431,8 +1452,18 @@ void productFinishGeneric(){
   target.bounds.ymin=std::min(target.bounds.ymin,views[i].bounds.ymin);
   target.bounds.ymax=std::max(target.bounds.ymax,views[i].bounds.ymax);
  }
+ productSeparateBoundaryWalls(job,input,axisViews);
  productCapturePlanInventory(job,db,input,views,original,nameChecks,ownership);
+ for(std::size_t v=0;v<views.size();++v)for(const auto i:views[v].walls)if(job.planBoundaryWalls.count(input.walls[i].wall.handle)){
+  const auto& h=input.walls[i].wall.handle;
+  if(job.sourceInventory.items.count({v+1,"wall-axis",h}))productCheckPlanSource(job,v+1,"wall-axis",h,bcpproduct::PlanCheck::omitted,{},u8"D31：已按源绑定构件用途确认为围墙，不参与主体轴网");
+  if(job.sourceInventory.items.count({v+1,"wall-height",h}))productCheckPlanSource(job,v+1,"wall-height",h,bcpproduct::PlanCheck::omitted,{},u8"D31：围墙保留原构造高度，不套主体楼层墙高");
+ }
  if(job.architecturalPlanOnly)productCaptureOldAnnotations(job,db,views,ownership,sourcePerimeterWitnesses);
+ const auto furnitureExclusions=productPlanConfirmedNonFurnitureOutlines(job,db,input,job.unifiedUnitMM);
+ const auto furniture=productApplyPlanFurniture(job,db,furnitureExclusions);
+ if(job.currentPlanRules)productProtectFurnitureMembers(job,db);
+ productCapturePlanTables(job,db,views);
  std::vector<bool> selected(views.size());
  if(job.unifiedPlan){
   for(std::size_t i=0;i<views.size();++i)selected[i]=ownership[i].eligible();
@@ -1505,7 +1536,7 @@ void productFinishGeneric(){
    alignment[view].floor=floor;
    if(ownership[view].role!=ProductPanelRole::floor)continue;
    std::vector<bcpproduct::AxisServiceWall> tieWalls;
-   for(const auto index:views[view].walls){
+   for(const auto index:axisViews[view].walls){
     const auto& source=input.walls[index];
     if(source.low||!source.orthogonal||
        (std::abs(source.total-200)>1e-5&&std::abs(source.total-240)>1e-5))continue;
@@ -1643,7 +1674,7 @@ void productFinishGeneric(){
   const bool registeredProjection=projection&&registered.registered&&alignment[projection->reference].registered&&
    std::abs(projection->shift.x-(registered.offset.x-alignment[projection->reference].offset.x))<=1./layout.unitMM&&
    std::abs(projection->shift.y-(registered.offset.y-alignment[projection->reference].offset.y))<=1./layout.unitMM;
-  if(job.unifiedPlan)productApplyRetreatAxes(projectAxes,view,bounds,input,views[view],axes,.01/layout.unitMM);
+  if(job.unifiedPlan)productApplyRetreatAxes(projectAxes,view,bounds,input,axisViews[view],axes,.01/layout.unitMM);
   if(!surfaces.empty()&&!projection)job.detailPending.push_back({u8"屋顶露台轴网",std::to_string(view+1),u8"已读到室外投影边界；下层共同轴位未唯一匹配，保留本层已知轴网"});
   const auto annotation=projection?projection->bounds:bounds;
   const int panel=static_cast<int>(layout.panels.size());
@@ -1660,11 +1691,21 @@ void productFinishGeneric(){
    productStageOldPerimeterDimensions(job,db,layout,panel,view+1,&originalFacade);
   }
   std::sort(axes.begin(),axes.end(),[](const auto& a,const auto& b){return a.vertical!=b.vertical?a.vertical>b.vertical:a.coordinate<b.coordinate;});
+  auto sourceAxisBindings=job.unifiedPlan?productBridgeSourceAxes(sourceAxisOccupants,view,axes,layout.unitMM):
+      std::map<std::size_t,ProductSourceAxisBinding>{};
+  std::set<std::string> matchedSourceHandles,unboundAxisNumbers;
+  for(const auto& [index,binding]:sourceAxisBindings)if(binding.issue.empty())
+   matchedSourceHandles.insert(binding.handles.begin(),binding.handles.end());
+  for(const auto& source:sourceAxisOccupants)if(source.visible&&(!source.view||*source.view==view)&&!matchedSourceHandles.count(source.handle))
+   unboundAxisNumbers.insert(source.numbers.begin(),source.numbers.end());
+  for(const auto& [index,binding]:sourceAxisBindings)if(binding.issue.empty())axes[index].label.clear();
+  for(const auto& [index,binding]:sourceAxisBindings)if(!binding.issue.empty())
+   for(const auto& handle:binding.handles)productRecordPlanAxisFailure(job,view+1,binding.number,handle,
+     std::string("source axis retained; no same-station new circle created: ")+binding.issue);
   if(alignment[view].registered){
    const auto& offset=alignment[view].offset;
    std::array<std::set<std::size_t>,2> matchedStations;
    for(auto& axis:axes){
-    axis.label.clear();
     const auto direction=axis.vertical?0:1;
     const auto& stations=buildingStations[direction];
     const auto position=axis.coordinate-(axis.vertical?offset.x:offset.y);
@@ -1673,10 +1714,15 @@ void productFinishGeneric(){
     const auto index=static_cast<std::size_t>(match-stations.begin());
     if(!matchedStations[direction].insert(index).second)continue;
     const auto candidate=axis.vertical?std::to_string(index+1):bcp::alphabetLabel(index).value_or("");
-    if(!reservedAxisNumbers.count(candidate))axis.label=candidate;
+    axis.label=candidate;
+    if(unboundAxisNumbers.count(candidate)){
+     axis.showNegative=axis.showPositive=false;
+     productRecordPlanAxisFailure(job,view+1,candidate,axis.labelHandle,
+       "approved registered number is still occupied by an unmapped source axis; source retained without a new duplicate");
+    }
    }
   }
-  std::set<std::string> occupied=reservedAxisNumbers;
+  std::set<std::string> occupied=unboundAxisNumbers;
   if(alignment[view].registered){
    for(std::size_t i=0;i<buildingStations[0].size();++i)occupied.insert(std::to_string(i+1));
    for(std::size_t i=0;i<buildingStations[1].size();++i){
@@ -1692,9 +1738,22 @@ void productFinishGeneric(){
    while(!a.label.empty()&&occupied.count(a.label));
    occupied.insert(a.label);
   }
+  for(auto& [index,binding]:sourceAxisBindings)if(binding.issue.empty())binding.approvedNumber=axes[index].label;
   if(!job.unifiedPlan)for(bool vertical:{true,false})for(bool negative:{true,false}){std::vector<std::size_t> indices;std::vector<double> positions,reaches;for(std::size_t i=0;i<axes.size();++i){const auto& a=axes[i];if(a.vertical!=vertical||!(negative?a.negative:a.positive))continue;double reach=negative?1e100:-1e100;for(const auto& w:service)if(w.vertical==vertical&&std::abs(w.coordinate-a.coordinate)<1e-5)reach=negative?std::min(reach,w.lower):std::max(reach,w.upper);for(const auto& c:columnService)if(std::abs((vertical?c.x:c.y)-a.coordinate)<1e-5)reach=negative?std::min(reach,vertical?c.y:c.x):std::max(reach,vertical?c.y:c.x);indices.push_back(i);positions.push_back(a.coordinate);reaches.push_back(reach);}const auto keep=bcp::outerAxisLabels(positions,reaches,negative,800);for(std::size_t i=0;i<indices.size();++i)if(!keep[i]){if(negative)axes[indices[i]].showNegative=false;else axes[indices[i]].showPositive=false;}}
   for(auto& a:axes){
    if(a.label.empty()||(!a.showNegative&&!a.showPositive))continue;
+   productExpectPlanAxis(layout,panel,a.vertical,a.label,a.coordinate,a.showNegative,a.showPositive);
+   const auto binding=sourceAxisBindings.find(static_cast<std::size_t>(&a-axes.data()));
+   if(binding!=sourceAxisBindings.end()&&binding->second.issue.empty()){
+    productBindExpectedPlanAxis(layout,panel,a.vertical,a.label,binding->second.handles.front());
+    auto& expected=*std::find_if(layout.expectedAxes.begin(),layout.expectedAxes.end(),[&](const auto& row){return row.panel==panel&&row.vertical==a.vertical&&row.number==a.label;});
+    expected.sourceLabels=binding->second.handles;expected.sourceEndHandles=binding->second.ends;expected.sourceFolds=binding->second.folds;
+    for(const auto& handle:binding->second.handles){layout.axes.push_back({handle,panel,a.vertical?1:0,0});layout.axisOriginalHandles[handle]=expected.original;}
+    for(const auto& [side,fold]:binding->second.folds)layout.axisFolds[{binding->second.ends.at(side),side}]=fold;
+   }
+   // Formal generation materializes the frozen ends once, from the approved
+   // native template, in productPlanLayout. Do not run the obsolete fitter first.
+   if(job.unifiedPlan)continue;
    AcDbObjectId id;
    try{
    id=cloneOne(bank,a.vertical?axisV:axisH,db);
@@ -1703,6 +1762,7 @@ void productFinishGeneric(){
    {auto e=editObject<AcDbEntity>(id);productStatus(e->transformBy(AcGeMatrix3d::translation(a.vertical?AcGeVector3d(a.coordinate-g[0].x,0,0):AcGeVector3d(0,a.coordinate-g[0].y,0))),"place current logical axis");}
    trialPositionAxis(id,a.vertical,a.vertical?annotation.ymin:annotation.xmin,a.vertical?annotation.ymax:annotation.xmax,3600,true);productGenericAxisNumber(id,a.label,a.vertical);
    a.labelHandle=axisHandle(id);
+   productBindExpectedPlanAxis(layout,panel,a.vertical,a.label,a.labelHandle);
    if(a.showNegative!=a.showPositive){
     layout.keepNegativeAxisEnd.emplace(a.labelHandle,a.showNegative);
     job.axisSideCommandUsed=true;
@@ -1880,7 +1940,7 @@ void productFinishGeneric(){
     openingAxisTerminals.push_back({axis.vertical,axis.coordinate,range.first,range.second,axis.sourceWalls.front()});
   }
   productGenericOpenings(job,db,input,views,view,bounds,panel,prototype,layout,captions,interior,openingAxisTerminals);
-  if(job.unifiedPlan)productApplyAxisDetails(job,db,projectAxes,view,panel,input,views[view],bounds,axes,prototype,layout);
+  if(job.unifiedPlan)productApplyAxisDetails(job,db,projectAxes,view,panel,input,axisViews[view],bounds,axes,prototype,layout);
   productGenericRooms(job,db,input,views,view,bounds,surfaces,panel,reference,layout.scale,layout.unitMM,nameChecks,
                       job.unifiedPlan,&writtenAreas
 #ifdef PLAN_STANDALONE_ENTRY
@@ -1927,6 +1987,14 @@ void productFinishGeneric(){
   for(std::size_t view=0;view<exportedAxes.size();++view){
    if(!generatedViews[view])continue;
    for(auto& axis:exportedAxes[view]){
+    if(axis.labelHandle.empty()){
+     const auto expected=std::find_if(layout.expectedAxes.begin(),layout.expectedAxes.end(),[&](const auto& row){
+      return row.panel==panel&&row.vertical==axis.vertical&&row.number==axis.label&&
+       std::abs(row.station-axis.coordinate)<.01/layout.unitMM;
+     });
+     if(expected!=layout.expectedAxes.end()&&expected->issue.empty()&&!expected->outputs.empty())
+      axis.labelHandle=expected->original.empty()?expected->outputs.front():expected->original;
+    }
     if(axis.labelHandle.empty()||axis.writtenLines.empty())continue;
     for(const auto& role:layout.axes){
      if(role.panel!=panel)continue;
@@ -1964,7 +2032,10 @@ void productFinishGeneric(){
   for(const auto& handle:side.dimensions)if(!handle.empty())layout.projectedPerimeter.insert(handle);
  for(const auto& c:input.columns){auto e=editObject<AcDbEntity>(find(db,c.handle));e->setLayer(productPlanLayer(db,L"COLUMN",140));e->setColorIndex(256);}for(const auto& w:input.walls)if(!w.low){auto e=editObject<AcDbEntity>(find(db,w.wall.handle));e->setLayer(productPlanLayer(db,L"WALL",140));e->setColorIndex(256);}
  if(job.validation)writeNew(job.root/L"native-00-caption-height.step","entered");
- const bool fontConfirmed=productNativeLabelHeight(db,job.genericCaptionIds);writeNew(job.root/L"通用编号字高核验.json",std::string("{\"publicPropertiesField\":\"文字高度\",\"nominalPaperHeight\":3.0,\"nativeOpeningCount\":")+std::to_string(job.genericCaptionIds.size())+",\"actualReadbackConfirmed\":"+(fontConfirmed?"true":"false")+"}");if(!fontConfirmed)job.detailPending.push_back({u8"门窗编号字高",u8"已生成编号",u8"公开特性字段未全部读回纸面3.0，保留真实编号并列待调整；不以文字样式高度冒充编号本体已修改"});
+ const auto captionHeight=productTypographyModelHeight(job,"_TCH_WINDOW");
+ const auto captionHeightIssues=productEnsureEffectiveOpeningHeight(db,job.genericCaptionIds,captionHeight);
+ writeNew(job.root/L"通用编号字高核验.json",std::string("{\"publicPropertiesField\":\"文字高度\",\"targetModelHeight\":")+std::to_string(captionHeight)+",\"nativeOpeningCount\":"+std::to_string(job.genericCaptionIds.size())+",\"actualReadbackConfirmed\":"+(captionHeightIssues.empty()?"true":"false")+"}");
+ for(const auto& issue:captionHeightIssues)job.detailPending.push_back({u8"门窗编号字高",issue.object,issue.reason});
  if(job.validation)writeNew(job.root/L"native-01-caption-placement.step","entered");
  stamp("roof-and-opening-height");
  productGenericRecenterCaptions(job,db,captions);
@@ -1972,12 +2043,11 @@ void productFinishGeneric(){
  productPlanFrameAppearance(db,layout);
  stamp("opening-label-placement-and-frame");
  // Removing masks must not relocate witnesses against the old global envelope.
- productLatestStyle(db,false);
- const auto furnitureExclusions=productPlanConfirmedNonFurnitureOutlines(job,db,input,layout.unitMM);
- const auto furniture=productApplyPlanFurniture(job,db,furnitureExclusions);
+ productLatestStyle(db,false,job.currentPlanRules?&job.protectedFurnitureMembers:nullptr);
  const auto sourceCleanup=productCleanConfirmedSourceDuplicates(job,db,views,layout.unitMM);
  stamp("furniture-and-source-cleanup");
  {auto e=editObject<AcDbEntity>(linePrototype);productStatus(e->erase(),"retire temporary axis style carrier");}
+ productWriteBoundaryDimensions(job,db,input,prototype,designSources);
  {auto e=editObject<AcDbEntity>(prototype);productStatus(e->erase(),"retire temporary annotation-only prototype");}
  if(job.unifiedPlan){
   for(const auto& [key,item]:job.sourceInventory.items){
@@ -2015,7 +2085,7 @@ void productFinishGeneric(){
  const auto balconyEdges=productGenerateBalconyEdges(job,db,input,views,layout.unitMM);
  stamp("remaining-source-dimensions-and-balcony-edges");
 #ifdef PLAN_STANDALONE_ENTRY
- if(!job.confirmedRooms.empty()){
+ if(!job.currentPlanRules&&!job.confirmedRooms.empty()){
   std::vector<ProductPlanBounds> roomPanels;
   for(const auto& view:views)roomPanels.push_back({view.bounds.xmin,view.bounds.ymin,view.bounds.xmax,view.bounds.ymax});
   for(const auto& room:job.confirmedRooms)
@@ -2046,6 +2116,7 @@ void productFinishGeneric(){
   stairProfile,job.sourceHash);
  if(job.unifiedPlan)productRestoreVerticalDrawOrder(db,verticalSource,indoorStairs);
  stamp("detail-notes-entrance-and-draw-order");
+ productApplyPlanOmissions(job,db,input,views,generatedViews,roomGrids,original);
  productApplyPlanDimensionStyle(job,db,layout.scale,layout.unitMM);
  if(productNormalizeSourceNativeDimensionStyles(job,db,reference,views,generatedViews,layout.scale,layout.unitMM))
   productApplyPlanDimensionStyle(job,db,layout.scale,layout.unitMM);
@@ -2117,7 +2188,7 @@ void productFinishGeneric(){
  if(job.validation)writeNew(job.root/L"native-08-vertical-notes.step","entered");
  if(job.unifiedPlan)productWriteStairVerticalNotes(job,db,indoorStairs,views,layout.scale/layout.unitMM);
  if(job.validation)writeNew(job.root/L"native-09-note-layout.step","entered");
- const auto looseNotes=job.unifiedPlan?productArrangeConstructionNotes(job,db,entranceSteps,roof,layout.scale/layout.unitMM):
+ auto looseNotes=job.unifiedPlan?productArrangeConstructionNotes(job,db,entranceSteps,roof,layout.scale/layout.unitMM):
   std::vector<ProductLooseNotePlacement>{};
  const auto titlePositions=productArrangePlanTitles(job,db,input,views,layout.scale/layout.unitMM,areaSummaries,movedAreaNotes);
  for(const auto& group:titlePositions)for(auto& note:sourceText)
@@ -2131,14 +2202,14 @@ void productFinishGeneric(){
  if(jointRoomLayout){
   if(job.validation)writeNew(job.root/L"native-09-final-room-layout.step","entered");
   stamp("paper-geometry-stairs-and-construction-notes");
-  verifyRoomDimensions=arrangeFullPlanRoomDimensions(job,db,reference,original,input,views,
+  if(!job.currentPlanRules)verifyRoomDimensions=arrangeFullPlanRoomDimensions(job,db,reference,original,input,views,
     generatedViews,roomPanels,roomGrids,interior,indoorStairs,layout.scale,layout.unitMM,placeSourceText);
   stamp("joint-room-dimension-layout");
   productCompactRemainingCaptionConflicts(job,db,captions);
  }
 #endif
  report<<"],\"sourceWalls\":"<<input.walls.size()<<",\"sourceOpenings\":"<<input.openings.size()<<",\"sourceColumns\":"<<input.columns.size()<<",\"lowWallsPreserved\":"<<std::count_if(input.walls.begin(),input.walls.end(),[](const auto& w){return w.low;})<<",\"allRulesComplete\":false}";writeNew(job.root/L"通用输入核验.json",report.str());
- job.detailPending.push_back({u8"通用后续模块",u8"总建筑面积",u8"当前保留源图楼层总建筑面积；本次按实际墙内边重算房间净面积，未据此替代总建筑面积"});
+ job.detailPending.push_back({u8"通用后续模块",u8"总建筑面积",u8"当前保留源图楼层总建筑面积，楼层计量依据需独立核对。"});
  job.chains=job.dimensions=0;for(const auto& item:modelTypes(db))if(item.second==L"TDbDimension2"){auto e=open<AcDbEntity>(find(db,ascii(item.first)));if(e->visibility()==AcDb::kVisible){++job.chains;job.dimensions+=static_cast<int>(chainValues(e->objectId()).size());}}
  placeSourceText();
 #ifdef PLAN_STANDALONE_ENTRY
@@ -2147,6 +2218,7 @@ void productFinishGeneric(){
       sourceText,layout.scale,layout.unitMM);
 #endif
  productCollectPlanPrintWindows(job,db,input,views,layout,roof,areaSummaries,titlePositions,movedAreaNotes);
+ productExpandPlanTables(job,db);
 #ifdef PLAN_STANDALONE_ENTRY
  productWriteFallbackPlanSheets(job,db,input,views,roof,layout.scale/layout.unitMM);
 #endif
@@ -2154,9 +2226,20 @@ void productFinishGeneric(){
   std::set<std::string> sourceDimensionHandles;
   for(const auto& source:job.planSourceAnnotations)
    if(source.kind=="dimension"||source.kind=="unreadable-dimension")sourceDimensionHandles.insert(source.handle);
-  for(const auto& issue:productNormalizeWholePlanTypography(job,db,reference))
+  std::map<std::string,AcGeVector3d> noteTranslations;
+  for(const auto& issue:productNormalizeWholePlanTypography(job,db,reference,&noteTranslations))
    job.detailPending.push_back({u8"统一字体",issue.object,issue.reason});
+  for(auto& note:looseNotes){
+   const auto move=noteTranslations.find(note.handle);
+   if(move==noteTranslations.end())continue;
+   for(auto& point:note.after)point+=move->second;
+   if(note.insertion)*note.insertion+=move->second;
+  }
   auto dimensions=productEnforcePlanDimensions(job,db,reference,sourceDimensionHandles,false,true);
+  for(auto& boundary:designSources.boundaryDimensions)
+   for(const auto& replacement:dimensions.objects)if(replacement.source==boundary.second&&!replacement.target.empty()){
+    boundary.second=replacement.target;break;
+   }
   job.planFinalDimensionCheck=[&job,dimensions=std::move(dimensions)](AcDbDatabase& saved,const fs::path& drawing){
    Working working(&saved);
    productVerifyRequiredPlanDimensions(job,saved,dimensions,drawing);
@@ -2202,9 +2285,21 @@ void productFinishGeneric(){
    std::ostringstream notes;notes<<"{\"savedReopened\":true,\"notes\":[";
    for(std::size_t i=0;i<looseNotes.size();++i){
     const auto& note=looseNotes[i];const auto id=find(saved,note.handle);const auto points=chainGrips(id);
-    require(points.size()==note.after.size()&&std::equal(points.begin(),points.end(),note.after.begin(),
-     [](const auto& a,const auto& b){return a.distanceTo(b)<=1e-5;})&&
-     productConstructionNoteContents(id)==note.text,"reopened construction note placement");
+    bool positionOK=false;
+    if(note.insertion){
+     const auto text=open<AcDbMText>(id);
+     positionOK=text->location().distanceTo(*note.insertion)<=1e-5&&
+      text->direction().isEqualTo(note.direction)&&static_cast<int>(text->attachment())==note.attachment;
+    }else if(points.size()==4&&note.after.size()==4){
+     positionOK=points[0].distanceTo(note.after[0])<=1e-5&&points[2].distanceTo(note.after[2])<=1e-5;
+    }
+    const auto contents=productConstructionNoteContents(id);
+    if(!positionOK||contents!=note.text){
+     std::ostringstream changed;changed<<"{\"handle\":\""<<note.handle<<"\",\"expected\":"<<wholePoints(note.after)
+      <<",\"actual\":"<<wholePoints(points)<<",\"beforeText\":"<<jsonUtf8(note.text)<<",\"actualText\":"<<jsonUtf8(contents)<<'}';
+     writeNew(job.root/L"construction-note-readback-failure.json",changed.str());
+     throw std::runtime_error("reopened construction note anchor, orientation or contents changed");
+    }
     if(i)notes<<',';
     notes<<"{\"object\":\""<<note.handle<<"\",\"before\":"<<wholePoints(note.before)<<",\"after\":"<<wholePoints(points)<<'}';
    }
@@ -2250,25 +2345,37 @@ void productFinishGeneric(){
    const auto finalOccupants=productAxisOccupancy(saved);
    for(const auto& occupant:sourceAxisOccupants){
     const auto final=std::find_if(finalOccupants.begin(),finalOccupants.end(),[&](const auto& row){return row.handle==occupant.handle;});
-    bool reused=false;
-    for(const auto& row:finalOccupants){
-     if(std::any_of(sourceAxisOccupants.begin(),sourceAxisOccupants.end(),[&](const auto& source){return source.handle==row.handle;}))continue;
-     for(const auto& number:row.numbers)reused|=occupant.numbers.count(number)!=0;
+    const auto expected=std::find_if(layout.expectedAxes.begin(),layout.expectedAxes.end(),[&](const auto& row){
+     return std::find(row.sourceLabels.begin(),row.sourceLabels.end(),occupant.handle)!=row.sourceLabels.end();});
+    bool replaced=expected!=layout.expectedAxes.end()&&expected->issue.empty()&&!expected->outputs.empty()&&final==finalOccupants.end();
+    std::set<int> actualSides;
+    if(replaced)for(const auto& handle:expected->outputs){
+     const auto row=std::find_if(finalOccupants.begin(),finalOccupants.end(),[&](const auto& item){return item.handle==handle;});
+     if(row==finalOccupants.end()||!row->issue.empty()||row->numbers!=std::set<std::string>{expected->number}){replaced=false;break;}
+     for(const auto& end:row->ends){replaced&=end.vertical==expected->vertical&&std::abs(end.station-expected->station)<.01/layout.unitMM;actualSides.insert(end.side);}
     }
-    std::ostringstream row;
-    row<<"{\"object\":\""<<occupant.handle<<"\",\"sourceNumbers\":";
+    if(expected!=layout.expectedAxes.end()){
+     std::set<int> wanted;if(expected->negative)wanted.insert(expected->vertical?2:0);if(expected->positive)wanted.insert(expected->vertical?3:1);
+     replaced&=actualSides==wanted;
+    }
+    const auto state=!occupant.visible?"not-applicable-invisible-source-axis":replaced?"verified-source-axis-template-replacement":
+      final!=finalOccupants.end()?"pending-retained-source-axis-no-safe-replacement":"pending-unmapped-source-axis-loss";
+    std::ostringstream row;row<<"{\"object\":\""<<occupant.handle<<"\",\"sourceNumbers\":";
     productWriteHandleArray(row,std::vector<std::string>(occupant.numbers.begin(),occupant.numbers.end()));
-    row<<",\"sourceVisible\":"<<(occupant.visible?"true":"false")<<",\"savedReopened\":true,\"result\":\""
-       <<(final!=finalOccupants.end()&&final->numbers==occupant.numbers&&!occupant.numbers.empty()&&!reused?
-         "verified-retained-number-reservation":"pending-axis-occupancy")<<"\"}";
+    row<<",\"approvedNumber\":"<<jsonUtf8(bcpproduct::decodeMessage(expected==layout.expectedAxes.end()?std::string{}:expected->number))
+       <<",\"sourceVisible\":"<<(occupant.visible?"true":"false")<<",\"savedReopened\":true,\"result\":\""<<state<<"\",\"replacementHandles\":";
+    productWriteHandleArray(row,expected==layout.expectedAxes.end()?std::vector<std::string>{}:expected->outputs);row<<'}';
     productRecordRuleEvidence(job,"A26",row.str());
+    if(occupant.visible&&!replaced){const auto reason=expected!=layout.expectedAxes.end()&&!expected->issue.empty()?expected->issue:
+       !occupant.issue.empty()?occupant.issue:"source axis has no unique verified wall/column station and visible-side replacement";
+     job.detailPending.push_back({u8"源轴号替换",occupant.handle,reason});}
    }
-   if(sourceAxisOccupants.empty()){
-    std::ostringstream row;
-    row<<"{\"scope\":\"original-model-space-native-axis-labels\",\"sourceLabels\":0,\"reopenedLabels\":"
-       <<finalOccupants.size()<<",\"savedReopened\":true,\"result\":\"verified-no-original-native-label-reservations\"}";
-    productRecordRuleEvidence(job,"A26",row.str());
+   for(const auto& [path,reason]:unmappedSourceAxisGroups){
+    productRecordRuleEvidence(job,"A26","{\"scope\":\"source-axis-container-coverage\",\"path\":"+jsonUtf8(bcpproduct::decodeMessage(path))+
+     ",\"coverageKnown\":false,\"result\":\"pending-unmapped-source-axis-container\",\"reason\":"+jsonUtf8(bcpproduct::decodeMessage(reason))+"}");
+    job.detailPending.push_back({u8"源轴号容器覆盖",path,reason});
    }
+   if(sourceAxisOccupants.empty()&&unmappedSourceAxisGroups.empty())productRecordRuleEvidence(job,"A26","{\"scope\":\"source-native-axis-replacement\",\"sourceLabels\":0,\"savedReopened\":true,\"result\":\"not-applicable-no-source-native-axis\"}");
   }
   productAuditPlanPanels(job,saved,input,views,ownership,generatedViews);
   std::set<std::string> entranceDimensions;
@@ -2348,6 +2455,8 @@ void productFinishGeneric(){
   }
   productVerifyPlanFrameGroups(job,saved,frameMoves);
   productVerifyPlanFurniture(job,saved,furniture,furnitureExclusions);
+  productVerifyPlanOmissions(job,saved);
+  productVerifyDesignSources(job,saved,designSources,candidate);
   productVerifyCleanSourceDuplicates(job,saved,sourceCleanup,layout.unitMM);
   productAuditSourceWindowStrokes(job,saved,views,layout.unitMM,sourceOpeningTraces);
   productAuditPlanColumnAndFacilities(job,saved,input,views);
@@ -2404,6 +2513,7 @@ void productFinishGeneric(){
   AcDbDatabase paperReadback(false,true);
   productStatus(paperReadback.readDwgFile(candidate.c_str(),AcDbDatabase::kForReadAndAllShare,false),"read saved paper geometry");
   productStatus(paperReadback.closeInput(true),"close saved paper geometry input");
+  productAuditPlanTables(job,paperReadback);
   productCheckPlanPrintGeometry(job,paperReadback,input,views);
  }
  productWritePlanFacts(job,input,views,generatedViews,exportedAxes,layout,alignment);

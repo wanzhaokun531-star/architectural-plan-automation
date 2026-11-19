@@ -65,6 +65,9 @@ inline const char* planRuleStatus(const PlanRule& rule) {
     if (rule.state == "retired") return "retired";
     if (rule.state == "paused") return "paused";
     if (rule.action == "unclassified" || rule.action == "changed") return "needs-rule-mapping";
+    if (rule.action == "current-plan-final-readback" &&
+        std::set<std::string>{"G09","N06","L08","Y10","D23","S01","A28","O09","D31","QA11"}.count(rule.id))
+        return "awaiting-drawing-evidence";
     if ((rule.id=="D30"&&rule.action=="source-dimension-replacement")||
         (rule.id=="Y10"&&rule.action=="dimension-text-style")) return "awaiting-drawing-evidence";
     if ((rule.action=="plan-host-verification"&&(rule.id=="T03"||rule.id=="Q09"))||

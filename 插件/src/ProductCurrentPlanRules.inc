@@ -94,7 +94,7 @@ void productApplyCurrentPlanRules(ProductJob& job,AcDbDatabase& db){
  productTrimExteriorLegs(job,db,layout);
  if(!job.latestThreeModel)productApplyPlanDimensionStyle(job,db,layout.scale,layout.unitMM);
  productResolvePlanPlacement(job,db,layout);
- productPlanLayout(db,layout,[&](const auto& h){return find(db,h);},job.root/L"外围间距核验.json");
+ productPlanLayout(db,layout,[&](const auto& h){return find(db,h);},job.root/L"外围间距核验.json",&job);
  productContinuousMainAxes(job,db,layout);
  productPlanFrameAppearance(db,layout);
  writeNew(job.root/L"规则执行入口.json",std::string("{\"version\":\"0.2.2\",\"commonPlanFinalization\":true,\"latestModelRoute\":")+(job.latestThreeModel?"true":"false")+",\"axisRangeInference\":\"current native wall/column geometry plus reviewed overrides\",\"allRulesUniversallyImplemented\":false}");

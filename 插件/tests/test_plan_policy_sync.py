@@ -10,6 +10,35 @@ policy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(policy)
 
 class PolicySyncTests(unittest.TestCase):
+    def test_opening_information_and_three_mm_typography_cannot_drift(self):
+        master = policy.read_json(policy.MASTER)
+        data = policy.read_json(self.resources / 'plan-policy/rules.json')
+        self.assertEqual(data['openingLabels']['paperHeightMM'], 3.0)
+        self.assertEqual(data['openingLabels']['fixedHeight'], 3.0)
+        self.assertEqual(data['openingLabels']['widthFactor'], .65)
+        self.assertEqual(data['openingDesignSourcePolicy']['crossSourcePriority'], 'project-confirmed-basis')
+        data['openingDesignSourcePolicy']['sourcesWhenProvided'] = []
+        with self.assertRaisesRegex(ValueError, 'openingDesignSourcePolicy'):
+            policy.verify_machine_rules(data, policy.master_rules(master), master['dimensionStylePolicy'])
+        data['openingDesignSourcePolicy'] = master['openingDesignSourcePolicy']
+        data['openingLabels']['paperHeightMM'] = 4.0
+        with self.assertRaisesRegex(ValueError, 'L08'):
+            policy.verify_machine_rules(data, policy.master_rules(master), master['dimensionStylePolicy'])
+
+    def test_boundary_walls_are_separate_and_gates_have_numbers(self):
+        master = policy.read_json(policy.MASTER)
+        data = policy.read_json(self.resources / 'plan-policy/rules.json')
+        scope = data['buildingPerimeterScopePolicy']
+        self.assertIn('porch-steps', scope['subjectComponents'])
+        self.assertIn('eave', scope['subjectComponents'])
+        self.assertIn('boundary-wall', scope['excludeComponents'])
+        self.assertIs(scope['useWholeDrawingBounds'], False)
+        self.assertIs(data['boundaryWallPlanPolicy']['individualWallLengths'], True)
+        self.assertIs(data['boundaryWallPlanPolicy']['numberEveryGate'], True)
+        scope['useWholeDrawingBounds'] = True
+        with self.assertRaisesRegex(ValueError, 'buildingPerimeterScopePolicy'):
+            policy.verify_machine_rules(data, policy.master_rules(master), master['dimensionStylePolicy'])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.resources = Path(self.temp.name)
@@ -73,19 +102,25 @@ class PolicySyncTests(unittest.TestCase):
 
     def test_reopened_drawing_checks_have_versioned_mappings(self):
         master = policy.read_json(policy.MASTER)
-        expected = {'D09': 'perimeter-placement',
-                    'D17': 'scope-policy-pending-runtime', 'D18': 'dimension-clearance',
+        expected = {'D17': 'scope-policy-pending-runtime', 'D18': 'dimension-clearance',
                     'Y07': 'projection-frame', 'Y08': 'projection-frame',
-                    'A02': 'axis-label-readback',
+                    'A02': 'axis-label-readback', 'A26': 'axis-occupancy-readback',
+                    'A27': 'floor-axis-registration',
                     'A11': 'axis-line-readback', 'D11': 'perimeter-chain-readback',
-                    'O06': 'opening-caption-readback', 'TL04': 'template-rule-pending-runtime'}
-        expected.update({key: 'scope-policy-pending-runtime' for key in ('S01', 'QA09', 'P04')})
+                    'O06': 'opening-caption-readback'}
+        expected.update({key: 'scope-policy-pending-runtime' for key in ('QA09', 'P04')})
+        expected.update({key: 'current-plan-final-readback' for key in
+                         ('G09', 'N06', 'L08', 'Y10', 'D23', 'S01', 'A28', 'O09', 'D31', 'QA11')})
         catalog = policy.unified_catalog(master, 'A' * 64)
-        for key in ('A14', 'A26', 'A28', 'D24', 'N06', 'P06'):
+        for key in ('A14', 'D09', 'D24', 'P06', 'TL04'):
             self.assertIn(f'RULE {key} active changed ', catalog)
         for key, action in expected.items():
             self.assertIn(f'RULE {key} active {action} ', catalog)
             row = next(row for row in master['rules'] if row['id'] == key)
+            if action == 'current-plan-final-readback':
+                self.assertTrue(row['execution']['runtimeConnected'])
+                self.assertTrue(row['execution']['projectEvidenceRequired'])
+                self.assertFalse(row['execution']['nativeImplementationVerified'])
             row['rule'] += ' 增加待接入条件。'
         catalog = policy.unified_catalog(master, 'A' * 64)
         for key in expected:
@@ -96,7 +131,7 @@ class PolicySyncTests(unittest.TestCase):
         row = next(row for row in master['rules'] if row['id'] == 'D23')
         catalog = policy.unified_catalog(master, 'B' * 64)
         self.assertNotIn('PARAM D23 stair-extension', catalog)
-        self.assertIn('RULE D23 active scope-policy-pending-runtime ', catalog)
+        self.assertIn('RULE D23 active current-plan-final-readback ', catalog)
         row['rule'] += ' 增加未经接入的适用条件。'
         self.assertIn('RULE D23 active changed ', policy.unified_catalog(master, 'B' * 64))
 
@@ -147,7 +182,7 @@ class PolicySyncTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Y10'):
             policy.verify_machine_rules(entry, rules, expected)
         row = next(row for row in master['rules'] if row['id'] == 'Y10')
-        self.assertIn('RULE Y10 active template-rule-pending-runtime ', policy.unified_catalog(master, 'A' * 64))
+        self.assertIn('RULE Y10 active current-plan-final-readback ', policy.unified_catalog(master, 'A' * 64))
         self.assertIs(row['execution']['nativeImplementationVerified'], False)
 
     def test_source_dimension_policy_rejects_reuse_and_old_rule_evidence(self):

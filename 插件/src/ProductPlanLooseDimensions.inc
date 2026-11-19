@@ -214,7 +214,7 @@ bool productVerifyLooseDimensionTarget(ProductJob& job,AcDbDatabase& db,
 void productResolveLooseDimensions(ProductJob& job,AcDbDatabase& db,AcDbDatabase& reference,
  const std::vector<bcpproduct::GenericView>& views,const std::vector<bool>& active,
  std::vector<std::pair<AcDbObjectId,bool>>& interior){
- if(!job.architecturalPlanOnly||job.planLooseDimensions.empty())return;
+ if((!job.architecturalPlanOnly&&!job.currentPlanRules)||job.planLooseDimensions.empty())return;
  std::map<std::string,std::size_t> uses;
  for(const auto& [path,row]:job.planLooseDimensions)for(const auto& stroke:row.strokes)++uses[stroke];
  std::vector<std::string> native;
@@ -248,6 +248,14 @@ void productResolveLooseDimensions(ProductJob& job,AcDbDatabase& db,AcDbDatabase
    row.reason=u8"源线共用、受保护或已改动，保留原尺寸表达供重开对账";
    continue;
   }
+  if(job.currentPlanRules&&job.interiorLooseLabels.count(annotation.path)){
+   for(auto id:old){
+    productStatus(editObject<AcDbEntity>(id)->erase(),"remove confirmed interior dimension stroke");
+    job.planOmissions.emplace(axisHandle(id),"D23");
+   }
+   row.reason=u8"测点对应室内构件，已按 D23 清除整组独立线文。";
+   continue;
+  }
   const auto retire=[&]{
    std::vector<AcDbObjectId> hidden;
    try{
@@ -278,6 +286,7 @@ void productResolveLooseDimensions(ProductJob& job,AcDbDatabase& db,AcDbDatabase
   else{
    const auto& bounds=views[annotation.panel-1].bounds;
    const auto& first=row.stations[0];const auto& last=row.stations[1];
+   if(job.currentPlanRules){row.reason=u8"须按实际外围或室外细部测点核对原表达。";continue;}
    const auto step=last-first;
    const auto middle=first+step*.5;
    const AcGePoint3d position(row.vertical?row.baseline:middle.x,row.vertical?middle.y:row.baseline,middle.z);

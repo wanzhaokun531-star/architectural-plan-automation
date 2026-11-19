@@ -56,8 +56,12 @@ def main():
         except RetryableHostError:
             continue
         report = attempt / "job"
-        _, native = verify_dimension_revision(report)
-        print(report)
+        drawing, native = verify_dimension_revision(report)
+        from wall_height_pipeline import rebind
+        from template_revision import execute_template_revision
+        final_sheets = rebind(sheets, file_hash(source), drawing, work / 'final-sheets.tsv')
+        final = execute_template_revision(drawing, final_sheets, work / 'finalize', root, skill)
+        print(final['report'])
         open_items = sum(bool(row['issue']) for row in native['dimensions']) + native['dimensionStyleTable']['unresolved']
         print(f"dimensions={len(native['dimensions'])} open={open_items}")
         return

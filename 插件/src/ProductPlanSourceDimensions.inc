@@ -370,7 +370,9 @@ void productAuditSourceDimensionDisposition(ProductJob& job,AcDbDatabase& saved,
   std::string disposition="pending";
   std::string reason=u8"原尺寸测点、测值或显示不可读，需人工定位核对";
   auto status=bcpproduct::PlanCheck::pending;
-  if(!rebuilt&&styleReplacement==job.planDimensionRatioReplacements.end()&&shown&&same&&
+  if(!exists&&job.planOmissions.count(source)){
+   status=bcpproduct::PlanCheck::omitted;targets.clear();disposition="omitted-under-D23";reason=u8"实测用途为室内尺寸，保存重开已核原链退出。";
+  }else if(!rebuilt&&styleReplacement==job.planDimensionRatioReplacements.end()&&shown&&same&&
      productOutsideSelectedPlanWindows(job,saved,source)){
    disposition="retained-outside-print-scope";
    status=bcpproduct::PlanCheck::omitted;

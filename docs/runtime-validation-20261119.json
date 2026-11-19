@@ -1,0 +1,125 @@
+{
+  "contract": "plan.public-runtime-validation-summary.v1",
+  "date": "2026-11-19",
+  "scope": "Source and Skill update; public summary of two existing-input regressions. No project drawings or raw runtime logs are included.",
+  "module": {
+    "name": "PlanNative.arx",
+    "sha256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+    "compiled": true,
+    "locallyInstalledAndIdentityChecked": true
+  },
+  "typography": [
+    {
+      "style": "FY_HZ",
+      "font": "tssdeng.shx",
+      "bigFont": "hztxt.shx",
+      "paperHeightMM": 4.0,
+      "width": 0.7
+    },
+    {
+      "style": "_TCH_DIM",
+      "font": "simplex.shx",
+      "bigFont": "gbcbig.shx",
+      "paperHeightMM": 2.8,
+      "width": 1.0
+    },
+    {
+      "style": "_TCH_WINDOW",
+      "font": "simplex.shx",
+      "bigFont": "gbcbig.shx",
+      "paperHeightMM": 3.0,
+      "width": 0.65
+    }
+  ],
+  "controlFrames": {
+    "layer": "Defpoints",
+    "perSheet": 4,
+    "visibleInModel": true,
+    "colorACI": 8,
+    "linetype": "dashed",
+    "plottable": false
+  },
+  "implementation": {
+    "dimensionsAndAxes": "Copy and adapt native objects from the approved template; verify actual references and preserve measurements.",
+    "A28": "Single bend with the diagonal joining the circle is connected to the shared axis layout.",
+    "axisReplacement": "Verify a candidate before retiring the original. On failure retain the original and roll back unaccepted candidates.",
+    "axisRollbackValidation": "The adopted final probe verified both retirement orders, preservation of original native groups after rejected candidates, save/reopen and normal host exit. Earlier failed attempts remain recorded; exhaustive failure-path coverage is not claimed.",
+    "finalReadback": "Read the final saved DWG independently; bind rule, module, drawing and actual-print evidence. Generator verified flags alone are insufficient.",
+    "wallHeight": "Unified per-wall normalization and independent final reopen, with bounded local repair and recorded exceptions.",
+    "paperSettings": "Saved layouts and actual printing use shared paper settings; compare effective settings and inspect actual PDFs."
+  },
+  "validation": {
+    "pythonTestsPassed": 97,
+    "ruleSynchronizationTestsPassed": 29,
+    "installedEntryPreflightsPassed": [
+      "generate",
+      "revise",
+      "audit",
+      "template-finalize"
+    ],
+    "nativeCases": [
+      {
+        "id": "case-A",
+        "entry": "unattended-generate-with-template-finalization",
+        "wallsIndependentlyVerified": 106,
+        "actualPrintedSheets": 4,
+        "sourcePreserved": true,
+        "recordedHostsNormalExit": true,
+        "allRulesPassed": false
+      },
+      {
+        "id": "case-B",
+        "entry": "template-finalize",
+        "wallsIndependentlyVerified": 55,
+        "actualPrintedSheets": 2,
+        "sourcePreserved": true,
+        "recordedHostsNormalExit": true,
+        "allRulesPassed": false
+      }
+    ],
+    "totalWallsIndependentlyVerified": 161,
+    "totalActualPrintedSheets": 6,
+    "reviseIndependentlyExecutedThisRevision": false,
+    "auditIndependentlyExecutedThisRevision": false,
+    "bcp": {
+      "compatibilityCompilePassed": true,
+      "installed": false,
+      "nativeExecutedThisRevision": false
+    },
+    "failedSpecialistAttemptsCountedAsPass": false
+  },
+  "qualityStatus": {
+    "allRulesPassed": false,
+    "allCatalogRulesImplemented": false,
+    "knownExceptions": [
+      "Three linked annotation objects retain nonconforming typography because no verified safe independent edit was applied.",
+      "Eight title-block text items exceed the paper boundary; eight additional title-block internal text overlaps remain in one case.",
+      "One opening label overlaps an elevation label in the other case. It is also present in an earlier print from the same input; its first introduction is unknown and local avoidance was not attempted in the read-only review.",
+      "Expected axis-end completeness is unknown in one case; existing-object verification does not prove source completeness.",
+      "Some protected or unreadable instance domains remain outside complete annotation coverage. Furniture is preserved; unknown coverage is not counted as a pass.",
+      "Two layouts have no identified title-block text leaves, so title-block coverage is unresolved rather than passed.",
+      "Some specialist probes failed during test dispatch, object access or process shutdown. Their reports remain failed and are not substituted for normal final-project evidence."
+    ],
+    "publicationPolicy": "P06 permits delivery with a same-version exceptions list; processing completion, compatibility and successful PDF generation do not imply all rules passed."
+  },
+  "distribution": {
+    "updateKind": "source-and-skill",
+    "newPortableZipPublished": false,
+    "historicalPortableRelease": "portable-20261118",
+    "historicalZipIncludesThisRevision": false
+  },
+  "publicationChecks": {
+    "nativeSourceCompilePassed": true,
+    "compiledSourceFingerprintsChecked": 138,
+    "runtimeManifestFilesVerified": 73,
+    "nativePythonTestsPassed": 97,
+    "ruleSynchronizationTestsPassed": 29,
+    "sourceSkillFrontmatterValid": true,
+    "entryCompatibilityChecksPassed": 4,
+    "portablePackageBuildAndMemberHashReadbackPassed": true,
+    "newCADRunPerformedForPublication": false,
+    "publishedModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+    "localCompileSmokeModuleReplacesVerifiedModule": false,
+    "releaseZipPublished": false
+  }
+}

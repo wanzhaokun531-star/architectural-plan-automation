@@ -1,4 +1,4 @@
-﻿struct ProductPlanDatum {
+struct ProductPlanDatum {
  std::size_t panel{};
  std::string object;
  AcGePoint3d point;
@@ -165,7 +165,7 @@ std::vector<ProductPlanDatum> productGeneratePlanDatums(ProductJob& job,AcDbData
     const bool confirmedLocal=local!=localMarks.end()&&local->second==i+1;
     if(confirmedLocal)localMarks.erase(local);
     const bool floorCandidate=!confirmedLocal&&stair==stairs.end()&&precision&&floors[i]&&
-      (*floors[i]==1?std::abs(*value)<=.00001:*value>0.);
+      (*floors[i]==1?std::abs(*value)<=.00001:*floors[i]<1?*value<0.:*value>0.);
     if(!firstMark)evidence<<',';
     firstMark=false;
     evidence<<"{\"panel\":"<<i+1<<",\"object\":\""<<key<<"\",\"valueMetres\":"<<std::setprecision(12)<<*value
@@ -191,6 +191,7 @@ std::vector<ProductPlanDatum> productGeneratePlanDatums(ProductJob& job,AcDbData
    if(p!=input.properties.end()&&p->second.count(L"文字内容"))heights(p->second.at(L"文字内容"),i,key);
   }
  }
+ std::map<std::size_t,double> confirmedProjectHeights;
  std::ifstream profile(profilePath);
  std::string tag,sourceHash;
  if(profile)require(bool(profile>>tag>>sourceHash)&&tag=="PLANDATUM1","valid floor datum source profile");
@@ -210,8 +211,13 @@ std::vector<ProductPlanDatum> productGeneratePlanDatums(ProductJob& job,AcDbData
             "confirmed storey height in metres");
     auto& dataRow=data[panel-1];
     const double mm=metres*1000.;
-    if(dataRow.explicitHeightMM&&std::abs(*dataRow.explicitHeightMM-mm)>.01)dataRow.heightConflict=true;
-    else dataRow.explicitHeightMM=mm;
+    const auto prior=confirmedProjectHeights.find(panel);
+    if(prior!=confirmedProjectHeights.end()&&std::abs(prior->second-mm)>.01)dataRow.heightConflict=true;
+    else{
+     confirmedProjectHeights[panel]=mm;dataRow.explicitHeightMM=mm;
+     if(!dataRow.heightConfirmed)dataRow.heightConflict=false;
+     dataRow.heightConfirmed=true;
+    }
     continue;
    }
    require(tag=="LEVEL"&&bool(profile>>panel>>x>>y>>metres>>std::quoted(donorName)>>donorHash>>handle)&&

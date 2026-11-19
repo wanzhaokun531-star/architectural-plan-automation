@@ -1,3 +1,5 @@
+#include "dbproxy.h"
+
 struct ProductAxisProjectRow {
  std::string kind;
  int view{},otherView{},side{-1};
@@ -19,42 +21,131 @@ struct ProductProjectAxes {
  std::map<std::tuple<std::size_t,std::string,bool>,double> columns,walls;
 };
 
-struct ProductAxisOccupant {
- std::string handle;
- std::set<std::string> numbers;
- bool visible{};
+struct ProductSourceAxisEnd {
+ bool vertical{};double station{};int side{};std::string number,fold;
+ AcGePoint3d anchor,centre;
 };
-
-std::vector<ProductAxisOccupant> productAxisOccupancy(AcDbDatabase& db){
- std::vector<ProductAxisOccupant> records;
- const auto collect=[&](const auto& self,const AcDbEntity& entity,std::set<std::string>& numbers,unsigned depth)->void{
-  if(depth>5)return;
-  if(const auto text=AcDbText::cast(&entity)){
-   const auto* content=text->textString();
-   if(!content||!*content)return;
-   const std::wstring value(content);
-   if(value.find_first_not_of(L"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/")!=std::wstring::npos)return;
-   std::string label(value.begin(),value.end());
-   std::transform(label.begin(),label.end(),label.begin(),[](char c){return c>='a'&&c<='z'?static_cast<char>(c-'a'+'A'):c;});
-   numbers.insert(std::move(label));return;
+struct ProductAxisOccupant {
+ std::string handle;std::set<std::string> numbers;bool visible{};
+ std::vector<ProductSourceAxisEnd> ends;std::optional<std::size_t> view;std::string issue;bool editable{};
+};
+// Record coverage outside the editable model-space native-axis scope. This is
+// read-only: shared blocks, external references and unreadable containers are
+// never exploded or reported as successfully replaced.
+std::vector<std::pair<std::string,std::string>> productUnmappedSourceAxisGroups(AcDbDatabase& db){
+ std::vector<std::pair<std::string,std::string>> result;std::set<AcDbObjectId> active;
+ const auto visit=[&](auto&& self,AcDbObjectId id,const std::string& parent,int depth)->void{
+  const auto entity=open<AcDbEntity>(id);const auto handle=axisHandle(id),path=parent.empty()?handle:parent+"/"+handle;
+  const std::wstring type=entity->isA()->name();
+  if(type==L"TDbAxisLabelSet"&&!parent.empty())result.emplace_back(path,"nested native axis retained; model-space replacement coverage does not include its shared container");
+  if(const auto* proxy=AcDbProxyEntity::cast(entity.get())){
+   const auto* original=proxy->originalClassName();
+   if(original&&std::wstring(original).find(L"Axis")!=std::wstring::npos)
+    result.emplace_back(path,"proxy axis retained; native station and business number unreadable");
   }
-  const auto type=std::wstring(entity.isA()->name());
-  if(type!=L"TDbAxisLabelSet"&&type!=L"TDbSymbDrawingIndex")return;
-  TemplateParts parts(&entity);
-  if(entity.explode(parts.values)!=Acad::eOk)return;
-  for(int i=0;i<parts.values.length();++i)
-   if(const auto child=AcDbEntity::cast(static_cast<AcRxObject*>(parts.values[i])))self(self,*child,numbers,depth+1);
+  const auto* block=AcDbBlockReference::cast(entity.get());if(!block)return;
+  const auto definition=block->blockTableRecord();const auto record=open<AcDbBlockTableRecord>(definition);
+  AcDbBlockTableRecordIterator* raw{};
+  if(depth>=20||active.count(definition)||record->isUnloaded()||record->newIterator(raw)!=Acad::eOk){
+   result.emplace_back(path,"unreadable source container; nested axis coverage is unknown");return;
+  }
+  active.insert(definition);std::unique_ptr<AcDbBlockTableRecordIterator> iterator(raw);
+  for(;!iterator->done();iterator->step()){AcDbObjectId child;
+   if(iterator->getEntityId(child)==Acad::eOk)self(self,child,path,depth+1);
+   else result.emplace_back(path,"source container member unreadable; nested axis coverage is unknown");
+  }
+  active.erase(definition);
  };
- for(const auto& [raw,type]:modelTypes(db)){
-  if(type!=L"TDbAxisLabelSet")continue;
-  const auto handle=ascii(raw);
-  const auto entity=open<AcDbEntity>(find(db,handle));
-  const auto layer=open<AcDbLayerTableRecord>(entity->layerId());
-  ProductAxisOccupant row{handle,{},entity->visibility()==AcDb::kVisible&&!layer->isOff()&&!layer->isFrozen()};
-  collect(collect,*entity,row.numbers,0);
+ for(const auto& [handle,type]:modelTypes(db))visit(visit,find(db,ascii(handle)),{},0);
+ return result;
+}
+std::vector<ProductAxisOccupant> productAxisOccupancy(AcDbDatabase& db){
+ std::vector<ProductAxisOccupant> records;const auto folds=productFindAxisFolds(db);
+ for(const auto& [raw,type]:modelTypes(db))if(type==L"TDbAxisLabelSet"){
+  const auto handle=ascii(raw);const auto id=find(db,handle);const auto entity=open<AcDbEntity>(id);
+  const auto layer=open<AcDbLayerTableRecord>(entity->layerId());ProductAxisOccupant row;
+  row.handle=handle;row.visible=entity->visibility()==AcDb::kVisible&&!layer->isOff()&&!layer->isFrozen();
+  row.editable=!entity->isAProxy()&&entity->ownerId()==modelId(db)&&!layer->isLocked()&&!entity->hasFields();
+  try{
+   const auto g=chainGrips(id);require(g.size()==4||g.size()==8,"source native axis end geometry unreadable");
+   for(std::size_t k=0;k<g.size();k+=4){ProductSourceAxisEnd end;end.anchor=g[k];end.centre=g[k+1];
+    bool associated=false;
+    for(const auto& [key,foldHandle]:folds.axisFolds)if(key.first==handle){
+     const auto points=productFoldPoints(db,folds,handle,key.second);if(points.back().distanceTo(g[k])>.01)continue;
+     require(!associated,"multiple connectors refer to the same source axis end");associated=true;
+     end.side=key.second;end.vertical=end.side>=2;end.anchor=points.front();end.fold=foldHandle;
+    }
+    if(!associated){const auto delta=end.centre-end.anchor;
+     const bool vertical=std::abs(delta.x)<.01&&std::abs(delta.y)>.01;
+     const bool horizontal=std::abs(delta.y)<.01&&std::abs(delta.x)>.01;
+     require(vertical!=horizontal,"slanted source axis lacks an associated true-station connector");
+     end.vertical=vertical;end.side=(vertical?2:0)+(productAxisNormal(end.centre,vertical)>productAxisNormal(end.anchor,vertical)?1:0);
+    }
+    end.station=productAxisStation(end.anchor,end.vertical);row.ends.push_back(end);
+    row.ends.back().number=productUtf8(productAxisCaptionAt(id,end.centre));
+    row.numbers.insert(row.ends.back().number);
+   }
+   require(row.numbers.size()==1,"source axis has conflicting business numbers across its ends");
+   for(const auto& end:row.ends)require(end.vertical==row.ends.front().vertical&&std::abs(end.station-row.ends.front().station)<.01,
+       "source native collection contains more than one true axis station");
+  }catch(const std::exception& error){row.issue=error.what();}
   records.push_back(std::move(row));
+ }return records;
+}
+void productAssignSourceAxisViews(std::vector<ProductAxisOccupant>& rows,const std::vector<bcpproduct::GenericView>& views,double unit,double circleOffset){
+ const double eps=.01/unit;
+ for(auto& row:rows){std::optional<std::size_t> agreed;bool ambiguous=row.ends.empty();
+  for(const auto& end:row.ends){double best=std::numeric_limits<double>::infinity();std::optional<std::size_t> owner;bool tied=false;
+   for(std::size_t v=0;v<views.size();++v){const auto& b=views[v].bounds;
+    const double low=end.vertical?b.xmin:b.ymin,high=end.vertical?b.xmax:b.ymax;
+    const double datum=end.side==0?b.xmin:end.side==1?b.xmax:end.side==2?b.ymin:b.ymax,sign=end.side%2?1.:-1.;
+    const double normal=productAxisNormal(end.centre,end.vertical);
+    if(end.station<low-eps||end.station>high+eps||sign*(normal-datum)<=eps)continue;
+    const double score=std::abs(normal-(datum+sign*circleOffset));
+    if(score<best-eps){best=score;owner=v;tied=false;}else if(std::abs(score-best)<=eps)tied=true;
+   }
+   if(!owner||tied||(agreed&&*agreed!=*owner)){ambiguous=true;break;}agreed=owner;
+  }
+  if(!ambiguous)row.view=agreed;
+  else if(row.issue.empty())row.issue="source native axis cannot be assigned uniquely to one floor";
  }
- return records;
+}
+struct ProductSourceAxisBinding {
+ std::vector<std::string> handles;std::map<int,std::string> ends,folds;
+ std::string number,approvedNumber,issue;bool negative{},positive{};
+};
+std::map<std::size_t,ProductSourceAxisBinding> productBridgeSourceAxes(
+ const std::vector<ProductAxisOccupant>& source,std::size_t view,std::vector<GenericPlanAxis>& axes,double unit){
+ std::map<std::size_t,ProductSourceAxisBinding> result;const double eps=.01/unit;
+ for(std::size_t index=0;index<axes.size();++index){auto& axis=axes[index];ProductSourceAxisBinding binding;std::set<std::string> numbers;
+  for(const auto& row:source){if(!row.visible||(row.view&&row.view!=view))continue;
+   if(std::none_of(row.ends.begin(),row.ends.end(),[&](const auto& end){return end.vertical==axis.vertical&&std::abs(end.station-axis.coordinate)<eps;}))continue;
+   binding.handles.push_back(row.handle);numbers.insert(row.numbers.begin(),row.numbers.end());
+   if(!row.editable||!row.issue.empty())binding.issue=row.issue.empty()?"source axis is protected from replacement":row.issue;
+   for(const auto& end:row.ends){
+    if(end.vertical!=axis.vertical||std::abs(end.station-axis.coordinate)>=eps){binding.issue="source collection crosses distinct real stations";continue;}
+    if(!binding.ends.emplace(end.side,row.handle).second)binding.issue="multiple source circles occupy the same side of one true axis";
+    if(!end.fold.empty())binding.folds[end.side]=end.fold;
+    if(end.side%2){binding.positive=true;if(!axis.positive)binding.issue="source positive label has no matching wall or column side service";}
+    else{binding.negative=true;if(!axis.negative)binding.issue="source negative label has no matching wall or column side service";}
+   }
+  }
+  if(binding.handles.empty())continue;
+  if(numbers.size()!=1)binding.issue="same-station source axes disagree on the business number";
+  else binding.number=*numbers.begin();
+  // A source number is not an approved whole-building number. Ordinary numbers
+  // are assigned from the current registered table below, including wrong old
+  // numbers. Attached axes need an independently established reference; never
+  // silently turn 1/3 into 1 or 3, or infer a new reference merely from its text.
+  if(binding.number.find('/')!=std::string::npos)
+   binding.issue="source attached-axis reference is not established in the registered ordinary-axis table; retained without a duplicate";
+  if(binding.issue.empty()){
+   axis.label=binding.number;axis.showNegative=binding.negative;axis.showPositive=binding.positive;
+   axis.labelHandle=binding.handles.front();
+  }else{axis.showNegative=false;axis.showPositive=false;axis.label.clear();}
+  result.emplace(index,std::move(binding));
+ }
+ return result;
 }
 
 std::vector<ProductAxisProjectRow> productReadAxisProject(ProductJob& job){

@@ -1,5 +1,6 @@
 param(
     [Parameter(Mandatory)][string]$Source,
+    [ValidateSet('generate','revise')][string]$Mode='generate',
     [Parameter(Mandatory)][string]$Output,
     [string]$WorkspaceRoot,
     [string]$WorkDirectory,
@@ -16,7 +17,7 @@ $python = 'python'
 if (Test-Path -LiteralPath $machine -PathType Leaf) {
     $python = (Get-Content -LiteralPath $machine -Raw -Encoding UTF8 | ConvertFrom-Json).python
 }
-$arguments = @('-B', '-X', 'utf8', $entry, '--source', $Source, '--output', $Output)
+$arguments = @('-B', '-X', 'utf8', $entry, '--source', $Source, '--output', $Output, '--mode', $Mode)
 foreach ($pair in @(
     @{ Name = '--workspace-root'; Value = $WorkspaceRoot },
     @{ Name = '--work-directory'; Value = $WorkDirectory },

@@ -1,0 +1,1057 @@
+{
+  "schema": "plan.runtime-capabilities.v1",
+  "ruleRevision": "2026-11-19",
+  "modules": {
+    "2797D61C253D0CA2302F4FF717CE5AF27F3384C858CC034C3BB1A0B331887731": {
+      "modes": {
+        "generate": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "revise": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "audit": {
+          "compatible": true,
+          "scope": "只读复核；发现和覆盖状态按实际证据填写。"
+        },
+        "template-finalize": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        }
+      },
+      "pending": [
+        "全新方案整图生成不计为已按现行规则通过",
+        "P06正式版+同版遗留清单口径不变；未通过与未验证保持真实状态"
+      ],
+      "retiredModes": [
+        {
+          "retiredOn": "2026-11-19",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "modes": {
+            "generate": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "revise": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "template-finalize": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            }
+          },
+          "previouslyAbsentModes": []
+        }
+      ]
+    },
+    "77E08C620549917D0DA77A22D642FEEAED45B4F00C066EC6614E9FC491F8367D": {
+      "verifiedOn": "2026-11-19",
+      "project": "衡南江口贺府",
+      "modes": {
+        "generate": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "revise": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "audit": {
+          "compatible": true,
+          "scope": "只读复核，核源图指纹及模型对象数。"
+        },
+        "template-finalize": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        }
+      },
+      "evidence": {
+        "generate": {
+          "sourceSHA256": "07E628BDF7ACA6C9FB14C8982A338673200C4C18513BE4E3F8D5CF820FEDFC66",
+          "outputSHA256": "F18C584491BCDB6F17CB17EB71D79D67C0CF1BAD2BE41B35DF3806E80D43148F",
+          "originalFurniture": 52,
+          "nestedFurniture": 8,
+          "verifiedExteriorChains": 35,
+          "verifiedRoofChains": 8,
+          "printedLayouts": [
+            {
+              "layout": "平面图幅-1",
+              "PDFSHA256": "100DDCF62B04F69ECDB041DAF806234FDA6CC77ECF7DE67EB9D768731069C4D9"
+            },
+            {
+              "layout": "平面图幅-2",
+              "PDFSHA256": "F6C33082D85BD6C64CBE802B2C261CBA48125FD3697924012EA0DA1DDD0BD102"
+            },
+            {
+              "layout": "平面图幅-3",
+              "PDFSHA256": "A2CB8AC65AD339584E3DB97C7BB330C8481A8DB8A24D20ADB42134B2FBBB0ECB"
+            },
+            {
+              "layout": "平面图幅-4",
+              "PDFSHA256": "462A77413A95D96DA0172437BD38807E04BE19A5A4CAA05AD719DC211DE083E3"
+            }
+          ],
+          "p06Items": 160
+        },
+        "revise": {
+          "sourceSHA256": "BCF61580B053F18DD38929AA911FF574F7BB3C0ADBF3DC1F886D05FD0CC2DD14",
+          "outputSHA256": "D0DAB48462D6FE64A90A41BFE2D3865ED94342DFE6C30E5A0A9F06247E8F6C6F",
+          "originalFurniture": 52,
+          "nestedFurniture": 8,
+          "verifiedExteriorChains": 35,
+          "verifiedRoofChains": 8,
+          "printedLayouts": [
+            {
+              "layout": "平面图幅-1",
+              "PDFSHA256": "D44A97DC60D3CE2FD6479683A72889AB4B93A69807C0AB9FDC8C0F6401268A79"
+            },
+            {
+              "layout": "平面图幅-2",
+              "PDFSHA256": "4D034C535A0B99FCF04B94DE0E0BE8344ADF662DA8D671A5EF7114068FA1467B"
+            },
+            {
+              "layout": "平面图幅-3",
+              "PDFSHA256": "D172BE144C6D29855431C0F87A832DC6409D703A22761DE664508CFCD0563D72"
+            },
+            {
+              "layout": "平面图幅-4",
+              "PDFSHA256": "36DD1625E4F06527B9A84032FE0ECBAB611511F9EBF09C55D4DFC02454FB634F"
+            }
+          ],
+          "p06Items": 64
+        }
+      },
+      "verificationSHA256": "553E6A8CA666AE61B0E25DB62681CAD930034630200F5F1CE6C45592B312880F",
+      "pending": [
+        "新的输入按实际楼层、图幅及项目参数验收，未关闭事项按 P06 绑定正式 DWG 指纹。"
+      ],
+      "retiredModes": [
+        {
+          "retiredOn": "2026-11-19",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "modes": {
+            "generate": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "revise": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "template-finalize": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            }
+          },
+          "previouslyAbsentModes": []
+        }
+      ],
+      "localDetailFieldsOmitted": 1
+    },
+    "48641135C8694CDEEC53B4135EBEEEF8815306FA4021F31EA16D542AE866E94F": {
+      "verifiedOn": "2026-11-19",
+      "project": "衡南江口贺府",
+      "modes": {
+        "generate": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "revise": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "audit": {
+          "compatible": true,
+          "scope": "只读复核，核源图指纹及模型对象数。"
+        },
+        "template-finalize": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        }
+      },
+      "verificationSHA256": "553E6A8CA666AE61B0E25DB62681CAD930034630200F5F1CE6C45592B312880F",
+      "pending": [
+        "新的输入按实际楼层、图幅及项目参数验收，未关闭事项按 P06 绑定正式 DWG 指纹。"
+      ],
+      "verificationStatus": "candidate-under-native-validation",
+      "retiredModes": [
+        {
+          "retiredOn": "2026-11-19",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "modes": {
+            "generate": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "revise": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "template-finalize": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            }
+          },
+          "previouslyAbsentModes": []
+        }
+      ],
+      "localDetailFieldsOmitted": 1
+    },
+    "12CDCFECA20F44B509AC8C5449FF9FF6518CC2EF8C2A449CFDBF8BB931794256": {
+      "verifiedOn": "2026-11-19",
+      "project": "衡南江口贺府",
+      "modes": {
+        "generate": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "revise": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        },
+        "audit": {
+          "compatible": true,
+          "scope": "只读复核，核源图指纹及模型对象数。"
+        },
+        "template-finalize": {
+          "compatible": false,
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+        }
+      },
+      "verificationSHA256": "553E6A8CA666AE61B0E25DB62681CAD930034630200F5F1CE6C45592B312880F",
+      "pending": [
+        "新的输入按实际楼层、图幅及项目参数验收，未关闭事项按 P06 绑定正式 DWG 指纹。"
+      ],
+      "verificationStatus": "candidate-under-native-validation",
+      "retiredModes": [
+        {
+          "retiredOn": "2026-11-19",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "modes": {
+            "generate": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "revise": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            },
+            "template-finalize": {
+              "compatible": false,
+              "reason": "当前墙高通用流程要求冻结墙清单、自动范围及免额外打印接口；请采用已安装的现行模块，旧模块历史结论不能替代当前验证。"
+            }
+          },
+          "previouslyAbsentModes": []
+        }
+      ],
+      "localDetailFieldsOmitted": 1
+    },
+    "40B589F71B5BCDD6703ED64E3815E367F378554124C76A932B5A889B524171CF": {
+      "verifiedOn": "2026-11-19",
+      "modes": {
+        "generate": {
+          "compatible": false,
+          "scope": "从已保存方案及其同指纹项目参数生成平面，独立重开后按实际布局整套试印。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。"
+        },
+        "revise": {
+          "compatible": false,
+          "scope": "在已有成图副本按源对象及测点通用修订，保存重开后整套试印。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。"
+        },
+        "audit": {
+          "compatible": true,
+          "scope": "只读复核，核源图指纹及模型对象数。"
+        },
+        "template-finalize": {
+          "compatible": false,
+          "scope": "模板终核、家具复核、逐幅四框及同版实际打印。",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "reason": "已被当前规则一致性模块取代，禁止旧模块继续可写出图；原实跑事实保留在原模块 evidence 和 retiredModes。"
+        }
+      },
+      "verificationSHA256": "553E6A8CA666AE61B0E25DB62681CAD930034630200F5F1CE6C45592B312880F",
+      "pending": [
+        "本次新增验证限墙高处理与入口衔接；其他字体或图面遗留按同版清单，不将墙高通过称为整图所有规则通过。"
+      ],
+      "projects": [
+        "贺府",
+        "晏府",
+        "邵府"
+      ],
+      "evidence": {
+        "wallHeightWorkflow": {
+          "entry": "native/wall_height_pipeline.py",
+          "schema": "plan.final-wall-heights.v1",
+          "maximumLocalRepairs": 2,
+          "finalReadbackRequired": true,
+          "cases": {
+            "generationHandoff": {
+              "outputSHA256": "85D5CCD3621B67FDFA7E1E2481E9F02CE0B7C26969C7903A8C62DA816389FE5D",
+              "wallCount": 106,
+              "wallIssues": [],
+              "actualHeights": {
+                "3300.0": 74,
+                "3600.0": 32
+              },
+              "floors": [
+                {
+                  "component": 2,
+                  "floor": 1,
+                  "targetMM": 3600.0,
+                  "basis": "adjacent-finished-floor-difference",
+                  "finishedMetres": 0.0,
+                  "datumBasis": "explicit-finished-floor"
+                },
+                {
+                  "component": 3,
+                  "floor": 2,
+                  "targetMM": 3300.0,
+                  "basis": "adjacent-finished-floor-difference",
+                  "finishedMetres": 3.6,
+                  "datumBasis": "explicit-finished-floor"
+                },
+                {
+                  "component": 4,
+                  "floor": 3,
+                  "targetMM": 3300.0,
+                  "basis": "confirmed-project-storey-height",
+                  "finishedMetres": 6.9,
+                  "datumBasis": "explicit-finished-floor"
+                }
+              ],
+              "printedSheets": 4,
+              "otherUnresolvedCount": 81,
+              "scope": "wall-height workflow; does not declare all drawing rules passed",
+              "localDetailFieldsOmitted": 3
+            },
+            "publicTemplate": {
+              "outputSHA256": "9E7B4B6EBAE79151690BBF38ABC2C6C32DC9520E4149A40796F528871015BB9B",
+              "wallCount": 114,
+              "wallIssues": [],
+              "actualHeights": {
+                "3300.0": 48,
+                "3000.0": 22,
+                "3600.0": 44
+              },
+              "floors": [
+                {
+                  "component": 1,
+                  "floor": 1,
+                  "finishedMetres": 0.0,
+                  "targetMM": 3600.0,
+                  "basis": "confirmed-project-storey-height",
+                  "datumBasis": "explicit-finished-floor"
+                },
+                {
+                  "component": 2,
+                  "floor": 2,
+                  "finishedMetres": 3.6,
+                  "targetMM": 3300.0,
+                  "basis": "confirmed-project-storey-height",
+                  "datumBasis": "explicit-finished-floor"
+                },
+                {
+                  "component": 3,
+                  "floor": 3,
+                  "finishedMetres": 6.9,
+                  "targetMM": 3000.0,
+                  "basis": "confirmed-project-storey-height",
+                  "datumBasis": "explicit-finished-floor"
+                }
+              ],
+              "printedSheets": 4,
+              "otherUnresolvedCount": 104,
+              "scope": "wall-height workflow; does not declare all drawing rules passed",
+              "localDetailFieldsOmitted": 3
+            },
+            "publicRevision": {
+              "outputSHA256": "F50C48A86202D3D7E7573B42B0A14BB119D4B5B5BFB36273FC156D47D3F6BAE0",
+              "wallCount": 55,
+              "wallIssues": [],
+              "actualHeights": {
+                "3300.0": 35,
+                "2900.0": 20
+              },
+              "floors": [
+                {
+                  "component": 1,
+                  "floor": 1,
+                  "finishedMetres": 0.0,
+                  "targetMM": 2900.0,
+                  "basis": "confirmed-project-storey-height",
+                  "datumBasis": "explicit-finished-floor"
+                },
+                {
+                  "component": 2,
+                  "floor": 2,
+                  "finishedMetres": 2.9,
+                  "targetMM": 3300.0,
+                  "basis": "rule-default",
+                  "datumBasis": "explicit-finished-floor"
+                }
+              ],
+              "printedSheets": 2,
+              "otherUnresolvedCount": 36,
+              "scope": "wall-height workflow; does not declare all drawing rules passed",
+              "localDetailFieldsOmitted": 3
+            }
+          }
+        }
+      },
+      "retiredModes": [
+        {
+          "retiredOn": "2026-11-19",
+          "supersededByModuleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+          "modes": {
+            "generate": {
+              "compatible": true,
+              "scope": "从已保存方案及其同指纹项目参数生成平面，独立重开后按实际布局整套试印。"
+            },
+            "revise": {
+              "compatible": true,
+              "scope": "在已有成图副本按源对象及测点通用修订，保存重开后整套试印。"
+            },
+            "template-finalize": {
+              "compatible": true,
+              "scope": "模板终核、家具复核、逐幅四框及同版实际打印。"
+            }
+          },
+          "previouslyAbsentModes": []
+        }
+      ],
+      "localDetailFieldsOmitted": 1
+    },
+    "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC": {
+      "verifiedOn": "2026-11-19",
+      "verificationStatus": "native-runtime-consistency-verified-with-recorded-exceptions",
+      "nativeVerified": true,
+      "modes": {
+        "generate": {
+          "compatible": true,
+          "nativeModeVerified": true,
+          "sharedFinalizerVerified": true,
+          "scope": "贺府冻结源图，完整 unattended generate 入口；四页同版实打及独立墙高读回。"
+        },
+        "template-finalize": {
+          "compatible": true,
+          "nativeModeVerified": true,
+          "sharedFinalizerVerified": true,
+          "scope": "贺府四幅及邵府两幅的实际模板末端；每个项目未通过项仍按同版清单。"
+        },
+        "revise": {
+          "compatible": true,
+          "nativeModeVerified": false,
+          "sharedFinalizerVerified": true,
+          "scope": "协议适配及共同终核继承；本轮未单独实跑 revise 入口，不以共同末端代称各修订子模式全通过。"
+        },
+        "audit": {
+          "compatible": true,
+          "nativeModeVerified": false,
+          "sharedFinalizerVerified": true,
+          "scope": "既有只读协议适配；本轮验证为共同终核的独立读回，未单独重跑 audit 模式。"
+        }
+      },
+      "allCatalogRulesImplemented": false,
+      "evidence": {
+        "generate": {
+          "project": "贺府",
+          "summary": {
+            "sha256": "6A814F01D63459D8FE020AEDF146231F7D8CF59C504172F0F0E3196FBA8315C0",
+            "localDetailFieldsOmitted": 1
+          },
+          "sourceSHA256": "07E628BDF7ACA6C9FB14C8982A338673200C4C18513BE4E3F8D5CF820FEDFC66",
+          "sourcePreserved": true,
+          "outputSHA256": "A9ACC76717CDCD12CC0513F09853B4F05735C3B991CF1462446D90DEA25B1A04",
+          "wallHeightProof": {
+            "sha256": "CF6EBB9DE831C65001B162DFF51EF8439E1D6D339D1BE0AFFB0989376A848EE4",
+            "localDetailFieldsOmitted": 1
+          },
+          "wallCount": 106,
+          "wallUnresolved": {
+            "recordCount": 0,
+            "categories": {},
+            "booleanStatusCounts": {},
+            "exitCodeCounts": {},
+            "detailsOmitted": true,
+            "localEvidencePreserved": true,
+            "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+            "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+          },
+          "pages": [
+            {
+              "sha256": "79A3F94266DCFCD11390547CB30C04B184443EB6CAC4DE6BEF44D9D4D99B9189",
+              "hashMatches": true,
+              "panel": 1,
+              "layout": "平面图幅-1",
+              "status": "plotted",
+              "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+              "paperScale": 1,
+              "viewportScale": 0.01,
+              "device": "FY-XS-2026.9-PDF.pc3",
+              "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+            },
+            {
+              "sha256": "834141576E0DB2342763C33E5B1867175A70EAC8B08B536B460E621729ED7BC0",
+              "hashMatches": true,
+              "panel": 2,
+              "layout": "平面图幅-2",
+              "status": "plotted",
+              "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+              "paperScale": 1,
+              "viewportScale": 0.01,
+              "device": "FY-XS-2026.9-PDF.pc3",
+              "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+            },
+            {
+              "sha256": "2201D23B83E26424DE6602B6736674B08C071D67786A501FF102F42FE71B3308",
+              "hashMatches": true,
+              "panel": 3,
+              "layout": "平面图幅-3",
+              "status": "plotted",
+              "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+              "paperScale": 1,
+              "viewportScale": 0.01,
+              "device": "FY-XS-2026.9-PDF.pc3",
+              "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+            },
+            {
+              "sha256": "D82742A336AA68372497EA9181EAFFF5327E5AAD9A41CEECD1BF001A23FF3F09",
+              "hashMatches": true,
+              "panel": 4,
+              "layout": "平面图幅-4",
+              "status": "plotted",
+              "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+              "paperScale": 1,
+              "viewportScale": 0.01,
+              "device": "FY-XS-2026.9-PDF.pc3",
+              "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+            }
+          ],
+          "dimensions": 72,
+          "dimensionSegments": 245,
+          "axisEnds": 57,
+          "axisVerified": 57,
+          "axisEvidence": {
+            "sha256": "00C634C6248266A3F452E21D30469886F6E584C52C5C6A7A128E13426F6BB690",
+            "localDetailFieldsOmitted": 1
+          },
+          "axisBindingBasis": "Expected-end inventory is independently checked by the same-version template-native readback; it has no standalone DWG SHA field.",
+          "defpointsFrames": 16,
+          "typographyObjects": 935,
+          "typographyVerified": 932,
+          "typographyUnresolved": {
+            "recordCount": 9,
+            "categories": {
+              "linked-note": 9
+            },
+            "booleanStatusCounts": {
+              "annotative": {
+                "true": 0,
+                "false": 3
+              },
+              "verified": {
+                "true": 0,
+                "false": 3
+              },
+              "vertical": {
+                "true": 0,
+                "false": 3
+              }
+            },
+            "exitCodeCounts": {},
+            "detailsOmitted": true,
+            "localEvidencePreserved": true,
+            "localEvidenceCanonicalSHA256": "38E2EF08BB8743D5C1FA1B123CA36309CD63CEAA53D00BC2E788DE70060DA5DC",
+            "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+          },
+          "unitGlyphRepairs": {
+            "recordCount": 2,
+            "categories": {},
+            "booleanStatusCounts": {
+              "equivalentUnitOnly": {
+                "true": 2,
+                "false": 0
+              },
+              "recordedProtectedParametersEqual": {
+                "true": 2,
+                "false": 0
+              },
+              "verified": {
+                "true": 2,
+                "false": 0
+              }
+            },
+            "exitCodeCounts": {},
+            "detailsOmitted": true,
+            "localEvidencePreserved": true,
+            "localEvidenceCanonicalSHA256": "83359CB39B86FA6096E2699E14585E22FA0B01C44B4F7CE42DD863BF66EC56E4",
+            "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+          },
+          "publication": {
+            "contract": "plan.publication-quality.v1",
+            "outputSHA256": "A9ACC76717CDCD12CC0513F09853B4F05735C3B991CF1462446D90DEA25B1A04",
+            "processingCompleted": true,
+            "delivered": true,
+            "checkedRulesPassed": true,
+            "coverageComplete": false,
+            "allRulesPassed": false,
+            "unknownCoverageRules": [
+              "D23",
+              "S01"
+            ],
+            "unresolvedCount": 50,
+            "status": "delivered-with-exceptions",
+            "localDetailFieldsOmitted": 2
+          },
+          "unresolved": {
+            "recordCount": 19,
+            "categories": {
+              "linked-note": 9,
+              "omission-coverage-D23": 1,
+              "omission-coverage-S01": 1,
+              "title-paper-bounds": 8
+            },
+            "booleanStatusCounts": {},
+            "exitCodeCounts": {},
+            "detailsOmitted": true,
+            "localEvidencePreserved": true,
+            "localEvidenceCanonicalSHA256": "F623C6E91E8C7EC84E72EDF87B0DDF95C6A72266DA726D4362CA4B3E377D59BC",
+            "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+          },
+          "ruleEvidence": {
+            "sha256": "3408F613EAD17A9614B8583933DF6A593FB7308E7C7E290EA65FBB06594C2F1F",
+            "localDetailFieldsOmitted": 1
+          },
+          "allCatalogRulesImplemented": false,
+          "closures": {
+            "recordCount": 4,
+            "categories": {},
+            "booleanStatusCounts": {
+              "nativeQuitConfirmed": {
+                "true": 4,
+                "false": 0
+              }
+            },
+            "exitCodeCounts": {
+              "0": 4
+            },
+            "detailsOmitted": true,
+            "localEvidencePreserved": true,
+            "localEvidenceCanonicalSHA256": "C0AA21291226336D8FB11F115663224230D819282BCC48B41D7AADD469FAA621",
+            "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+          },
+          "historicalAttempts": {
+            "recordCount": 0,
+            "categories": {},
+            "booleanStatusCounts": {},
+            "exitCodeCounts": {},
+            "detailsOmitted": true,
+            "localEvidencePreserved": true,
+            "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+            "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+          },
+          "localDetailFieldsOmitted": 2,
+          "publicationSummary": {
+            "contract": "plan.public-runtime-metadata.v1",
+            "localEvidencePreserved": true,
+            "localEvidenceCanonicalSHA256": "470B843002095A74A0F84E7F4C28DB855D77382311A3D47D25EF7FCDCF78EC3A",
+            "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+            "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+          }
+        },
+        "template-finalize": [
+          {
+            "project": "贺府",
+            "summary": {
+              "sha256": "6A814F01D63459D8FE020AEDF146231F7D8CF59C504172F0F0E3196FBA8315C0",
+              "localDetailFieldsOmitted": 1
+            },
+            "sourceSHA256": "07E628BDF7ACA6C9FB14C8982A338673200C4C18513BE4E3F8D5CF820FEDFC66",
+            "sourcePreserved": true,
+            "outputSHA256": "A9ACC76717CDCD12CC0513F09853B4F05735C3B991CF1462446D90DEA25B1A04",
+            "wallHeightProof": {
+              "sha256": "CF6EBB9DE831C65001B162DFF51EF8439E1D6D339D1BE0AFFB0989376A848EE4",
+              "localDetailFieldsOmitted": 1
+            },
+            "wallCount": 106,
+            "wallUnresolved": {
+              "recordCount": 0,
+              "categories": {},
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "pages": [
+              {
+                "sha256": "79A3F94266DCFCD11390547CB30C04B184443EB6CAC4DE6BEF44D9D4D99B9189",
+                "hashMatches": true,
+                "panel": 1,
+                "layout": "平面图幅-1",
+                "status": "plotted",
+                "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+                "paperScale": 1,
+                "viewportScale": 0.01,
+                "device": "FY-XS-2026.9-PDF.pc3",
+                "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+              },
+              {
+                "sha256": "834141576E0DB2342763C33E5B1867175A70EAC8B08B536B460E621729ED7BC0",
+                "hashMatches": true,
+                "panel": 2,
+                "layout": "平面图幅-2",
+                "status": "plotted",
+                "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+                "paperScale": 1,
+                "viewportScale": 0.01,
+                "device": "FY-XS-2026.9-PDF.pc3",
+                "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+              },
+              {
+                "sha256": "2201D23B83E26424DE6602B6736674B08C071D67786A501FF102F42FE71B3308",
+                "hashMatches": true,
+                "panel": 3,
+                "layout": "平面图幅-3",
+                "status": "plotted",
+                "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+                "paperScale": 1,
+                "viewportScale": 0.01,
+                "device": "FY-XS-2026.9-PDF.pc3",
+                "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+              },
+              {
+                "sha256": "D82742A336AA68372497EA9181EAFFF5327E5AAD9A41CEECD1BF001A23FF3F09",
+                "hashMatches": true,
+                "panel": 4,
+                "layout": "平面图幅-4",
+                "status": "plotted",
+                "paper": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
+                "paperScale": 1,
+                "viewportScale": 0.01,
+                "device": "FY-XS-2026.9-PDF.pc3",
+                "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+              }
+            ],
+            "dimensions": 72,
+            "dimensionSegments": 245,
+            "axisEnds": 57,
+            "axisVerified": 57,
+            "axisEvidence": {
+              "sha256": "00C634C6248266A3F452E21D30469886F6E584C52C5C6A7A128E13426F6BB690",
+              "localDetailFieldsOmitted": 1
+            },
+            "axisBindingBasis": "Expected-end inventory is independently checked by the same-version template-native readback; it has no standalone DWG SHA field.",
+            "defpointsFrames": 16,
+            "typographyObjects": 935,
+            "typographyVerified": 932,
+            "typographyUnresolved": {
+              "recordCount": 9,
+              "categories": {
+                "linked-note": 9
+              },
+              "booleanStatusCounts": {
+                "annotative": {
+                  "true": 0,
+                  "false": 3
+                },
+                "verified": {
+                  "true": 0,
+                  "false": 3
+                },
+                "vertical": {
+                  "true": 0,
+                  "false": 3
+                }
+              },
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "38E2EF08BB8743D5C1FA1B123CA36309CD63CEAA53D00BC2E788DE70060DA5DC",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "unitGlyphRepairs": {
+              "recordCount": 2,
+              "categories": {},
+              "booleanStatusCounts": {
+                "equivalentUnitOnly": {
+                  "true": 2,
+                  "false": 0
+                },
+                "recordedProtectedParametersEqual": {
+                  "true": 2,
+                  "false": 0
+                },
+                "verified": {
+                  "true": 2,
+                  "false": 0
+                }
+              },
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "83359CB39B86FA6096E2699E14585E22FA0B01C44B4F7CE42DD863BF66EC56E4",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "publication": {
+              "contract": "plan.publication-quality.v1",
+              "outputSHA256": "A9ACC76717CDCD12CC0513F09853B4F05735C3B991CF1462446D90DEA25B1A04",
+              "processingCompleted": true,
+              "delivered": true,
+              "checkedRulesPassed": true,
+              "coverageComplete": false,
+              "allRulesPassed": false,
+              "unknownCoverageRules": [
+                "D23",
+                "S01"
+              ],
+              "unresolvedCount": 50,
+              "status": "delivered-with-exceptions",
+              "localDetailFieldsOmitted": 2
+            },
+            "unresolved": {
+              "recordCount": 19,
+              "categories": {
+                "linked-note": 9,
+                "omission-coverage-D23": 1,
+                "omission-coverage-S01": 1,
+                "title-paper-bounds": 8
+              },
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "F623C6E91E8C7EC84E72EDF87B0DDF95C6A72266DA726D4362CA4B3E377D59BC",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "ruleEvidence": {
+              "sha256": "3408F613EAD17A9614B8583933DF6A593FB7308E7C7E290EA65FBB06594C2F1F",
+              "localDetailFieldsOmitted": 1
+            },
+            "allCatalogRulesImplemented": false,
+            "closures": {
+              "recordCount": 4,
+              "categories": {},
+              "booleanStatusCounts": {
+                "nativeQuitConfirmed": {
+                  "true": 4,
+                  "false": 0
+                }
+              },
+              "exitCodeCounts": {
+                "0": 4
+              },
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "C0AA21291226336D8FB11F115663224230D819282BCC48B41D7AADD469FAA621",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "historicalAttempts": {
+              "recordCount": 0,
+              "categories": {},
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "localDetailFieldsOmitted": 2,
+            "publicationSummary": {
+              "contract": "plan.public-runtime-metadata.v1",
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "470B843002095A74A0F84E7F4C28DB855D77382311A3D47D25EF7FCDCF78EC3A",
+              "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+              "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+            }
+          },
+          {
+            "project": "邵府",
+            "summary": {
+              "sha256": "47997D7458FC378583BE327908C712624FE8383B766BA3D224C60300FD4035C8",
+              "localDetailFieldsOmitted": 1
+            },
+            "sourceSHA256": "498056C4A2DAF6EF5744B755598C697B57B5D12F073CE4166A9CD32CC9117E3A",
+            "sourcePreserved": true,
+            "outputSHA256": "F2BA6443BD72D11E565A8A08A7359AFD59E293817C4CAC5B310DFF29B0B4755B",
+            "wallHeightProof": {
+              "sha256": "34052496D7111C3F2FF2D812F8964189EE275DDE3EC45EE9EBED1ABB9C8790DC",
+              "localDetailFieldsOmitted": 1
+            },
+            "wallCount": 55,
+            "wallUnresolved": {
+              "recordCount": 0,
+              "categories": {},
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "pages": [
+              {
+                "sha256": "C590600D7E7F89A669FE10F59CDCB8D3437529F13C3F679B83945C27E12DE58E",
+                "hashMatches": true,
+                "panel": 1,
+                "layout": "邵府一层",
+                "status": "plotted",
+                "paper": "ISO_full_bleed_A3_(420.00_x_297.00_MM)",
+                "paperScale": 1,
+                "viewportScale": 0.01,
+                "device": "FY-XS-2026.9-PDF.pc3",
+                "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+              },
+              {
+                "sha256": "AF681992D62656CB01CC24B3FB1A753927478A7E684E884D12EA9A3C5A502A62",
+                "hashMatches": true,
+                "panel": 2,
+                "layout": "邵府二层",
+                "status": "plotted",
+                "paper": "ISO_full_bleed_A3_(420.00_x_297.00_MM)",
+                "paperScale": 1,
+                "viewportScale": 0.01,
+                "device": "FY-XS-2026.9-PDF.pc3",
+                "plotStyle": "FY-XS-2026.9-A3 A4.ctb"
+              }
+            ],
+            "dimensions": 32,
+            "dimensionSegments": 99,
+            "axisEnds": 0,
+            "axisVerified": 0,
+            "axisEvidence": {
+              "sha256": "A7BDDE5CBB1C50E82F098B2B70FB649A945565878A5525729038D0825692B170",
+              "localDetailFieldsOmitted": 1
+            },
+            "axisBindingBasis": "Expected-end inventory is independently checked by the same-version template-native readback; it has no standalone DWG SHA field.",
+            "defpointsFrames": 8,
+            "typographyObjects": 50,
+            "typographyVerified": 50,
+            "typographyUnresolved": {
+              "recordCount": 0,
+              "categories": {},
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "unitGlyphRepairs": {
+              "recordCount": 0,
+              "categories": {},
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "publication": {
+              "contract": "plan.publication-quality.v1",
+              "outputSHA256": "F2BA6443BD72D11E565A8A08A7359AFD59E293817C4CAC5B310DFF29B0B4755B",
+              "processingCompleted": true,
+              "delivered": true,
+              "checkedRulesPassed": true,
+              "coverageComplete": false,
+              "allRulesPassed": false,
+              "unknownCoverageRules": [
+                "D23",
+                "S01",
+                "A28"
+              ],
+              "unresolvedCount": 9,
+              "status": "delivered-with-exceptions",
+              "localDetailFieldsOmitted": 2
+            },
+            "unresolved": {
+              "recordCount": 5,
+              "categories": {
+                "axis-expected": 1,
+                "omission-coverage-D23": 1,
+                "omission-coverage-S01": 1,
+                "title-paper-coverage": 2
+              },
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "2626E6B162FAA2CEA1061211D672718309376135D2B30FADFBDC9ED2D72573A5",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "ruleEvidence": {
+              "sha256": "7316CA55E54C24CE4D4733752DC5389C4E3C379B67C3FB2EDB0DAE7420B378FA",
+              "localDetailFieldsOmitted": 1
+            },
+            "allCatalogRulesImplemented": false,
+            "closures": {
+              "recordCount": 3,
+              "categories": {},
+              "booleanStatusCounts": {
+                "nativeQuitConfirmed": {
+                  "true": 3,
+                  "false": 0
+                }
+              },
+              "exitCodeCounts": {
+                "0": 3
+              },
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "516EB7BF1585CFEE5981FDFAB07684830A242962B63B53F6934B559A34F9CA8E",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "historicalAttempts": {
+              "recordCount": 0,
+              "categories": {},
+              "booleanStatusCounts": {},
+              "exitCodeCounts": {},
+              "detailsOmitted": true,
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "4F53CDA18C2BAA0C0354BB5F9A3ECBE5ED12AB4D8E11BA873C2F11161202B945",
+              "countMeaning": "Recorded rows, not distinct defects; false statuses and unknown-coverage categories remain unresolved."
+            },
+            "localDetailFieldsOmitted": 2,
+            "publicationSummary": {
+              "contract": "plan.public-runtime-metadata.v1",
+              "localEvidencePreserved": true,
+              "localEvidenceCanonicalSHA256": "D080833BC92A702C855B2142B1A322720B376C03E8CCE39302ECFCB1A6A6E90A",
+              "details": "Original local evidence is retained privately. Public metadata omits local paths, drawing handles, object text, coordinates and geometry.",
+              "acceptance": "Compatibility, completion, checked rules and unknown coverage keep their original meanings; this summary grants no additional pass."
+            }
+          }
+        ]
+      },
+      "pending": [
+        "compatible 仅表示协议适配，不能据此宣称全部规则或任意输入已通过。",
+        "图纸是否通过以各项目 publication 原始状态及同版遗留清单为准；历史验证仅属于其原模块 SHA。"
+      ]
+    }
+  },
+  "metadataPublication": {
+    "contract": "plan.public-runtime-metadata.v1",
+    "originalMetadataSHA256": "96D3163A142CF73A7B77BE37C2305FF7C0DFB4DAAC745A9168FCD5B65FF41C53",
+    "localEvidencePreserved": true,
+    "functionalAdmissionUnchanged": true,
+    "scope": "Public validation summaries only; original local detailed evidence remains outside the repository."
+  }
+}

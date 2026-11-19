@@ -59,7 +59,14 @@ std::wstring iniPath(){wchar_t b[32768]{};require(GetModuleFileNameW(reinterpret
 std::wstring ini(const std::wstring& file,const wchar_t* key){wchar_t b[32768]{};const auto n=GetPrivateProfileStringW(L"stage2",key,L"",b,32768,file.c_str());require(n>0&&n<32767,"missing/truncated stage2 setting");return {b,n};}
 std::string ascii(const std::wstring& s){require(s.find_first_not_of(L"0123456789ABCDEF") == std::wstring::npos,"nonhex identity");return {s.begin(),s.end()};}
 std::wstring desktop(HANDLE h){wchar_t b[512]{};DWORD n{};require(h&&GetUserObjectInformationW(h,UOI_NAME,b,sizeof(b),&n),"desktop read");return b;}
-void isolated(const std::wstring& nonce){const auto current=desktop(GetThreadDesktop(GetCurrentThreadId()));HDESK input=OpenInputDesktop(0,FALSE,DESKTOP_READOBJECTS);require(input!=nullptr,"input desktop read");std::wstring active;try{active=desktop(input);}catch(...){CloseDesktop(input);throw;}CloseDesktop(input);require(current==L"CodexS1_"+nonce&&current!=active,"stage2 test command requires attested private desktop");resbuf value{};require(acedGetVar(L"SECURELOAD",&value)==RTNORM&&value.restype==RTSHORT&&value.resval.rint==1,"SECURELOAD must remain1");}
+bool stage2SecureLoader(short value){
+#ifdef PLAN_STANDALONE_ENTRY
+ return value==1||value==2;
+#else
+ return value==1;
+#endif
+}
+void isolated(const std::wstring& nonce){const auto current=desktop(GetThreadDesktop(GetCurrentThreadId()));HDESK input=OpenInputDesktop(0,FALSE,DESKTOP_READOBJECTS);require(input!=nullptr,"input desktop read");std::wstring active;try{active=desktop(input);}catch(...){CloseDesktop(input);throw;}CloseDesktop(input);require(current==L"CodexS1_"+nonce&&current!=active,"stage2 test command requires attested private desktop");resbuf value{};require(acedGetVar(L"SECURELOAD",&value)==RTNORM&&value.restype==RTSHORT&&stage2SecureLoader(value.resval.rint),"secure loading required for the isolated native command");}
 template<class T>struct Close {void operator()(T* p)const noexcept{if(p)p->close();}};
 template<class T>std::unique_ptr<T,Close<T>> open(AcDbObjectId id){T* p{};const auto result=acdbOpenObject(p,id,AcDb::kForRead);if(result!=Acad::eOk){wchar_t h[32]{};id.handle().getIntoAsciiBuffer(h);throw std::runtime_error(std::string("read native object status=")+std::to_string(static_cast<int>(result))+" handle="+ascii(h));}return std::unique_ptr<T,Close<T>>(p);}
 AcDbObjectId modelId(AcDbDatabase& db){AcDbBlockTable* raw{};status(db.getBlockTable(raw,AcDb::kForRead),"read block table");std::unique_ptr<AcDbBlockTable,Close<AcDbBlockTable>> table(raw);AcDbObjectId id;status(table->getAt(ACDB_MODEL_SPACE,id),"model id");return id;}

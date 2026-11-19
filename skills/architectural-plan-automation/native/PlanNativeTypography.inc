@@ -1,7 +1,13 @@
 struct PlanTypographyRequest {fs::path source,output,report,resources,sheets;bool inspect{};};
 
 std::string planTypographyProtected(AcDbDatabase& db,const std::set<std::string>& scope){
- auto value=wholeProtected(db,scope,true);
+ std::map<std::string,std::string> nativeLabels;
+ for(const auto& [h,type]:modelTypes(db))if(type==L"TDbSymbElevation"||type==L"TDbSymbArrow"){
+  const auto key=ascii(h);if(scope.count(key))continue;
+  const auto label=open<AcDbEntity>(find(db,key));
+  nativeLabels[key]=jsonUtf8(productPlanDetailContents(*label));
+ }
+ auto value=wholeProtected(db,scope,true,&nativeLabels);
  for(const auto& [handle,type]:modelTypes(db))if(type==L"AcDbBlockReference"&&!scope.count(ascii(handle))){
   const auto ref=open<AcDbBlockReference>(find(db,ascii(handle)));const auto definition=ref->blockTableRecord();
   const auto name=symbolName(definition);if(name.rfind(L"*U",0)!=0)continue;

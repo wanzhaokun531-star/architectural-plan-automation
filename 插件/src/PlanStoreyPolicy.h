@@ -9,7 +9,7 @@ namespace bcpproduct {
 struct PlanLevelInput {
     std::optional<int> floor;
     std::optional<double> explicitHeightMM, finishedMetres;
-    bool heightConflict{}, datumConflict{};
+    bool heightConflict{}, datumConflict{}, heightConfirmed{};
 };
 
 struct PlanLevelResult {
@@ -41,6 +41,11 @@ inline std::vector<PlanLevelResult> resolvePlanLevels(const std::vector<PlanLeve
     for (std::size_t i = 0; i < input.size(); ++i) {
         const auto& row = input[i];
         auto& resolved = result[i];
+        if (row.heightConfirmed && !row.heightConflict && row.explicitHeightMM) {
+            resolved.heightMM = row.explicitHeightMM;
+            resolved.heightBasis = "confirmed-project-storey-height";
+            continue;
+        }
         if (row.heightConflict || row.datumConflict) {
             resolved.heightBasis = "conflicting-source";
             continue;
@@ -101,7 +106,7 @@ inline std::vector<PlanLevelResult> resolvePlanLevels(const std::vector<PlanLeve
         if (!lower || !upper) continue;
         auto& base = result[*lower];
         const auto& next = result[*upper];
-        if (base.heightMM && base.finishedMetres && next.finishedMetres &&
+        if (!input[*lower].heightConfirmed && base.heightMM && base.finishedMetres && next.finishedMetres &&
             std::abs((*next.finishedMetres - *base.finishedMetres) * 1000. - *base.heightMM) > .01) {
             base.heightMM.reset();
             base.heightBasis = "conflicting-source";

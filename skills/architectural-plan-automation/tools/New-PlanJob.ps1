@@ -27,6 +27,11 @@
     [string]$WorkspaceRoot
 )
 $ErrorActionPreference = 'Stop'
+$capabilityReport = & python -B -X utf8 (Join-Path $PSScriptRoot '../native/runtime_preflight.py') --module-only --mode ($Mode.ToLowerInvariant())
+if ($LASTEXITCODE -ne 0) {
+    $diagnostic = ($capabilityReport -join [Environment]::NewLine) | ConvertFrom-Json
+    throw ("平面作业无法启动。{0}{1} 详见 references/native-tools.md。" -f $diagnostic.reason, $diagnostic.error)
+}
 if (-not $Resources) { $Resources = Join-Path $PSScriptRoot '../assets' }
 $sourceFile = (Resolve-Path -LiteralPath $Source).Path
 $report = [IO.Path]::GetFullPath($ReportDirectory)
@@ -145,8 +150,8 @@ if ($RoomNameReference) {
 if ($ProjectParameters) { $settings.projectParameters = (Resolve-Path -LiteralPath $ProjectParameters).Path }
 if ($PrintReview) { $settings.printReview = '1' }
 if ($Formal) {
-    if ($Mode -ne 'Generate' -and -not $resumeDrawing) {
-        throw 'Formal revision requires ResumeFrom and the original saved source DWG.'
+    if ($Mode -eq 'Audit') {
+        throw 'Formal output is available for Generate or Revise.'
     }
     $settings.delivery = 'formal'
     if ($resumeDrawing) {

@@ -10,6 +10,10 @@
 #include <dbplotsetval.h>
 #include <AcDbLMgr.h>
 #include <cwchar>
+#include <cctype>
+#include <textengine.h>
+#include <acgiutil.h>
+#include <dbtable.h>
 #include "../../../插件/src/BuildingPlanPlugin2020.cpp"
 #undef acrxEntryPoint
 #undef PLAN_STANDALONE_ENTRY
@@ -323,6 +327,8 @@ void verifyRetainedPlanAxes(const fs::path& sourcePath, AcDbDatabase& saved,
 #include "PlanNativeFurniture.inc"
 #include "PlanNativeTypography.inc"
 #include "PlanNativeTemplate.inc"
+#include "PlanNativeFinalProbe.inc"
+#include "PlanNativeTypographyWidthProbe.inc"
 
 void runNativePlan(const fs::path& config) {
     const auto setting = [&](const wchar_t* key) {
@@ -337,7 +343,7 @@ void runNativePlan(const fs::path& config) {
     const auto mode = setting(L"mode");
     require(mode.empty() || mode == L"generate" || mode == L"revise" || mode == L"audit" ||
             ((mode==L"fixture"||mode==L"axis-edit-trial"||mode==L"joint-annotations"||mode==L"wall-height"||
-              mode==L"dimension-rebuild"||mode==L"furniture-normalize"||mode==L"typography-finalize"||mode==L"template-finalize"||mode==L"control-frames"||mode==L"owned-cleanup")&&
+              mode==L"dimension-rebuild"||mode==L"furniture-normalize"||mode==L"typography-finalize"||mode==L"template-finalize"||mode==L"control-frames"||mode==L"owned-cleanup"||mode==L"design-source-probe"||mode==L"design-source-audit"||mode==L"final-regression-fixture"||mode==L"table-visibility-probe"||mode==L"typography-width-probe")&&
              !ini(iniPath(),L"nonce").empty()), "Unknown plan job mode");
     const fs::path resourceInput=setting(L"resources");
     require(!resourceInput.empty()&&fs::is_directory(resourceInput),u8"E_PLAN_RESOURCE：作业资源目录不存在，请核对本机 Skill 或项目资源路径。");
@@ -348,6 +354,26 @@ void runNativePlan(const fs::path& config) {
     if(mode==L"axis-edit-trial"){
         verifyAxisEditing(source,report,setting(L"axisEditExpectation"));
         return;
+    }
+    if(mode==L"design-source-probe"){
+        isolated(ini(iniPath(),L"nonce"));
+        productRunDesignSourcesProbe(source,setting(L"output"),report,resources,setting(L"designSources"));return;
+    }
+    if(mode==L"design-source-audit"){
+        isolated(ini(iniPath(),L"nonce"));
+        productRunDesignSourcesAudit(source,report,setting(L"designSourceAudit"));return;
+    }
+    if(mode==L"final-regression-fixture"){
+        isolated(ini(iniPath(),L"nonce"));
+        productWriteFinalRegressionFixture(source,setting(L"output"),report,resources,setting(L"typographySheets"));return;
+    }
+    if(mode==L"table-visibility-probe"){
+        isolated(ini(iniPath(),L"nonce"));
+        productProbeTableVisibility(source,report,resources,setting(L"typographySheets"));return;
+    }
+    if(mode==L"typography-width-probe"){
+        isolated(ini(iniPath(),L"nonce"));
+        productProbeTypographyWidth(source,setting(L"output"),report,resources);return;
     }
     if(mode==L"owned-cleanup"){
         isolated(ini(iniPath(),L"nonce"));
@@ -388,8 +414,8 @@ void runNativePlan(const fs::path& config) {
         isolated(ini(iniPath(),L"nonce"));
         const fs::path output=setting(L"wallInspect")==L"1"?fs::path{}:fs::path(setting(L"output"));
         require(output.empty()||(!fs::exists(output)&&output!=source),"wall revision must write a new DWG");
-        auto sheetJob=readJointPaperJob(source,setting(L"wallSheets"),output,report);
-        runNativeWallRevision({std::move(sheetJob),resources,setting(L"wallScope"),setting(L"floorLevels"),{}});
+        auto sheetJob=readJointPaperJob(source,setting(L"wallSheets"),output,report,setting(L"wallSkipPrint")==L"1");
+        runNativeWallRevision({std::move(sheetJob),resources,setting(L"wallScope"),setting(L"floorLevels"),{},setting(L"wallTargets"),setting(L"wallSkipPrint")==L"1"});
         return;
     }
     if(mode==L"dimension-rebuild"){
@@ -413,7 +439,7 @@ void runNativePlan(const fs::path& config) {
     if(!projectParameters.empty()){
         const std::set<std::wstring> supported{L"entranceSteps",L"indoorStairs",L"planDetailConfirmations",
             L"furnitureComponents",L"roofPlan",L"floorLevels",L"panelScope",L"sheetChecks",L"roomNameReference",
-            L"confirmedRooms",L"newDimensions"};
+            L"confirmedRooms",L"newDimensions",L"designSources"};
         std::ifstream profile(projectParameters);
         std::string tag,digest,key,file;
         require(bool(profile>>tag>>digest)&&tag=="PLANPROJECT1"&&digest==sha(source),
@@ -434,7 +460,7 @@ void runNativePlan(const fs::path& config) {
                 "conflicting project parameter inputs");
         return found==projectFiles.end()?explicitValue:found->second;
     };
-    const bool formalRevision=mode==L"revise"&&setting(L"delivery")==L"formal";
+    const bool formalRevision=mode==L"revise"&&!setting(L"resumePreviousDWG").empty()&&setting(L"delivery")==L"formal";
     const fs::path priorDrawing=setting(L"resumePreviousDWG");
     const auto priorDrawingHash=ascii(setting(L"resumePreviousSHA256"));
     require(formalRevision||priorDrawing.empty(),"revision target only applies to formal Revise");
@@ -485,6 +511,7 @@ void runNativePlan(const fs::path& config) {
             productJob->allowRoomTextConversion=setting(L"roomTextConversion")==L"1";
             productJob->confirmedRooms=std::move(confirmed);
             productJob->unifiedNewDimensions=newDimensions;
+            productJob->unifiedDesignSources=projectFile(L"designSources");
             productJob->planInkAnalyzer=inkAnalyzer;
             productJob->planInkPython=inkPython;
             if(!postcheck.empty())productJob->planPostcheckMode=postcheck;
@@ -498,7 +525,7 @@ void runNativePlan(const fs::path& config) {
     }
     for(const auto& [key,path]:projectFiles)
         require(mode!=L"audit"&&(key==L"confirmedRooms"||key==L"newDimensions"||
-            key==L"entranceSteps"||key==L"indoorStairs"),
+            key==L"entranceSteps"||key==L"indoorStairs"||key==L"furnitureComponents"||key==L"floorLevels"),
             "this project parameter is not implemented by the selected Revise/Audit mode");
     const auto output = mode == L"audit" ? fs::path{} : fs::weakly_canonical(setting(L"output"));
     require(mode == L"audit" || (source != output && !fs::exists(output)), "use a new DWG path");
@@ -713,6 +740,10 @@ void runNativePlan(const fs::path& config) {
     const double scale = std::stod(setting(L"scale")), unit = std::stod(setting(L"unitMM"));
     require(std::isfinite(scale) && scale > 0 && std::isfinite(unit) && unit > 0, "invalid scale or drawing unit");
     readConfirmedPlanDimensionFile(projectFile(L"newDimensions"),originalHash,unit);
+    job.currentPlanRules=true;
+    job.unifiedScale=scale;job.unifiedUnitMM=unit;
+    job.unifiedFurnitureComponents=projectFile(L"furnitureComponents");
+    job.allowRoomTextConversion=setting(L"roomTextConversion")==L"1";
     productLoadPlanPaperPolicy(job, scale, unit);
     const auto confirmed=readConfirmedPlanRooms(projectFile(L"confirmedRooms"),originalHash,unit);
     const auto materialSource = setting(L"prepareMaterialFrom");
@@ -756,6 +787,8 @@ void runNativePlan(const fs::path& config) {
     const auto views = bcpproduct::discoverGenericViews(walls);
     require(!views.empty(), "no identifiable native wall plans");
     productRecordRulePanels(job,views);
+    auto ownership=productIdentifyPlanPanels(input,views,unit);
+    productCaptureOldAnnotations(job,db,views,ownership,productPerimeterSourceWitnesses(db,job));
     auto names = productPlanNameInventory(db, input, views, roots,true);
     std::vector<ProductPlanBounds> panels;
     std::vector<bool> active;
@@ -776,66 +809,14 @@ void runNativePlan(const fs::path& config) {
             productGenericProjectionSurfaces(db, input, views, i, panel), static_cast<int>(i), material, scale, unit,
             names, true, &writtenAreas, confirmed, &roomGrids[i]);
     }
-    applyConfirmedPlanRooms(job,db,confirmed,panels,names,scale,unit,writtenAreas);
-    std::vector<PlanNativeDimension> dimensions;
-    for (const auto& [handle, type] : roots) {
-        const auto key = ascii(handle);
-        const bool native = type == L"TDbDimension2";
-        const bool stock = type == L"AcDbRotatedDimension" || type == L"AcDbAlignedDimension";
-        if (!native && !stock) continue;
-        auto entity = open<AcDbEntity>(find(db, key));
-        if (!productPlanDimensionVisible(*entity)) {
-            if (native || stock) job.planDimensionExclusions.insert(key);
-            continue;
-        }
-        {
-            const auto id = entity->objectId();
-            const auto* ordinary = AcDbDimension::cast(entity.get());
-            const auto grips = native ? chainGrips(id) : std::vector<AcGePoint3d>{};
-            const auto anchor = ordinary ? ordinary->textPosition() : grips.empty() ? AcGePoint3d{} : grips.front();
-            const auto p = bcpproduct::nearestGenericView(views, {anchor.x, anchor.y});
-            if (!active[p] || !inPanel(anchor, panels[p])) {
-                job.planDimensionExclusions.insert(key);
-                continue;
-            }
-            const auto values=productDimensionMeasurements(*entity,native);
-            const auto projection=stock?readPlanProjection(id):std::optional<PlanProjection>{};
-            if((native&&(values.empty()||grips.size()!=2*values.size()+6||grips[0].distanceTo(grips[1])<1e-5))||
-                (stock&&!projection)){
-                job.detailPending.push_back({u8"室内尺寸字框未验证",key,u8"原尺寸的公开测点、测值或方向无法读取"});
-                continue;
-            }
-            dimensions.push_back({key,static_cast<int>(p),native && std::abs(grips[0].x-grips[1].x)<1e-5,
-                stock,false,grips,values,key,projection});
-        }
-    }
-    applyConfirmedPlanDimensions(job,db,material,projectFile(L"newDimensions"),panels,active,unit,dimensions);
-    if(std::any_of(dimensions.begin(),dimensions.end(),[](const auto& dim){return dim.stock;})){
-        const auto prototype=cloneOne(material,find(material,"19A0"),db);
-        for(auto& dim:dimensions)if(dim.stock){
-            const auto original=find(db,dim.handle);
-            std::string reason;
-            const auto candidate=tryConvertPlanProjection(db,original,prototype,*dim.projection,reason);
-            if(candidate.isNull()){
-                job.detailPending.push_back({u8"普通投影尺寸待转",dim.handle,reason});
-                continue;
-            }
-            status(editObject<AcDbEntity>(original)->erase(),"retire verified ordinary dimension");
-            dim.handle=axisHandle(candidate);
-            dim.stock=false;
-            dim.grips=chainGrips(candidate);
-            dim.vertical=std::abs(dim.grips[0].x-dim.grips[1].x)<1e-5;
-        }
-        status(editObject<AcDbEntity>(prototype)->erase(),"retire projection prototype");
-    }
+    const auto furniture=productApplyPlanFurniture(job,db,{});
+    productApplyPlanOmissions(job,db,input,views,active,roomGrids,roots);
+    std::vector<std::pair<AcDbObjectId,bool>> recovered;
+    productResolveLooseDimensions(job,db,material,views,active,recovered);
     const auto entranceSteps=productEntranceSteps(job,db,input,views,unit,projectFile(L"entranceSteps"),originalHash,&material,scale);
     const auto indoorStairs=productIndoorStairs(job,db,views,&material,unit,scale,projectFile(L"indoorStairs"),originalHash);
     productApplyPlanDimensionStyle(job, db, scale, unit);
-    for(const auto& dimension:dimensions)if(dimension.stock)
-        styleRetainedPlanProjection(job,db,find(db,dimension.handle),*dimension.projection,scale,unit);
-    PlanJointTiming jointTiming;
-    auto layout=layoutPlanRooms(job,db,dimensions,panels,roomGrids,confirmed,scale/unit,jointTiming);
-    const auto candidate = report / L"candidate.dwg";
+    const auto candidate = report / L"revision-before-publication.dwg";
     require(!fs::exists(candidate), "candidate already exists");
     productArrangeEntranceDimensions(job,db,entranceSteps,scale,unit);
     productArrangeIndoorStairDimensions(job,db,indoorStairs,scale,unit);
@@ -845,11 +826,12 @@ void runNativePlan(const fs::path& config) {
     productVerifyEntranceSteps(job,saved,entranceSteps,report/L"exterior-entrance-steps.json");
     productVerifyIndoorStairs(job,saved,indoorStairs,unit,report/L"indoor-stairs.json");
     Working readback(&saved);
+    productVerifyPlanFurniture(job,saved,furniture,{});
+    productVerifyPlanOmissions(job,saved);
     verifyRetainedPlanAxes(source,saved,views,report);
     productVerifyPlanNames(job, saved, names);
     productVerifyPlanDimensionStyle(job, saved, scale, unit);
     productAuditPlanDimensionText(job, saved);
-    auditPlanLayout(job,saved,dimensions,roomGrids,confirmed,scale/unit,layout);
     std::ostringstream proof;
     proof << std::setprecision(17) << "{\"reopened\":true,\"modelRoots\":" << modelTypes(saved).size()
           << ",\"bcpLoadedBefore\":" << (beforeBcp ? "true" : "false")
@@ -870,105 +852,21 @@ void runNativePlan(const fs::path& config) {
         proof<<"{\"panel\":"<<area.panel<<",\"room\":\""<<area.name<<"\",\"body\":\""<<area.body
              <<"\",\"superscript\":\""<<area.exponent<<"\",\"m2\":"<<area.area<<'}';
     }
-    proof << "],\"interior\":[";
-    first = true;
-    for (const auto& dimension : dimensions) {
-        const auto id = find(saved, dimension.handle);
-        verifyPlanLayoutChain(dimension,id);
-        const auto entity = open<AcDbEntity>(id);
-        const auto actual = productDimensionMeasurements(*entity, !dimension.stock);
-        require(actual.size()==dimension.values.size()&&
-            std::equal(actual.begin(),actual.end(),dimension.values.begin(),
-              [](double a,double b){return std::abs(a-b)<1e-5;}),"reopened interior measurement changed");
-        const auto grips=dimension.stock?std::vector<AcGePoint3d>{}:chainGrips(id);
-        if(!dimension.stock){
-            require(grips.size()==dimension.grips.size()&&std::equal(grips.begin()+2,grips.begin()+actual.size()+3,
-                dimension.grips.begin()+2,[](const auto& a,const auto& b){return a.distanceTo(b)<1e-5;}),
-                "reopened interior measurement station changed");
-        }
-        if(dimension.projection)
-            productRecordRuleEvidence(job,"D26","{\"panel\":"+std::to_string(dimension.panel+1)+
-              ",\"source\":\""+dimension.sourceHandle+"\",\"object\":\""+dimension.handle+
-              "\",\"result\":\""+(dimension.stock?"retained-pending-conversion":"converted-and-verified")+"\"}");
-        if(!first)proof<<',';
-        first=false;
-        proof << "{\"panel\":" << dimension.panel+1 << ",\"sourceHandle\":\"" << dimension.sourceHandle
-              << "\",\"handle\":\"" << dimension.handle
-              << "\",\"stock\":" << (dimension.stock?"true":"false") << ",\"added\":"
-              << (dimension.added?"true":"false") << ",\"converted\":"
-              << (dimension.projection&&!dimension.stock?"true":"false")
-              << ",\"stationsPreserved\":true,\"projectionPreserved\":true,\"measurementsPreserved\":true,\"values\":[";
-        for(std::size_t i=0;i<actual.size();++i){if(i)proof<<',';proof<<actual[i];}
-        proof<<']';
-        if(!dimension.stock)proof<<",\"baseline\":"
-            <<(dimension.vertical?grips[0].x:grips[0].y);
-        std::vector<AcGePoint3d> stations;
-        if(dimension.projection)stations={dimension.projection->a,dimension.projection->b};
-        else stations.assign(grips.begin()+2,grips.begin()+actual.size()+3);
-        proof<<",\"stationCoordinates\":[";
-        for(std::size_t i=0;i<stations.size();++i){
-            if(i)proof<<',';
-            proof<<'['<<stations[i].x<<','<<stations[i].y<<','<<stations[i].z<<']';
-        }
-        proof<<']';
-        if(dimension.projection){
-            const auto& source=*dimension.projection;
-            proof<<",\"projectionDirection\":["<<source.direction.x<<','<<source.direction.y<<','<<source.direction.z
-                 <<"],\"sourceBaselinePoint\":["<<source.baseline.x<<','<<source.baseline.y<<','<<source.baseline.z
-                 <<"],\"sourceTextPosition\":["<<source.textPosition.x<<','<<source.textPosition.y<<','<<source.textPosition.z<<']';
-            const auto retained=dimension.stock?readPlanProjection(id):std::optional<PlanProjection>{};
-            const auto baseline=retained?retained->baseline:grips[0];
-            const auto text=retained?retained->textPosition:grips[4];
-            proof<<",\"baselinePoint\":["<<baseline.x<<','<<baseline.y<<','<<baseline.z
-                 <<"],\"textPosition\":["<<text.x<<','<<text.y<<','<<text.z<<']';
-        }
-        if(dimension.added){
-            const auto boxes=productGenericChainText(saved,id,dimension.vertical);
-            const double station=dimension.vertical?grips[2].x:grips[2].y;
-            const double baseline=dimension.vertical?dimension.grips[0].x:dimension.grips[0].y;
-            const auto sameSide=[&](const AcGePoint3d& point){
-                return ((dimension.vertical?point.x:point.y)-station)*(baseline-station)>0;
-            };
-            const bool textWithin=std::abs(baseline-station)<1e-5||
-                (!boxes.empty()&&std::all_of(boxes.begin(),boxes.end(),[&](const auto& box){
-                    return box&&sameSide(box->minPoint())&&sameSide(box->maxPoint());
-                }));
-            proof<<",\"textOnRequestedStationSide\":"<<(textWithin?"true":"false");
-        }
-        proof<<'}';
+    proof << "],\"layouts\":[";
+    const auto dict=open<AcDbDictionary>(saved.layoutDictionaryId());
+    std::unique_ptr<AcDbDictionaryIterator> iter(dict->newIterator());
+    std::map<int,std::wstring> paperLayouts;
+    for(;!iter->done();iter->next()){
+        const auto sheet=open<AcDbLayout>(iter->objectId());
+        if(sheet->modelType())continue;
+        const auto members=productFurnitureMembers(sheet->getBlockTableRecordId());
+        if(std::any_of(members.begin(),members.end(),[](auto id){
+            const auto entity=open<AcDbEntity>(id);const auto* vp=AcDbViewport::cast(entity.get());
+            return vp&&vp->number()!=1&&vp->width()>0&&vp->height()>0;
+        }))paperLayouts.emplace(sheet->getTabOrder(),iter->name());
     }
-    proof << "],\"layout\":[";
-    for(std::size_t g=0;g<layout.size();++g){
-        if(g)proof<<',';
-        const auto& group=layout[g];
-        std::ostringstream record;
-        record<<"{\"panel\":"<<group.panel+1<<",\"group\":"<<g+1<<",\"before\":"<<group.before
-              <<",\"after\":"<<group.after<<",\"unreadable\":"<<group.unreadable<<",\"result\":\""
-              <<(group.after||group.unreadable||group.sideIssues?"pending":"layout-verified")<<"\"}";
-        productRecordRuleEvidence(job,"D25",record.str());
-        proof<<"{\"panel\":"<<group.panel+1<<",\"group\":"<<g+1<<",\"roomKeys\":[";
-        first=true;
-        for(const auto room:group.rooms){
-            if(!first)proof<<',';
-            first=false;
-            proof<<"\"room-"<<room+1<<"\"";
-        }
-        for(const auto& entry:group.confirmedRooms){
-            if(!first)proof<<',';
-            first=false;
-            proof<<"\"confirmed-"<<entry.second<<"\"";
-        }
-        proof<<"],\"chains\":[";
-        first=true;
-        for(const auto member:group.members){
-            if(!first)proof<<',';
-            first=false;
-            proof<<'"'<<dimensions[member].handle<<'"';
-        }
-        proof<<"],\"beforeConflicts\":"<<group.before<<",\"writtenConflicts\":"<<group.written<<",\"afterConflicts\":"<<group.after
-             <<",\"overlaps\":"<<group.overlaps<<",\"unreadable\":"<<group.unreadable<<",\"beforeSideIssues\":"<<group.beforeSide
-             <<",\"sideIssues\":"<<group.sideIssues<<'}';
-    }
+    first=true;
+    for(const auto& entry:paperLayouts){if(!first)proof<<',';first=false;proof<<jsonUtf8(entry.second);}
     proof << "],\"pending\":[";
     first=true;
     for (const auto& item : job.detailPending) {
@@ -982,6 +880,7 @@ void runNativePlan(const fs::path& config) {
     bcpproduct::publishNewFile(candidate,output);
     proof << "],\"outputSHA256\":\"" << sha(output) << "\",\"completed\":true}";
     writeNew(report/L"plan-native-result.json",proof.str());
+    writeNew(report/L"product-result.json",proof.str());
 }
 
 void dispatchPlan(const fs::path& config) noexcept {
@@ -995,6 +894,8 @@ void dispatchPlan(const fs::path& config) noexcept {
             writeNew(fs::path(path)/L"plan-native-error.json",
                 "{\"code\":\""+productDiagnosticCode(error.what())+"\",\"drawingWritten\":false,\"error\":"+
                 jsonUtf8(bcpproduct::decodeMessage(error.what()))+"}");
+            if(!fs::exists(fs::path(path)/L"product-result.json"))
+                writeNew(fs::path(path)/L"product-result.json","{\"completed\":false,\"error\":"+jsonUtf8(bcpproduct::decodeMessage(error.what()))+"}");
         } catch (...) {}
     }
 }
