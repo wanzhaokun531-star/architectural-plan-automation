@@ -2,6 +2,8 @@
 
 自 **2026-11-20** 起，本仓库是平面自动化的唯一维护和发布仓库。已核对旧 `building-construction-drawing-automation` 仓库：现行生产代码和规则保留本库版本，补入四套开发技能、支持测试，以及有来源记录的历史技术摘要。旧仓库完整历史已另行备份；合并明细见[迁移记录](docs/repository-consolidation-20261120.json)，历史资料见[技术摘要](docs/history/building-construction-drawing-automation/851cdfe/technical-notes.md)。此次合并不改出图逻辑、不更新 ARX 或 Releases 安装包。
 
+旧仓库已归档为只读并指向本库，不再维护；由于后台授权的删除权限不足，尚未永久删除。后续更新均在本库进行。
+
 本次源码与 Skill 更新至 **2026-11-19**。尺寸、轴号继续以指定模板原生对象为来源；字体、墙高及最终检查采用现行统一参数，防止旧终核或原图同名样式覆盖新规则。
 
 | 用途与样式 | 主字体＋大字体 | 纸面字高 | 宽度 |

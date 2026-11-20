@@ -352,7 +352,12 @@
     "newCADRunPerformed": false,
     "desktopControlledForValidation": false,
     "architecturalRuleAcceptanceChanged": false,
-    "releaseZipUpdated": false
+    "releaseZipUpdated": false,
+    "independentReview": {
+      "findings": [],
+      "scope": "30 changed/added files plus all 299 original baseline files",
+      "reviewEvidenceSHA256": "990BAB9D580C4A8BEA9DAAAE1D94C1AEA818678512075599BDAD08B86E06A39D"
+    }
   },
   "oldRepositoryBackup": {
     "format": "git bundle --all plus mirror and API metadata",
@@ -370,7 +375,17 @@
   },
   "publicationPolicy": "Only architectural-plan-automation is maintained and published. Use a clean checkout; do not push mixed legacy workspace history. Historical rule snapshots cannot override current rules.",
   "cleanup": {
-    "state": "pending-after-push-verification",
-    "visibilityChanged": false
+    "state": "archived-deletion-permission-blocked",
+    "oldRepositoryDeleted": false,
+    "oldRepositoryArchived": true,
+    "deleteHTTPStatus": 403,
+    "deleteAPIMessage": "Must have admin rights to Repository.",
+    "currentCredentialHasDeleteRepoScope": false,
+    "canonicalRepositoryVerified": true,
+    "verifiedMergedCommit": "b7635fdf27f16af121ada19587137f710abf68eb",
+    "visibilityChanged": false,
+    "localPublicationRoutingUpdated": true,
+    "mixedWorkspaceHistoryAndIndexPreserved": true,
+    "remainingAction": "Permanent deletion of the old repository requires GitHub repository deletion authorization."
   }
 }
