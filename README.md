@@ -1,5 +1,7 @@
 # 平面自动化 Skill
 
+自 **2026-11-20** 起，本仓库是平面自动化的唯一维护和发布仓库。已核对旧 `building-construction-drawing-automation` 仓库：现行生产代码和规则保留本库版本，补入四套开发技能、支持测试，以及有来源记录的历史技术摘要。旧仓库完整历史已另行备份；合并明细见[迁移记录](docs/repository-consolidation-20261120.json)，历史资料见[技术摘要](docs/history/building-construction-drawing-automation/851cdfe/technical-notes.md)。此次合并不改出图逻辑、不更新 ARX 或 Releases 安装包。
+
 本次源码与 Skill 更新至 **2026-11-19**。尺寸、轴号继续以指定模板原生对象为来源；字体、墙高及最终检查采用现行统一参数，防止旧终核或原图同名样式覆盖新规则。
 
 | 用途与样式 | 主字体＋大字体 | 纸面字高 | 宽度 |
@@ -48,3 +50,13 @@ msbuild '阶段1/原生接口探测/src/NativeAccessProbe.vcxproj' /p:Configurat
 已编译版本的安装和运行步骤见 [换机安装说明](skills/architectural-plan-automation/references/portable-install.md)。已发布 ZIP 的校验值见 [SHA256SUMS.txt](SHA256SUMS.txt)。
 
 源码、已编译模块与 Releases 安装包分别按指纹和实际验证范围管理。Releases 中的 ZIP 保持原发布版本；更新仓库不会自动更新安装包。
+
+## 后台支持测试
+
+安装 MSBuild、v141 C++ 工具集和 Windows SDK 10.0.19041.0 后，在仓库根目录运行：
+
+```powershell
+powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tools/Test-PlanSupport.ps1 -BuildRoot build/support-tests
+```
+
+入口自动查找 MSBuild，也可用 `-MSBuildPath` 指定。每轮使用独立输出目录，依次执行诊断、策略、输入解析、已有散水几何算法及宿主退出策略测试，保留日志和 `result.json`。不启动 CAD、不控制桌面、不覆盖成图模块；散水测试不会启用暂停的散水出图。这些测试验证支持代码，不代表实际项目或全部规则验收通过。

@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-20",
+  "canonicalRepository": "https://github.com/wanzhaokun531-star/architectural-plan-automation",
+  "oldRepository": "https://github.com/wanzhaokun531-star/building-construction-drawing-automation",
+  "oldCommit": "851cdfe121a67d2e63f3ea8a7bf7614f81c6c2d2",
+  "newBaseCommit": "fd70314148e1475b3d95d526b347c11caa4ae3c6",
+  "inventory": {
+    "oldTrackedFiles": 4167,
+    "newBaseTrackedFiles": 299,
+    "samePathsAndBytes": 97,
+    "samePathsDifferentBytes": 17,
+    "oldUniquePaths": 4053,
+    "activeProductionDependencyGaps": [],
+    "samePathProductionFilesReplaced": 0
+  },
+  "selection": "Keep the newer production implementation and current rules; migrate reusable development skills and pure support tests. Historical notes are documentation only.",
+  "migratedFiles": [
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/.gitignore",
+      "targetPath": ".codex/skills/autocad2020-objectarx/.gitignore",
+      "sha256": "DA80CCFD121AD13BCF80DFA19CA9198E635DE938C609782ABEBC97ADA4C1AD9B",
+      "bytes": 174
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/README.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/README.md",
+      "sha256": "D3258350E387AC31CE219B5A240139F8D55D934B3C543EA8304910AD92810A1A",
+      "bytes": 6183
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/SKILL.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/SKILL.md",
+      "sha256": "66E884E2F0EBB29EB4F35C293B3B87AEEB6D77DFDB23FC5763F4F27032A75282",
+      "bytes": 6171
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/build-and-loading.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/build-and-loading.md",
+      "sha256": "A4FE45AE6F37970E7C9C1414E45AC1159F3D9849CD841ED8E5C709B4E5E6F811",
+      "bytes": 6012
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/database-lifecycle.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/database-lifecycle.md",
+      "sha256": "E310EB832E22EEFD8DD34FF4FDDBE17B586D880C34959DC769F5C6F997C7DE39",
+      "bytes": 4491
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/development-efficiency.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/development-efficiency.md",
+      "sha256": "6ABEFE7BC93EFBD40FB2EC42C5C1569711E93157882EB3DD673A0FDE3ECD0925",
+      "bytes": 9402
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/drawing-compatibility.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/drawing-compatibility.md",
+      "sha256": "D42B6400B8C30C33934E1656CBCA1131D2BF559AD3930843181938294E7D792E",
+      "bytes": 9896
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/native-drawing-patterns.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/native-drawing-patterns.md",
+      "sha256": "B078B36F94DB5D3AE251450A880FCD722AF55452692A59883C35777834ECC248",
+      "bytes": 6332
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/reproducible-workflows.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/reproducible-workflows.md",
+      "sha256": "CB221A806717C4E8AB1B34124D23184033E1758468B13A822FEA039BFA935120",
+      "bytes": 10826
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/sources.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/sources.md",
+      "sha256": "3E7E8BC311FA1CECA303D6827CB0132A2D607708BA283A30725C9E153B12135E",
+      "bytes": 6167
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/references/verification.md",
+      "targetPath": ".codex/skills/autocad2020-objectarx/references/verification.md",
+      "sha256": "4C05C52A95307895983E20A613A8BBA6835FB4A3954DAA61B81319B1EDC10639",
+      "bytes": 11461
+    },
+    {
+      "sourcePath": ".codex/skills/autocad2020-objectarx/scripts/Inspect-Arx2020.ps1",
+      "targetPath": ".codex/skills/autocad2020-objectarx/scripts/Inspect-Arx2020.ps1",
+      "sha256": "8E5489B3404992378066E56CA7F7A53012E013B63CBF7F10949A94C8B4A91EDC",
+      "bytes": 14774
+    },
+    {
+      "sourcePath": ".codex/skills/cpp-coding-standards/SKILL.md",
+      "targetPath": ".codex/skills/cpp-coding-standards/SKILL.md",
+      "sha256": "F870B47D3493B0AD0B6E3808A679AC3C429B60F03193AF6C9DC0E0D9E6981436",
+      "bytes": 22291
+    },
+    {
+      "sourcePath": ".codex/skills/cpp-testing/SKILL.md",
+      "targetPath": ".codex/skills/cpp-testing/SKILL.md",
+      "sha256": "A92FB5DA9B7E3CD1B4DEE185B3EB9D0A55352AF6396BF996D2EEF72D683784DF",
+      "bytes": 9175
+    },
+    {
+      "sourcePath": ".codex/skills/review-agent/SKILL.md",
+      "targetPath": ".codex/skills/review-agent/SKILL.md",
+      "sha256": "BB46315F6BC4B7051C05F807D19B1689B20418AC6C42590406D805C10FA2FD1A",
+      "bytes": 2718
+    },
+    {
+      "sourcePath": "插件/tests/DiagnosticTests.cpp",
+      "targetPath": "插件/tests/DiagnosticTests.cpp",
+      "sha256": "E71BE1433D49397416B061DE2759F8AEE8A2B41E8E3A70D7326C4D5910406238",
+      "bytes": 1537
+    },
+    {
+      "sourcePath": "插件/tests/DiagnosticTests.vcxproj",
+      "targetPath": "插件/tests/DiagnosticTests.vcxproj",
+      "sha256": "C875B8E6CC2C6917B76EF51DC3ADAAA14790EFE25355D48CCBAC6EB66829E5A3",
+      "bytes": 1411
+    },
+    {
+      "sourcePath": "插件/tests/PolicyTests.cpp",
+      "targetPath": "插件/tests/PolicyTests.cpp",
+      "sha256": "FDB200E011469CA430FAA3D0C0C295EC2CC12BA6B4DDBC38A5AF4A57CB1A4DE1",
+      "bytes": 4427
+    },
+    {
+      "sourcePath": "插件/tests/PolicyTests.vcxproj",
+      "targetPath": "插件/tests/PolicyTests.vcxproj",
+      "sha256": "AFFA548F1833234F2743EB125D76323E92DB2C52679C118C3CA8437FEAF80B4E",
+      "bytes": 1387
+    },
+    {
+      "sourcePath": "插件/tests/ProjectInputTests.cpp",
+      "targetPath": "插件/tests/ProjectInputTests.cpp",
+      "sha256": "5CEF08D7A74C0DD4E25E76E681D9AF4F117E25DFDC1393D466D549491F7809BA",
+      "bytes": 2834
+    },
+    {
+      "sourcePath": "插件/tests/ProjectInputTests.vcxproj",
+      "targetPath": "插件/tests/ProjectInputTests.vcxproj",
+      "sha256": "5A3084DF6F2349F0E35B84B041BD003F93AA79ACAF52232A51FEC868E9E8615C",
+      "bytes": 1610
+    },
+    {
+      "sourcePath": "阶段1/原生接口探测/tests/TestPostExitWindowPolicy.ps1",
+      "targetPath": "阶段1/原生接口探测/tests/TestPostExitWindowPolicy.ps1",
+      "sha256": "E6A3ADE50243D3FA5F724DD2799C43561B495D4E01E43219812FF0DA8AC18608",
+      "bytes": 1369
+    },
+    {
+      "sourcePath": "阶段2/tests/ApronGeometryTests.cpp",
+      "targetPath": "阶段2/tests/ApronGeometryTests.cpp",
+      "sha256": "12C6918B14E7984B3E7C034656257F638DFBC231C4EABB83AC5F8F686B8422DE",
+      "bytes": 16828
+    }
+  ],
+  "newSupportFiles": [
+    {
+      "path": "tools/Test-PlanSupport.ps1",
+      "sha256": "673A89F9E46BB70F621358E2852E215A1FE9D6AF914AD889135F73647AD3D0A1"
+    },
+    {
+      "path": "阶段2/tests/ApronGeometryTests.vcxproj",
+      "sha256": "37AB8CAF121C354580DD0DA8E325D396929FD9396AE3A733B564533B1CAF0E71"
+    }
+  ],
+  "ruleAndResourceRetention": {
+    "schemaVersion": 1,
+    "section": "rule-resource-retention",
+    "date": "2026-11-20",
+    "oldRepository": {
+      "name": "building-construction-drawing-automation",
+      "commit": "851cdfe121a67d2e63f3ea8a7bf7614f81c6c2d2",
+      "trackedBlobCount": 4167
+    },
+    "newBaseRepository": {
+      "name": "architectural-plan-automation",
+      "commit": "fd70314148e1475b3d95d526b347c11caa4ae3c6",
+      "trackedBlobCount": 299
+    },
+    "decision": "保留新库现行规则及运行资源；只补历史技术摘要与已有轴号资源的脱敏来源，不将旧规则、项目配置或样张迁回执行路径。",
+    "activeRuleOrResourceAddedFromOldRepository": false,
+    "requiredMissingCurrentResourceFound": false,
+    "archiveFiles": [
+      {
+        "path": "docs/history/building-construction-drawing-automation/851cdfe/resources/axes-provenance.json",
+        "purpose": "既有相同轴号DWG/TSV的脱敏来源及历史范围",
+        "sha256": "5D0948AD6FF5BA273742B99D4508E65610431134F305E223C488122618AFF5E3"
+      },
+      {
+        "path": "docs/history/building-construction-drawing-automation/851cdfe/technical-notes.md",
+        "purpose": "6份历史技术资料的来源摘要和验证边界",
+        "sha256": "6BC2FBEC34D2EB9C706F61FA37C0ED3894AC460E6BB5FD782AB70AE199EF9033"
+      }
+    ],
+    "resourceMatches": [
+      {
+        "oldPath": "阶段2/resources/native-axis-number-templates.dwg",
+        "newPath": "skills/architectural-plan-automation/assets/axes.dwg",
+        "gitBlob": "45390bdae2ce11cb89d48791bd7320ad657f626c",
+        "sha256": "77C1DB9B4632E45A52CF4C9D848D0B0888C8283AF46F7AACCB2946BFF094D686",
+        "sameBytes": true
+      },
+      {
+        "oldPath": "阶段2/resources/native-axis-number-templates.tsv",
+        "newPath": "skills/architectural-plan-automation/assets/axes.tsv",
+        "gitBlob": "0a57c3a32c00ce4abbf3c4c6112ddb275de6a4fd",
+        "sha256": "ADACC8526A118A31A815CBAA8A9F5CD8107A00F638790A3109898D33B720E9A1",
+        "sameBytes": true
+      }
+    ],
+    "historicalDocuments": [
+      {
+        "path": "阶段1/轴号连续编号_公开协议与验证边界.md",
+        "gitBlob": "6dea9597d72369c39562479ca1ad4c6f2dc88f33",
+        "sha256": "C01F8E7F471AC0B096052BF77A466AD9B0A56617AF99DCBE75BFE17A78C503F9",
+        "currentRuleSource": false
+      },
+      {
+        "path": "阶段1/原生接口探测/隔离桌面宿主使用与验收.md",
+        "gitBlob": "15144dc3d06e4374d4f57fe4380c88adbfcd72cd",
+        "sha256": "8B9A309EADBD3F36F034BFB00BB1149A89D5075AEA95047BAD71B8D49C0CBE28",
+        "currentRuleSource": false
+      },
+      {
+        "path": "阶段1/窗口弹出原因与无打扰验证方案_只读审查.md",
+        "gitBlob": "fbb0b366b35875418a22510ee1122b19f14360b4",
+        "sha256": "3ADBFD31BF7208A00E924286CBF6F1C5CFA0C44F31A00316662E934E56B2274A",
+        "currentRuleSource": false
+      },
+      {
+        "path": "阶段2/整体连续天正尺寸验证报告_20261031.md",
+        "gitBlob": "a5c84b39facfa500c558aeab8d1d580a36a56a2d",
+        "sha256": "179A6F1FEC0B5EEC50FC34BDBB0C8541C02906A265502575AB36AFC610BB6CDB",
+        "currentRuleSource": false
+      },
+      {
+        "path": "插件/docs/0.1.5使用说明.md",
+        "gitBlob": "d180e6c5008a4082d08c49bfe5d7e37d7153aef2",
+        "sha256": "F83475DA7D7851BD2F7F236796F13BDE8BC588FD7CCA2EEBB906CF6A6173EFDD",
+        "currentRuleSource": false
+      },
+      {
+        "path": "插件/docs/0.1.5验证报告.md",
+        "gitBlob": "d6aaf122c0905aaa1a8c76235c581ecbe04e3d2d",
+        "sha256": "DFB17ED01854C123D433090E843A90C56896AC07E1F7CCB5E08AAD0BCAF9E019",
+        "currentRuleSource": false
+      }
+    ],
+    "excludedFromActiveSource": {
+      "oldDrawingAndPDFTrackedFiles": 213,
+      "dwgCount": 192,
+      "pdfCount": 21,
+      "projectSpecificResources": [
+        "插件/resources/approved-layout/",
+        "插件/resources/three-floor/"
+      ],
+      "oldAutomaticInstructions": [
+        "AGENTS.md",
+        ".codex/",
+        ".superpowers/"
+      ],
+      "oldRuleGenerator": "docs/规则汇编_20261103/build_document.py"
+    },
+    "supersededRequirementsNotRestored": [
+      "室内尺寸生成",
+      "房间面积标注",
+      "旧外围间距和项目偏移常数",
+      "保留旧隐藏尺寸作为模板替换通过",
+      "家具炸开再成块",
+      "旧文字字号和字体例外",
+      "按无墙区统一截断既有主要轴线"
+    ],
+    "furnitureHistoricalFinding": "所核旧提交规则正文未发现家具必须递归炸开条款；此排除项用于防止恢复任何历史实现，不声称该提交已含此规则。",
+    "preservedCurrentRequirements": [
+      "指定模板原生尺寸和轴号及现行候选验证/失败回滚",
+      "FY_HZ 4.0/0.7；_TCH_DIM 2.8/1；_TCH_WINDOW 3.0/0.65及现行字体",
+      "每幅四道模型可见灰色虚线不打印Defpoints实体框",
+      "家具块/嵌套保护、取消室内尺寸和房间面积",
+      "独立重开实际读回、同版实打、P06真实遗留清单"
+    ],
+    "validation": {
+      "gitResourceIdentityChecked": true,
+      "startedCAD": false,
+      "historicalSamplesReopened": false,
+      "runtimeRulesChanged": false,
+      "nativeModuleChanged": false,
+      "allRulesPassedClaimed": false,
+      "scope": "本次为历史整合和资源字节核对；不增加现行运行通过范围。"
+    },
+    "privacy": {
+      "personalAbsolutePathsPublished": false,
+      "rawProjectDrawingsAdded": false,
+      "rawLogsAdded": false
+    }
+  },
+  "validation": {
+    "baseFileChanges": [
+      "README.md"
+    ],
+    "productionFilesChanged": 0,
+    "runtimeManifestItemsVerified": 73,
+    "migratedFileHashesVerified": 23,
+    "nativePythonTestsPassed": 97,
+    "ruleSynchronizationTestsPassed": 29,
+    "developerSkillsValidated": 4,
+    "moduleOnlyPreflights": [
+      {
+        "mode": "generate",
+        "compatible": true,
+        "moduleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+      },
+      {
+        "mode": "revise",
+        "compatible": true,
+        "moduleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+      },
+      {
+        "mode": "audit",
+        "compatible": true,
+        "moduleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+      },
+      {
+        "mode": "template-finalize",
+        "compatible": true,
+        "moduleSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC"
+      }
+    ],
+    "cppAndHostTests": {
+      "passed": true,
+      "buildAndRunSteps": 9,
+      "allExitZero": true,
+      "observedStdout": {
+        "DiagnosticTests-run": "diagnostic checks=10",
+        "PolicyTests-run": "policy checks=41",
+        "ProjectInputTests-run": "project-input checks=4",
+        "ApronGeometryTests-run": "57 checks, 0 failures",
+        "PostExitWindowPolicy-run": "post-exit window policy: 8 passed; supervisor AST parsed; no CAD launched"
+      }
+    },
+    "negativeMissingMSBuild": {
+      "passedAsNegative": true,
+      "processExitCode": 1,
+      "runtimeUnchanged": true
+    },
+    "testCountQualification": [
+      "ProjectInput historical stdout says 4; source actually contains eight independent return-code assertion groups. Do not rewrite historical test expectations or treat stdout as all-branch coverage.",
+      "Pure support tests do not enable apron production, invoke CAD, modify production ARX, or establish all architectural rules passed."
+    ],
+    "runtimeSHA256": "EB4F605407F190516F3D0C29C770410A39293D89AFDCABD3508B5D6C975EEAFC",
+    "newCADRunPerformed": false,
+    "desktopControlledForValidation": false,
+    "architecturalRuleAcceptanceChanged": false,
+    "releaseZipUpdated": false
+  },
+  "oldRepositoryBackup": {
+    "format": "git bundle --all plus mirror and API metadata",
+    "completeReachableHistoryVerified": true,
+    "fullFsckPassed": true,
+    "bytes": 232360910,
+    "sha256": "DB2E356F1C820CFF9F4ECC4954E949C4F87C0EBD7F188A5F7F9E1955B1B4CAB7",
+    "nonGitCollections": {
+      "releases": 0,
+      "issues": 0,
+      "pullRequests": 0,
+      "tags": 0
+    },
+    "location": "Owner-controlled local backup; historical project drawings and obsolete release files are not republished."
+  },
+  "publicationPolicy": "Only architectural-plan-automation is maintained and published. Use a clean checkout; do not push mixed legacy workspace history. Historical rule snapshots cannot override current rules.",
+  "cleanup": {
+    "state": "pending-after-push-verification",
+    "visibilityChanged": false
+  }
+}

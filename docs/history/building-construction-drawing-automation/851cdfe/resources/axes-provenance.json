@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "recordedDate": "2026-11-20",
+  "recordType": "historical-resource-provenance",
+  "activeRuleSource": false,
+  "sourceRepository": "building-construction-drawing-automation",
+  "sourceCommit": "851cdfe121a67d2e63f3ea8a7bf7614f81c6c2d2",
+  "originalProvenanceRecord": {
+    "path": "阶段2/resources/native-axis-number-templates.json",
+    "gitBlob": "e5bbc7a0a3685517dab90f932e04865d8ccba8b3",
+    "sha256": "52CCD99DFCC495DE501C7452167F7CFD250E5821B87D3871AA6A764E73285876",
+    "bytes": 1037
+  },
+  "resources": [
+    {
+      "path": "阶段2/resources/native-axis-number-templates.dwg",
+      "gitBlob": "45390bdae2ce11cb89d48791bd7320ad657f626c",
+      "sha256": "77C1DB9B4632E45A52CF4C9D848D0B0888C8283AF46F7AACCB2946BFF094D686",
+      "bytes": 3232136,
+      "currentPath": "skills/architectural-plan-automation/assets/axes.dwg",
+      "sameBytesAsCurrent": true
+    },
+    {
+      "path": "阶段2/resources/native-axis-number-templates.tsv",
+      "gitBlob": "0a57c3a32c00ce4abbf3c4c6112ddb275de6a4fd",
+      "sha256": "ADACC8526A118A31A815CBAA8A9F5CD8107A00F638790A3109898D33B720E9A1",
+      "bytes": 383,
+      "currentPath": "skills/architectural-plan-automation/assets/axes.tsv",
+      "sameBytesAsCurrent": true
+    }
+  ],
+  "originalRecordHashClaims": {
+    "sourceSHA256": "77C1DB9B4632E45A52CF4C9D848D0B0888C8283AF46F7AACCB2946BFF094D686",
+    "donorReportSHA256": "3A1F566C53F78EB0D415B8D74C17DDDE89435E00B472532A8486D689B9D6EE1A",
+    "librarySHA256": "77C1DB9B4632E45A52CF4C9D848D0B0888C8283AF46F7AACCB2946BFF094D686",
+    "indexSHA256": "ADACC8526A118A31A815CBAA8A9F5CD8107A00F638790A3109898D33B720E9A1"
+  },
+  "originalRecordHashClaimsValidation": {
+    "librarySHA256": "independently-computed-from-old-Git-blob-and-current-file",
+    "indexSHA256": "independently-computed-from-old-Git-blob-and-current-file",
+    "sourceSHA256": "historical-record-claim-not-reopened",
+    "donorReportSHA256": "historical-record-claim-not-revalidated"
+  },
+  "historicalScope": {
+    "prebuiltNumbers": "1..10",
+    "prebuiltLetters": "A..M excluding I",
+    "arbitraryNumberSetterClaimed": false,
+    "scopeAppliesOnlyToHistoricalMaterials": true
+  },
+  "currentPrecedence": "现行尺寸和轴号以 assets/annotation-template/平面标注.dwg 的真实原生对象及现行规则为准。此处记录旧 axes 资源来源，不将旧有限编号范围当作当前能力上限，也不把其原生协议当当前执行入口。",
+  "redactions": {
+    "personalAbsolutePathsRemoved": true,
+    "originalProjectAndRunPathsOmitted": true,
+    "projectDrawingsCopied": false
+  },
+  "validationBoundary": "本次仅核Git字节及已存在资源一致性，未启动CAD、重开旧样例或重新验证历史运行。"
+}
